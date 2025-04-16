@@ -14,12 +14,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4",
+      model: "gpt-4o",
       temperature: 0.3,
       messages: [
         {
           role: "system",
-          content: "Du bist ein Ernährungsberater. Für eine Beschreibung gib Kalorien, Eiweiß, Fett, KH geschätzt zurück. Format: {\"Kalorien\":..., \"Eiweiß\":..., \"Fett\":..., \"Kohlenhydrate\":...}",
+          content: `Du bist ein Ernährungsberater und sollst eine Kalorien- und Makronährwertschätzung (Kalorien, Eiweiß, Fett, Kohlenhydrate) zu einer freien Texteingabe liefern.
+
+          Der Nutzer schreibt, was er gegessen hat - in natürlicher Sprache, manchmal nur ein paar Wörter, manchmal mit Zusatzinfos wie Rezept oder Portionsgröße. Hier gelten folgende Regeln:
+
+          1. Die Menge wird of als ausgeschriebenes Wort („ein“, „zwei“) oder Zahl („1“, „2“) geschrieben, manchmal vage („ein bisschen“, „eine Handvoll“). Immer bezieht sich die Menge auf **verzehrte Einheiten**, nicht pro 100g.
+
+          2. Wenn ein Lebensmittel oder Fertigprodukt genannt wird (z. B. „Redbull“, „Happy Hippo“, „Apfel“, „Pom-Bär“), interpretiere die Menge so:
+            - „1 Redbull“ = 250 ml
+            - „1 Happy Hippo“ = 1 Stück (nicht ganze Packung)
+            - „1 Packung Pom-Bär“ = ganze 50 g Tüte
+            - „1 Apfel“ ≈ 150 g, „kleiner Apfel“ ≈ 100 g
+            - „2/5 Kinderschokolade“ = 2 von 5 Balken eines Riegels (= 0.4 Riegel)
+
+          3. Wenn Begriffe wie „Portion“, „Schüssel“ oder „Teller“ vorkommen, nutze realistische Portionsgrößen (z. B. 300–450 g je nach Gericht). „Ich habe Rezept XY gekocht und die Hälfte gegessen“ → bedeutet: 50 % der geschätzten Gesamtwerte.
+
+          4. Bei vagen Angaben wie „ein bisschen Käse“ oder „Handvoll Chips“, gehe von einer kleinen realistischen Menge aus (10–25 g).
+
+          5. Verarbeite auch Sätze wie „Ich habe xy gegessen“, „Heute zum Mittag gab’s...“ – extrahiere relevante Infos und gib **nur die geschätzten Gesamtwerte der Mahlzeit** aus.
+
+          6. Antworte ausschließlich im folgenden JSON-Format (keine weiteren Erklärungen):
+
+          {"Kalorien":..., "Eiweiß":..., "Fett":..., "Kohlenhydrate":...}`,
         },
         { role: "user", content: text },
       ],
