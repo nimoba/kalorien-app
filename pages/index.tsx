@@ -70,21 +70,26 @@ export default function Home() {
       {scanning && (
         <div style={{ marginTop: 20 }}>
           <h3>📸 Scanne deinen Barcode</h3>
+
+          <label style={{ display: "block", marginBottom: 4 }}>Menge (z. B. 1, 0.5):</label>
+          <input
+            type="number"
+            min="0.1"
+            step="0.1"
+            value={menge}
+            onChange={(e) => setMenge(e.target.value)}
+            placeholder="Menge"
+            style={{ padding: "8px", width: "100%", fontSize: 16, marginBottom: 12 }}
+          />
+
           <BarcodeScanner onDetected={handleBarcode} />
+
           <button onClick={() => setScanning(false)} style={{ marginTop: 10 }}>
             ❌ Abbrechen
           </button>
         </div>
       )}
-      <input
-        type="number"
-        min="0.1"
-        step="0.1"
-        value={menge}
-        onChange={(e) => setMenge(e.target.value)}
-        placeholder="Menge (z. B. 1)"
-        style={{ marginTop: 12, padding: "8px", width: "100%", fontSize: 16 }}
-      />
+
 
 
       {status === "success" && <p>✅ Erfolgreich eingetragen!</p>}
