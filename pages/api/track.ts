@@ -1,7 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
-import { useState } from "react";
-import BarcodeScanner from "../components/BarcodeScanner"; // 👈 dein Component
 
 // ⬇️ Favoriten-Tabelle checken
 async function checkFavoritMatch(name: string) {
