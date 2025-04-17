@@ -1,10 +1,10 @@
 // pages/index.tsx
 import { useState } from "react";
 import BarcodeScanner from "../components/BarcodeScanner"; // 👈 dein Component
-const [menge, setMenge] = useState("1");
 
 
 export default function Home() {
+  const [menge, setMenge] = useState("1");
   const [eingabe, setEingabe] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [scanning, setScanning] = useState(false);
