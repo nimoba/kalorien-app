@@ -21,7 +21,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let kohlenhydrate = safe(p.nutriments?.["carbohydrates_100g"]);
     
 
-    const fehlenMakros = kcal === 0 || eiweiß === 0 || fett === 0 || kohlenhydrate === 0;
+    const isMissing = (val: any) => val === undefined || val === null;
+
+    const fehlenMakros =
+      isMissing(p.nutriments?.["energy-kcal_100g"]) ||
+      isMissing(p.nutriments?.["proteins_100g"]) ||
+      isMissing(p.nutriments?.["fat_100g"]) ||
+      isMissing(p.nutriments?.["carbohydrates_100g"]);
+
 
     if (fehlenMakros) {
       const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
