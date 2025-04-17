@@ -21,10 +21,11 @@ export default function BarcodeScanner({ onDetected, onError }: Props) {
         onDetected(decodedText);
         scanner.clear().catch(console.error);
       },
-      (error) => {
-        onError?.(error);
+      () => {
+        // ❌ Kein Fehler-Handling → keine Aktion bei "kein Treffer"
       }
     );
+    
 
     return () => {
       scanner.clear().catch(() => {});
