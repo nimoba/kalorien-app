@@ -1,4 +1,5 @@
 // pages/index.tsx
+'use client';
 import { useState } from "react";
 import BarcodeScanner from "../components/BarcodeScanner"; // 👈 dein Component
 const [menge, setMenge] = useState("1");
