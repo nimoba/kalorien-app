@@ -85,13 +85,21 @@ export default function Home() {
 
           <BarcodeScanner
             onDetected={handleBarcode}
-            onError={(err) => setScanError("❌ Kein gültiger Barcode erkannt")}
+            onError={(err) => {
+              if (!scanError) {
+                setScanError("❌ Kein gültiger Barcode erkannt. Bitte neu ausrichten oder Abstand ändern.");
+              }
+            }}
           />
 
 
-          <button onClick={() => setScanning(false)} style={{ marginTop: 10 }}>
+          <button onClick={() => {
+            setScanning(false);
+            setScanError("");
+          }} style={{ marginTop: 10 }}>
             ❌ Abbrechen
           </button>
+
         </div>
       )}
 
