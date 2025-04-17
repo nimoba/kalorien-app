@@ -37,9 +37,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             {
               role: "system",
               content: `Du bist ein Ernährungsberater. Gib nur geschätzte Nährwerte für ein bekanntes Produkt aus – **nicht pro 100g**, sondern realistisch für **eine konsumierte Portion**. Verwende dabei allgemeine Marktstandards:
-- z. B. 1 Happy Hippo = 20g ≈ 118kcal
-- z. B. 1 Dose Red Bull = 250ml ≈ 112 kcal
-Gib die Werte im JSON-Format aus: {"Kalorien":..., "Eiweiß":..., "Fett":..., "Kohlenhydrate":...}`
+              - z. B. 1 Happy Hippo = 20g ≈ 118kcal
+              - z. B. 1 Dose Red Bull = 250ml ≈ 112 kcal
+              Gib die Werte im JSON-Format aus: {"Kalorien":..., "Eiweiß":..., "Fett":..., "Kohlenhydrate":...}`
             },
             {
               role: "user",

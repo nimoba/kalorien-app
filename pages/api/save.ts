@@ -4,9 +4,16 @@ import { google } from "googleapis";
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { name, kcal, eiweiss, fett, kh } = req.body;
 
-  if (!name || !kcal) {
-    return res.status(400).json({ error: "Fehlende Daten" });
+  if (
+    !name ||
+    isNaN(Number(kcal)) ||
+    isNaN(Number(eiweiss)) ||
+    isNaN(Number(fett)) ||
+    isNaN(Number(kh))
+  ) {
+    return res.status(400).json({ error: "Ungültige oder unvollständige Nährwerte" });
   }
+  
 
   try {
     const auth = new google.auth.GoogleAuth({
@@ -35,6 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const values = favRes.data.values?.flat() || [];
     const exists = values.map(v => v.toLowerCase()).includes(name.toLowerCase());
+    
+    console.log("🔍 Daten zum Speichern:", { name, kcal, eiweiss, fett, kh });
 
     if (!exists) {
       await sheets.spreadsheets.values.append({
