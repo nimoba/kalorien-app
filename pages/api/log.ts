@@ -1,4 +1,7 @@
-export default function handler(req, res) {
-    console.log("CLIENT LOG:", req.body.message);
-    res.status(200).json({ ok: true });
-  }
+import type { NextApiRequest, NextApiResponse } from "next";
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  const message = req.body?.message || "Kein Inhalt";
+  console.log("📥 CLIENT LOG:", message);
+  res.status(200).json({ status: "ok" });
+}
