@@ -5,10 +5,18 @@ import {
   ArcElement,
   Tooltip,
   Legend,
+  DoughnutController,
 } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  DoughnutController
+);
+
 
 interface Props {
   label: string;

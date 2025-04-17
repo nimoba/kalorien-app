@@ -9,8 +9,10 @@ import {
   Filler,
   Tooltip,
   Legend,
+  LineController,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 
 ChartJS.register(
   LineElement,
@@ -19,8 +21,10 @@ ChartJS.register(
   LinearScale,
   Filler,
   Tooltip,
-  Legend
+  Legend,
+  LineController
 );
+
 
 export function TagesLineChart() {
   // Dummy-Daten – später via API dynamisch

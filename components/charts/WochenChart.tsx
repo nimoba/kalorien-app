@@ -9,10 +9,13 @@ import {
   Legend,
   LineElement,
   PointElement,
+  BarController,
+  LineController,
 } from "chart.js";
-import { Chart } from "react-chartjs-2";
 
+import { Chart } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
+
 
 // Register everything needed for mixed chart
 ChartJS.register(
@@ -22,8 +25,11 @@ ChartJS.register(
   Tooltip,
   Legend,
   LineElement,
-  PointElement
+  PointElement,
+  BarController,
+  LineController
 );
+
 
 export function WochenChart() {
   const labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
