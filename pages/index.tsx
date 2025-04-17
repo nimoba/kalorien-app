@@ -1,220 +1,69 @@
-// pages/index.tsx
 import { useState } from "react";
-import BarcodeScanner from "../components/BarcodeScanner"; // 👈 dein Component
+import FloatingForm from "../components/FloatingForm";
+import { GaugeChart } from "../components/charts/GaugeChart";
+import { TagesLineChart } from "../components/charts/TagesLineChart";
+import { WochenChart } from "../components/charts/WochenChart";
 
+export default function Dashboard() {
+  const [showForm, setShowForm] = useState(false);
 
-export default function Home() {
-  const [menge, setMenge] = useState("1");
-  const [eingabe, setEingabe] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [scanning, setScanning] = useState(false);
-  const [scanError, setScanError] = useState(""); // ⬅️ für Fehleranzeige
-  const [previewData, setPreviewData] = useState<null | {
-    name: string;
-    kcal: number;
-    eiweiss: number;
-    fett: number;
-    kh: number;
-  }> (null);
-  const [gramm, setGramm] = useState("100"); // standardmäßig 100g
-  
-
-  const handleBarcode = async (code: string) => {
-    try {
-      const res = await fetch(`/api/barcode?code=${code}&menge=${menge}`);
-      const data = await res.json();
-  
-      if (res.ok) {
-        setPreviewData({
-          name: data.name,
-          kcal: data.Kalorien,
-          eiweiss: data.Eiweiß,
-          fett: data.Fett,
-          kh: data.Kohlenhydrate,
-        });
-        setGramm("100");
-      } else {
-        console.warn("❌ Barcode-API Fehler:", res.status, data);
-        alert(`❌ Produkt nicht gefunden oder Fehler bei API (${res.status})`);
-      }
-    } catch (err) {
-      console.error("⚠️ Fehler beim Barcode-API-Aufruf:", err);
-      alert("⚠️ Fehler beim Senden des Barcodes");
-    } finally {
-      setScanning(false);
-    }
+  // Dummy-Daten – später aus API holen
+  const todayData = {
+    kalorien: 1450,
+    ziel: 2200,
+    eiweiss: 80,
+    eiweissZiel: 130,
+    fett: 50,
+    fettZiel: 70,
+    kh: 160,
+    khZiel: 250,
   };
-  
-  const handleTextSubmit = async () => {
-    setStatus("loading");
-    try {
-      const res = await fetch("/api/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: eingabe }),
-      });
-      const data = await res.json();
-  
-      if (res.ok) {
-        setPreviewData({
-          name: eingabe,
-          kcal: Number(data.Kalorien),
-          eiweiss: Number(data.Eiweiß),
-          fett: Number(data.Fett),
-          kh: Number(data.Kohlenhydrate),
-        });
-        setGramm("100");
-        setEingabe("");
-        setStatus("idle");
-      } else {
-        alert("❌ Fehler bei GPT");
-        setStatus("error");
-      }
-    } catch (err) {
-      alert("⚠️ Fehler bei GPT-Request");
-      setStatus("error");
-    }
-  };
-  
-
-  const handleSpeichern = async () => {
-    const res = await fetch("/api/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: previewData?.name,
-        kcal: (previewData!.kcal / 100) * parseFloat(gramm),
-        eiweiss: (previewData!.eiweiss / 100) * parseFloat(gramm),
-        fett: (previewData!.fett / 100) * parseFloat(gramm),
-        kh: (previewData!.kh / 100) * parseFloat(gramm),
-      }),
-    });
-  
-    if (res.ok) {
-      alert("✅ Eingetragen");
-      setPreviewData(null);
-      setGramm("100");
-    } else {
-      alert("❌ Fehler beim Speichern");
-    }
-  };
-  
-  
-  
-
-  async function senden() {
-    setStatus("loading");
-    try {
-      const res = await fetch("/api/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: eingabe }),
-      });
-      if (res.ok) {
-        setEingabe("");
-        setStatus("success");
-      } else {
-        setStatus("error");
-      }
-    } catch (err) {
-      setStatus("error");
-    }
-  }
 
   return (
-    <div style={{ padding: 24, fontFamily: "sans-serif" }}>
-      <h1>🍽 Kalorien Tracker</h1>
-  
-      <textarea
-        value={eingabe}
-        onChange={(e) => setEingabe(e.target.value)}
-        placeholder="Was hast du gegessen?"
-        rows={4}
-        style={{ width: "100%", fontSize: 16, padding: 12 }}
-      />
-  
+    <div style={{ padding: "24px", fontFamily: "sans-serif", position: "relative" }}>
+      <h1>📊 Dein Dashboard</h1>
+
+      {/* Gauge Charts */}
+      <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+        <GaugeChart label="Kalorien" value={todayData.kalorien} max={todayData.ziel} color="#ff6384" />
+        <GaugeChart label="Eiweiß" value={todayData.eiweiss} max={todayData.eiweissZiel} color="#36a2eb" />
+        <GaugeChart label="Fett" value={todayData.fett} max={todayData.fettZiel} color="#ffcd56" />
+        <GaugeChart label="Kohlenhydrate" value={todayData.kh} max={todayData.khZiel} color="#4bc0c0" />
+      </div>
+
+      {/* Line Chart – Tagesverlauf */}
+      <div style={{ marginTop: 40 }}>
+        <TagesLineChart />
+      </div>
+
+      {/* Wochenverlauf */}
+      <div style={{ marginTop: 40 }}>
+        <WochenChart />
+      </div>
+
+      {/* Floating Action Button */}
       <button
-        onClick={handleTextSubmit}
-        disabled={status === "loading"}
-        style={{ marginTop: 12, padding: "10px 20px" }}
+        onClick={() => setShowForm(true)}
+        style={{
+          position: "fixed",
+          bottom: 30,
+          right: 30,
+          width: 60,
+          height: 60,
+          borderRadius: "50%",
+          backgroundColor: "#36a2eb",
+          color: "#fff",
+          fontSize: 30,
+          border: "none",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+          cursor: "pointer",
+        }}
       >
-        {status === "loading" ? "Sende..." : "✅ Vorschau anzeigen"}
+        +
       </button>
 
-      <button
-        onClick={() => setScanning(true)}
-        style={{ marginTop: 12, padding: "10px 20px" }}
-      >
-        📷 Barcode scannen
-      </button>
-
-  
-      {scanning && (
-        <div style={{ marginTop: 20 }}>
-          <h3>📸 Scanne deinen Barcode</h3>
-  
-          <label style={{ display: "block", marginBottom: 4 }}>Menge (z. B. 1, 0.5):</label>
-          <input
-            type="number"
-            min="0.1"
-            step="0.1"
-            value={menge}
-            onChange={(e) => setMenge(e.target.value)}
-            placeholder="Menge"
-            style={{ padding: "8px", width: "100%", fontSize: 16, marginBottom: 12 }}
-          />
-  
-          <BarcodeScanner
-            onDetected={handleBarcode}
-            onError={(err) => {
-              if (!scanError) {
-                setScanError("❌ Kein gültiger Barcode erkannt. Bitte neu ausrichten oder Abstand ändern.");
-              }
-            }}
-          />
-  
-          <button onClick={() => {
-            setScanning(false);
-            setScanError("");
-          }} style={{ marginTop: 10 }}>
-            ❌ Abbrechen
-          </button>
-        </div>
-      )}
-  
-      {previewData && (
-        <div style={{ marginTop: 20, padding: 16, border: "1px solid #ccc", borderRadius: 8 }}>
-          <h3>📝 Vorschau: {previewData.name}</h3>
-  
-          <label>Menge in Gramm / ml:</label>
-          <input
-            type="number"
-            min="1"
-            value={gramm}
-            onChange={(e) => setGramm(e.target.value)}
-            style={{ width: "100%", padding: 8, marginTop: 4, marginBottom: 12 }}
-          />
-  
-          <p>💥 Kalorien: {((previewData.kcal / 100) * parseFloat(gramm || "0")).toFixed(1)} kcal</p>
-          <p>🍗 Eiweiß: {((previewData.eiweiss / 100) * parseFloat(gramm || "0")).toFixed(1)} g</p>
-          <p>🥑 Fett: {((previewData.fett / 100) * parseFloat(gramm || "0")).toFixed(1)} g</p>
-          <p>🍞 Kohlenhydrate: {((previewData.kh / 100) * parseFloat(gramm || "0")).toFixed(1)} g</p>
-  
-          <button onClick={handleSpeichern} style={{ marginTop: 10 }}>
-            ✅ Eintragen
-          </button>
-          <button onClick={() => setPreviewData(null)} style={{ marginTop: 10, marginLeft: 10 }}>
-            ❌ Abbrechen
-          </button>
-        </div>
-      )}
-  
-      {status === "success" && <p>✅ Erfolgreich eingetragen!</p>}
-      {status === "error" && <p>❌ Fehler beim Senden</p>}
-      {scanError && (
-        <p style={{ color: "red", marginTop: 10 }}>{scanError}</p>
-      )}
+      {/* Overlay-Form */}
+      {showForm && <FloatingForm onClose={() => setShowForm(false)} />}
     </div>
   );
-  
 }
