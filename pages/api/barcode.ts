@@ -13,10 +13,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const p = data.product;
     const produktname = p.product_name || "Unbekanntes Produkt";
 
-    let kcal = p.nutriments?.["energy-kcal_100g"] || 0;
-    let eiweiß = p.nutriments?.["proteins_100g"] || 0;
-    let fett = p.nutriments?.["fat_100g"] || 0;
-    let kohlenhydrate = p.nutriments?.["carbohydrates_100g"] || 0;
+    const safe = (val: any) => (typeof val === "number" ? val : 0);
+
+    let kcal = safe(p.nutriments?.["energy-kcal_100g"]);
+    let eiweiß = safe(p.nutriments?.["proteins_100g"]);
+    let fett = safe(p.nutriments?.["fat_100g"]);
+    let kohlenhydrate = safe(p.nutriments?.["carbohydrates_100g"]);
+    
 
     const fehlenMakros = kcal === 0 || eiweiß === 0 || fett === 0 || kohlenhydrate === 0;
 

@@ -45,6 +45,38 @@ export default function Home() {
     }
   };
   
+  const handleTextSubmit = async () => {
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: eingabe }),
+      });
+      const data = await res.json();
+  
+      if (res.ok) {
+        setPreviewData({
+          name: eingabe,
+          kcal: Number(data.Kalorien),
+          eiweiss: Number(data.Eiweiß),
+          fett: Number(data.Fett),
+          kh: Number(data.Kohlenhydrate),
+        });
+        setGramm("100");
+        setEingabe("");
+        setStatus("idle");
+      } else {
+        alert("❌ Fehler bei GPT");
+        setStatus("error");
+      }
+    } catch (err) {
+      alert("⚠️ Fehler bei GPT-Request");
+      setStatus("error");
+    }
+  };
+  
+
   const handleSpeichern = async () => {
     const res = await fetch("/api/save", {
       method: "POST",
@@ -105,8 +137,8 @@ export default function Home() {
         {status === "loading" ? "Sende..." : "✅ Eintragen"}
       </button>
   
-      <button onClick={() => setScanning(true)} style={{ marginTop: 12, padding: "10px 20px" }}>
-        📷 Barcode scannen
+      <button onClick={handleTextSubmit} disabled={status === "loading"} style={{ marginTop: 12, padding: "10px 20px" }}>
+        {status === "loading" ? "Sende..." : "✅ Vorschau anzeigen"}
       </button>
   
       {scanning && (
