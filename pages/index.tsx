@@ -19,14 +19,17 @@ export default function Home() {
         alert(`✅ Eingetragen: ${data.name} (${menge}x)`);
         setEingabe("");
       } else {
-        alert("❌ Produkt nicht gefunden");
+        console.warn("❌ Barcode-API Fehler:", res.status, data);
+        alert(`❌ Produkt nicht gefunden oder Fehler bei API (${res.status})`);
       }
     } catch (err) {
-      alert("⚠️ Fehler beim Scannen");
+      console.error("⚠️ Fehler beim Barcode-API-Aufruf:", err);
+      alert("⚠️ Fehler beim Senden des Barcodes");
     } finally {
       setScanning(false);
     }
   };
+  
   
 
   async function senden() {
