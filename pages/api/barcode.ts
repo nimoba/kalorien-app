@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { google } from "googleapis";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { code } = req.query;
@@ -19,7 +18,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let fett = p.nutriments?.["fat_100g"] || 0;
     let kohlenhydrate = p.nutriments?.["carbohydrates_100g"] || 0;
 
-    // ⛔ Wenn Daten fehlen → GPT-Fallback
     const fehlenMakros = kcal === 0 || eiweiß === 0 || fett === 0 || kohlenhydrate === 0;
 
     if (fehlenMakros) {
@@ -35,7 +33,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           messages: [
             {
               role: "system",
-              content: "Du bist ein Ernährungsberater. Gib nur geschätzte Nährwerte für ein bekanntes Produkt aus, im Format: {\"Kalorien\":..., \"Eiweiß\":..., \"Fett\":..., \"Kohlenhydrate\":...}",
+              content: `Du bist ein Ernährungsberater. Gib nur geschätzte Nährwerte für ein bekanntes Produkt aus – **nicht pro 100g**, sondern realistisch für **eine konsumierte Portion**. Verwende dabei allgemeine Marktstandards:
+- z. B. 1 Happy Hippo = 20g ≈ 118kcal
+- z. B. 1 Dose Red Bull = 250ml ≈ 112 kcal
+Gib die Werte im JSON-Format aus: {"Kalorien":..., "Eiweiß":..., "Fett":..., "Kohlenhydrate":...}`
             },
             {
               role: "user",
@@ -55,33 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kohlenhydrate = parsed.Kohlenhydrate;
     }
 
-    // ✅ In Google Sheet eintragen
-    const auth = new google.auth.GoogleAuth({
-      credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || ""),
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-    });
-
-    const sheets = google.sheets({ version: "v4", auth });
-    const today = new Date().toLocaleDateString("de-DE");
-
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Tabelle1!A:F",
-      valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [[today, `${produktname} (per Barcode)`, kcal, eiweiß, fett, kohlenhydrate]],
-      },
-    });
-
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Favoriten!A:E",
-      valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [[produktname.toLowerCase(), kcal, eiweiß, fett, kohlenhydrate]],
-      },
-    });
-
+    // ✅ Nur Daten zurückgeben – NICHT speichern
     res.status(200).json({
       name: produktname,
       Kalorien: kcal,
@@ -91,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       quelle: fehlenMakros ? "gpt" : "openfoodfacts",
     });
   } catch (err) {
-    console.error("Fehler bei Barcode-Eintrag:", err);
-    res.status(500).json({ error: "Fehler bei Produktsuche oder Sheets-Zugriff" });
+    console.error("Fehler bei Barcode-Verarbeitung:", err);
+    res.status(500).json({ error: "Interner Serverfehler" });
   }
 }
