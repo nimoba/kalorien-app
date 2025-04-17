@@ -25,7 +25,7 @@ export default function BarcodeScanner({ onDetected }: Props) {
         scanner.clear().catch(console.error);
       },
       (error) => {
-        console.warn(error);
+        console.log("Scanner-Fehler:", error); // vorher: console.warn
       }
     );
 
