@@ -25,14 +25,7 @@ export default function BarcodeScanner({ onDetected }: Props) {
         scanner.clear().catch(console.error);
       },
       (error) => {
-        console.log("Scanner-Fehler:", error);
-      
-        // 👇 Schick Fehler an Vercel Logs
-        fetch("/api/log", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: `Scanner-Fehler: ${error}` }),
-        }).catch((err) => console.error("Fehler beim Senden des Logs:", err));
+        onError?.(error);
       }
       
     );

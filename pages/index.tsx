@@ -8,6 +8,7 @@ export default function Home() {
   const [eingabe, setEingabe] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState(""); // ⬅️ für Fehleranzeige
 
   const handleBarcode = async (code: string) => {
     try {
@@ -82,7 +83,11 @@ export default function Home() {
             style={{ padding: "8px", width: "100%", fontSize: 16, marginBottom: 12 }}
           />
 
-          <BarcodeScanner onDetected={handleBarcode} />
+          <BarcodeScanner
+            onDetected={handleBarcode}
+            onError={(err) => setScanError("❌ Kein gültiger Barcode erkannt")}
+          />
+
 
           <button onClick={() => setScanning(false)} style={{ marginTop: 10 }}>
             ❌ Abbrechen
@@ -94,6 +99,10 @@ export default function Home() {
 
       {status === "success" && <p>✅ Erfolgreich eingetragen!</p>}
       {status === "error" && <p>❌ Fehler beim Senden</p>}
+      {scanError && (
+        <p style={{ color: "red", marginTop: 10 }}>{scanError}</p>
+      )}
+
     </div>
   );
 }
