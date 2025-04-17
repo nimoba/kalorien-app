@@ -133,13 +133,21 @@ export default function Home() {
         style={{ width: "100%", fontSize: 16, padding: 12 }}
       />
   
-      <button onClick={senden} disabled={status === "loading"} style={{ marginTop: 12, padding: "10px 20px" }}>
-        {status === "loading" ? "Sende..." : "✅ Eintragen"}
-      </button>
-  
-      <button onClick={handleTextSubmit} disabled={status === "loading"} style={{ marginTop: 12, padding: "10px 20px" }}>
+      <button
+        onClick={handleTextSubmit}
+        disabled={status === "loading"}
+        style={{ marginTop: 12, padding: "10px 20px" }}
+      >
         {status === "loading" ? "Sende..." : "✅ Vorschau anzeigen"}
       </button>
+
+      <button
+        onClick={() => setScanning(true)}
+        style={{ marginTop: 12, padding: "10px 20px" }}
+      >
+        📷 Barcode scannen
+      </button>
+
   
       {scanning && (
         <div style={{ marginTop: 20 }}>
