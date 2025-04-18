@@ -21,7 +21,17 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ padding: "24px", fontFamily: "sans-serif", position: "relative" }}>
+    <div
+      style={{
+        padding: "24px",
+        fontFamily: "sans-serif",
+        position: "relative",
+        backgroundColor: "#474747", // 💡 Dark gray background
+        minHeight: "100vh",
+        color: "#ffffff" // optional: white text
+      }}
+    >
+
       <h1>📊 Dein Dashboard</h1>
 
       {/* Gauge Charts */}
