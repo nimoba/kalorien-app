@@ -69,14 +69,14 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
         {gegessen} / {ziel} kcal
       </div>
   
-      {/* Neuer rotierender Container für Trenner */}
+      {/* Rotierender Trenner-Container */}
       <div
         style={{
           position: "absolute",
           top: "50%",
           left: "50%",
           transform: `translate(-50%, -100%) rotate(${winkel}deg)`,
-          transformOrigin: "center bottom",
+          transformOrigin: "center 130px", // NEU: fixierte Höhe vom Mittelpunkt
           zIndex: 10,
         }}
       >
@@ -101,6 +101,7 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
           }}
         />
       </div>
+
     </div>
   );
   
