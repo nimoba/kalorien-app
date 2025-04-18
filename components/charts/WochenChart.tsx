@@ -41,7 +41,7 @@ export function WochenChart() {
 
   // Dummy-Daten – später durch echte ersetzt
   const daten = Array.from({ length: 30 }, () =>
-    Math.round(Math.random() * 2400)
+    Math.round(Math.random() * 2800)
   );
   const ziel = 2200;
 

@@ -29,8 +29,8 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
         borderWidth: 0,
         circumference: 180,
         rotation: -90,
-        borderRadius: 10, // 👈 sorgt für runde Enden!
-        hoverOffset: 4, // für mehr optisches Feedback
+        borderRadius: 10,
+        hoverOffset: 4,
       },
     ],
   };
@@ -53,16 +53,44 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
     }}>
       <Doughnut data={data} options={options} />
 
+      {/* Text zentriert */}
       <div style={{
         position: "absolute",
         top: "70%",
         left: "50%",
         transform: "translate(-50%, -60%)",
         fontSize: 22,
-        fontWeight: "bold"
+        fontWeight: "bold",
+        zIndex: 2,
       }}>
         {gegessen} / {ziel} kcal
       </div>
+
+      {/* Trennlinie */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: "50%",
+        width: 2,
+        height: "70%",
+        backgroundColor: "#1e1e1e", // passe an deinen Hintergrund an
+        transform: "translateX(-50%)",
+        zIndex: 3,
+      }} />
+
+      {/* Dreieck oben */}
+      <div style={{
+        position: "absolute",
+        top: -6,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: 0,
+        height: 0,
+        borderLeft: "6px solid transparent",
+        borderRight: "6px solid transparent",
+        borderBottom: "10px solid #1e1e1e", // gleiche Farbe wie Hintergrund
+        zIndex: 4,
+      }} />
     </div>
   );
 }
