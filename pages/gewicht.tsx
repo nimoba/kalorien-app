@@ -36,7 +36,16 @@ export default function GewichtSeite() {
     return <p style={{ color: "#fff", textAlign: "center" }}>⏳ Lade Gewichtsdaten...</p>;
   }
 
-  const { startgewicht, verlauf, theoretisch, geglättet, trend } = data;
+  const {
+    startgewicht,
+    verlauf,
+    theoretisch,
+    geglättet,
+    trend,
+    fett,
+    muskel,
+    zielGewicht
+  } = data;  
 
   const labels = verlauf.map((e: any) => e.datum);
   const echteWerte = verlauf.map((e: any) => e.gewicht);
@@ -83,6 +92,15 @@ export default function GewichtSeite() {
         borderWidth: 2,
         tension: 0,
       },
+      zielGewicht && {
+        label: "Zielgewicht",
+        data: new Array(labels.length).fill(zielGewicht),
+        borderColor: "#ffffffaa",
+        borderWidth: 1,
+        pointRadius: 0,
+        borderDash: [2, 2],
+        tension: 0,
+      }
     ],
   };
 
@@ -123,8 +141,41 @@ export default function GewichtSeite() {
       <div style={{ marginTop: 32 }}>
         <Line data={chartData} options={options} />
       </div>
+      <div style={{ marginTop: 50 }}>
+        <h2>🧬 Körperzusammensetzung</h2>
+
+        <Line
+            data={{
+            labels: verlauf.map((e: any) => e.datum),
+            datasets: [
+                {
+                label: "Körperfett (%)",
+                data: fett.map((e: any) => e.wert),
+                borderColor: "#ffa600",
+                backgroundColor: "#ffa60033",
+                tension: 0.25,
+                },
+                {
+                label: "Muskelmasse (%)",
+                data: muskel.map((e: any) => e.wert),
+                borderColor: "#00cc99",
+                backgroundColor: "#00cc9933",
+                tension: 0.25,
+                },
+            ],
+            }}
+            options={{
+            responsive: true,
+            plugins: { legend: { position: "bottom" } },
+            scales: {
+                y: { beginAtZero: false },
+            },
+            }}
+        />
+        </div>
 
       <FloatingTabBar />
     </div>
+
   );
 }

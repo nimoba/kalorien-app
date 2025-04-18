@@ -46,68 +46,89 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 📊 Ziel-Kcal aus Ziele-Tabelle
-    const zielRes = await sheets.spreadsheets.values.get({
+    const zielKcalRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "Ziele!A2:A2",
     });
 
-    const zielKcal = Number(zielRes.data.values?.[0]?.[0]) || 2200;
+    const zielKcal = Number(zielKcalRes.data.values?.[0]?.[0]) || 2200;
+
+    // 📌 Zielgewicht (optional)
+    const zielGewichtRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: "Ziele!F2:F2",
+    });
+
+    const zielGewicht = Number(zielGewichtRes.data.values?.[0]?.[0]) || null;
+
+    // 📈 Fett- & Muskelverläufe
+    const fett = gewichtRows.map((row) => ({
+      datum: row[0],
+      wert: Number(row[2]) || null,
+    }));
+
+    const muskel = gewichtRows.map((row) => ({
+      datum: row[0],
+      wert: Number(row[3]) || null,
+    }));
 
     // 📐 Theoretischer Gewichtsverlauf
     const theoriewerte: { datum: string; gewicht: number }[] = [];
-    let aktuellesGewicht = startgewicht;
     let kumuliertesDefizit = 0;
 
-    const sortierteTage = Object.keys(kalorienProTag)
-      .sort((a, b) => {
-        const [t1, m1, j1] = a.split(".");
-        const [t2, m2, j2] = b.split(".");
-        return new Date(`${j1}-${m1}-${t1}`).getTime() - new Date(`${j2}-${m2}-${t2}`).getTime();
-      });
+    const sortierteTage = Object.keys(kalorienProTag).sort((a, b) => {
+      const [t1, m1, j1] = a.split(".");
+      const [t2, m2, j2] = b.split(".");
+      return new Date(`${j1}-${m1}-${t1}`).getTime() - new Date(`${j2}-${m2}-${t2}`).getTime();
+    });
 
     for (const tag of sortierteTage) {
       const konsumiert = kalorienProTag[tag];
-      const defizit = zielKcal - konsumiert; // ⬅️ wenn negativ → Zunahme
+      const defizit = zielKcal - konsumiert;
       kumuliertesDefizit += defizit;
 
       const deltaKg = kumuliertesDefizit / 7700;
       const gewicht = parseFloat((startgewicht - deltaKg).toFixed(2));
-
       theoriewerte.push({ datum: tag, gewicht });
     }
+
     // 📊 Gleitender Durchschnitt (7-Tage-Mittel)
-const smoothed = verlauf.map((_, i, arr) => {
-  const slice = arr.slice(Math.max(i - 3, 0), i + 4);
-  const avg = slice.reduce((sum, e) => sum + e.gewicht, 0) / slice.length;
-  return { datum: verlauf[i].datum, gewicht: Number(avg.toFixed(2)) };
-});
+    const smoothed = verlauf.map((_, i, arr) => {
+      const slice = arr.slice(Math.max(i - 3, 0), i + 4);
+      const avg = slice.reduce((sum, e) => sum + e.gewicht, 0) / slice.length;
+      return { datum: verlauf[i].datum, gewicht: Number(avg.toFixed(2)) };
+    });
 
-// 📈 Lineare Regression (Trend)
-function lineRegression(yVals: number[]) {
-  const x = yVals.map((_, i) => i);
-  const y = yVals;
-  const n = x.length;
-  const avgX = x.reduce((a, b) => a + b) / n;
-  const avgY = y.reduce((a, b) => a + b) / n;
+    // 📈 Lineare Regression (Trend)
+    function lineRegression(yVals: number[]) {
+      const x = yVals.map((_, i) => i);
+      const y = yVals;
+      const n = x.length;
+      const avgX = x.reduce((a, b) => a + b) / n;
+      const avgY = y.reduce((a, b) => a + b) / n;
 
-  const slope = x.reduce((sum, xi, i) => sum + (xi - avgX) * (y[i] - avgY), 0)
-    / x.reduce((sum, xi) => sum + Math.pow(xi - avgX, 2), 0);
+      const slope = x.reduce((sum, xi, i) => sum + (xi - avgX) * (y[i] - avgY), 0)
+        / x.reduce((sum, xi) => sum + Math.pow(xi - avgX, 2), 0);
 
-  const intercept = avgY - slope * avgX;
+      const intercept = avgY - slope * avgX;
 
-  return x.map((xi, i) => ({
-    datum: verlauf[i]?.datum || `Tag ${i + 1}`,
-    gewicht: Number((slope * xi + intercept).toFixed(2))
-  }));
-}
+      return x.map((xi, i) => ({
+        datum: verlauf[i]?.datum || `Tag ${i + 1}`,
+        gewicht: Number((slope * xi + intercept).toFixed(2)),
+      }));
+    }
 
-const trend = lineRegression(verlauf.map(v => v.gewicht));
+    const trend = lineRegression(verlauf.map(v => v.gewicht));
+
     res.status(200).json({
-        startgewicht,
-        verlauf,
-        theoretisch: theoriewerte,
-        geglättet: smoothed,
-        trend,
+      startgewicht,
+      verlauf,
+      theoretisch: theoriewerte,
+      geglättet: smoothed,
+      trend,
+      fett,
+      muskel,
+      zielGewicht,
     });
   } catch (err) {
     console.error("Fehler in /api/weight-history:", err);

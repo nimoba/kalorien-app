@@ -10,14 +10,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
-    const range = "Ziele!A2:E2"; // erste Zeile enthält Header
+
+    const range = "Ziele!A2:F2"; // A-F: Kcal, KH, Eiweiß, Fett, Startgewicht, Zielgewicht
 
     const result = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range,
     });
 
-    const [kcal, kh, eiweiss, fett, startgewicht] = result.data.values?.[0] || [];
+    const [kcal, kh, eiweiss, fett, startgewicht, zielGewicht] = result.data.values?.[0] || [];
 
     res.status(200).json({
       zielKcal: Number(kcal) || 2200,
@@ -25,8 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       zielEiweiss: Number(eiweiss) || 130,
       zielFett: Number(fett) || 70,
       startgewicht: Number(startgewicht) || 0,
+      zielGewicht: zielGewicht ? Number(zielGewicht) : null,
     });
-    
+
   } catch (err) {
     console.error("Fehler beim Laden der Zielwerte:", err);
     res.status(500).json({ error: "Fehler beim Laden der Zielwerte" });

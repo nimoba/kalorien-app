@@ -5,6 +5,8 @@ export interface Ziele {
   zielEiweiss: number;
   zielFett: number;
   zielKh: number;
+  zielGewicht?: number | null;
+  startgewicht?: number;
 }
 
 export function useZiele(trigger = 0): Ziele {
@@ -13,6 +15,8 @@ export function useZiele(trigger = 0): Ziele {
     zielEiweiss: 130,
     zielFett: 70,
     zielKh: 250,
+    zielGewicht: null,
+    startgewicht: 0,
   });
 
   useEffect(() => {
@@ -24,6 +28,8 @@ export function useZiele(trigger = 0): Ziele {
           zielEiweiss: data.zielEiweiss,
           zielFett: data.zielFett,
           zielKh: data.zielKh,
+          zielGewicht: data.zielGewicht ?? null,
+          startgewicht: data.startgewicht ?? 0,
         });
       })
       .catch(() => console.warn("⚠️ Zielwerte konnten nicht geladen werden"));
