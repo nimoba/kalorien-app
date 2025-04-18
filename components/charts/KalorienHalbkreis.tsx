@@ -43,7 +43,7 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
   };
 
   const progress = Math.min(gegessen / ziel, 1); // Max 100%
-  const winkel = progress * 180; // 0-180°
+  const winkel = (progress * 180)+270; // 0-180°
 
   return (
     <div style={{
