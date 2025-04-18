@@ -23,6 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: "v4", auth });
     const today = new Date().toLocaleDateString("de-DE");
+    const time = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
     // ✅ Eintrag in Tabelle1
     await sheets.spreadsheets.values.append({
@@ -30,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       range: "Tabelle1!A:F",
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[today, name, kcal, eiweiss, fett, kh]],
+        values: [[today, time, name, kcal, eiweiss, fett, kh]],
       },
     });
 
