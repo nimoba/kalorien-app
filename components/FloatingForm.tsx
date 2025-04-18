@@ -96,31 +96,34 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       top: 0, left: 0, right: 0, bottom: 0,
       background: "rgba(0,0,0,0.6)",
       display: "flex",
-      alignItems: "center",
+      alignItems: "flex-end",
       justifyContent: "center",
       zIndex: 999,
+      paddingBottom: 40,
     }}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 50 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
         style={{
           backgroundColor: "#2a2a2a",
           color: "#fff",
           padding: 24,
-          borderRadius: 12,
+          borderRadius: 16,
           width: "90%",
           maxWidth: 500,
           maxHeight: "90%",
           overflowY: "auto",
-          boxShadow: "0 5px 20px rgba(0,0,0,0.2)",
+          boxShadow: "0 5px 20px rgba(0,0,0,0.3)",
           position: "relative",
         }}
       >
-        {/* Schließen */}
-        <button
+        {/* ❌ Schließen-Button mit Mini-Sprung beim Hover */}
+        <motion.button
           onClick={onClose}
+          whileHover={{ scale: 1.2, rotate: 10 }}
+          transition={{ type: "spring", stiffness: 300 }}
           style={{
             position: "absolute",
             top: 12,
@@ -133,7 +136,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           }}
         >
           ✕
-        </button>
+        </motion.button>
 
         <h2 style={{ marginTop: 0 }}>📝 Neue Eingabe</h2>
 
@@ -151,11 +154,13 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             border: "1px solid #555",
             backgroundColor: "#1e1e1e",
             color: "#fff",
-            transition: "all 0.2s ease",
           }}
         />
 
-        <button
+        {/* Vorschau Button */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.02 }}
           onClick={handleTextSubmit}
           style={{
             backgroundColor: "#36a2eb",
@@ -167,12 +172,13 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             cursor: "pointer",
             boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
             marginBottom: 16,
-            transition: "transform 0.2s ease",
+            width: "100%",
           }}
         >
           ✅ Vorschau anzeigen
-        </button>
+        </motion.button>
 
+        {/* Menge kommt jetzt DARUNTER */}
         <label>Menge (z. B. 1, 0.5):</label>
         <input
           type="number"
@@ -189,7 +195,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             border: "1px solid #555",
             backgroundColor: "#1e1e1e",
             color: "#fff",
-            transition: "all 0.2s ease",
           }}
         />
 
@@ -204,6 +209,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             fontSize: 16,
             cursor: "pointer",
             marginBottom: 16,
+            width: "100%",
           }}
         >
           📷 Barcode scannen
@@ -244,19 +250,25 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <p>Fett: {((previewData.fett / 100) * parseFloat(gramm)).toFixed(1)} g</p>
             <p>Kohlenhydrate: {((previewData.kh / 100) * parseFloat(gramm)).toFixed(1)} g</p>
 
-            <button onClick={handleSpeichern} style={{
-              backgroundColor: "#3cb043",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "10px 16px",
-              fontSize: 16,
-              cursor: "pointer",
-              marginTop: 10,
-              marginRight: 8,
-            }}>
+            <motion.button
+              onClick={handleSpeichern}
+              whileHover={{ scale: 1.05 }}
+              animate={{ scale: [1, 1.01, 1] }}
+              transition={{ repeat: Infinity, duration: 1.8 }}
+              style={{
+                backgroundColor: "#3cb043",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "10px 16px",
+                fontSize: 16,
+                cursor: "pointer",
+                marginTop: 10,
+                marginRight: 8,
+              }}
+            >
               ✅ Eintragen
-            </button>
+            </motion.button>
 
             <button onClick={onClose} style={{
               backgroundColor: "#444",
