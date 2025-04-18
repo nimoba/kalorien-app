@@ -75,11 +75,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       theoriewerte.push({ datum: tag, gewicht });
     }
+    // 📊 Gleitender Durchschnitt (7-Tage-Mittel)
+const smoothed = verlauf.map((_, i, arr) => {
+  const slice = arr.slice(Math.max(i - 3, 0), i + 4);
+  const avg = slice.reduce((sum, e) => sum + e.gewicht, 0) / slice.length;
+  return { datum: verlauf[i].datum, gewicht: Number(avg.toFixed(2)) };
+});
 
+// 📈 Lineare Regression (Trend)
+function lineRegression(yVals: number[]) {
+  const x = yVals.map((_, i) => i);
+  const y = yVals;
+  const n = x.length;
+  const avgX = x.reduce((a, b) => a + b) / n;
+  const avgY = y.reduce((a, b) => a + b) / n;
+
+  const slope = x.reduce((sum, xi, i) => sum + (xi - avgX) * (y[i] - avgY), 0)
+    / x.reduce((sum, xi) => sum + Math.pow(xi - avgX, 2), 0);
+
+  const intercept = avgY - slope * avgX;
+
+  return x.map((xi, i) => ({
+    datum: verlauf[i]?.datum || `Tag ${i + 1}`,
+    gewicht: Number((slope * xi + intercept).toFixed(2))
+  }));
+}
+
+const trend = lineRegression(verlauf.map(v => v.gewicht));
     res.status(200).json({
-      startgewicht,
-      verlauf,
-      theoretisch: theoriewerte,
+        startgewicht,
+        verlauf,
+        theoretisch: theoriewerte,
+        geglättet: smoothed,
+        trend,
     });
   } catch (err) {
     console.error("Fehler in /api/weight-history:", err);

@@ -36,11 +36,13 @@ export default function GewichtSeite() {
     return <p style={{ color: "#fff", textAlign: "center" }}>⏳ Lade Gewichtsdaten...</p>;
   }
 
-  const { startgewicht, verlauf, theoretisch } = data;
+  const { startgewicht, verlauf, theoretisch, geglättet, trend } = data;
 
   const labels = verlauf.map((e: any) => e.datum);
   const echteWerte = verlauf.map((e: any) => e.gewicht);
   const theoriewerte = theoretisch.map((e: any) => e.gewicht);
+  const smoothed = geglättet.map((e: any) => e.gewicht);
+  const trendlinie = trend.map((e: any) => e.gewicht);
 
   const letzte = echteWerte[echteWerte.length - 1] || startgewicht;
   const diff = (letzte - startgewicht).toFixed(1);
@@ -63,6 +65,23 @@ export default function GewichtSeite() {
         borderDash: [5, 5],
         pointRadius: 0,
         tension: 0.2,
+      },
+      {
+        label: "7-Tage Ø",
+        data: smoothed,
+        borderColor: "#f4d35e",
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.25,
+      },
+      {
+        label: "Trendlinie",
+        data: trendlinie,
+        borderColor: "#d62e79",
+        borderDash: [2, 4],
+        pointRadius: 0,
+        borderWidth: 2,
+        tension: 0,
       },
     ],
   };
