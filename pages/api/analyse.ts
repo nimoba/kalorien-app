@@ -11,30 +11,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: "v4", auth });
     const id = process.env.GOOGLE_SHEET_ID;
 
-    const [kcalData, gewichtData] = await Promise.all([
-      sheets.spreadsheets.values.get({ spreadsheetId: id, range: "Tabelle1!A2:G" }),
-      sheets.spreadsheets.values.get({ spreadsheetId: id, range: "Gewicht!A2:B" }),
-    ]);
+    // 📊 Kalorienverlauf
+    const kcalRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: id,
+      range: "Tabelle1!A2:G",
+    });
 
-    const kcalRows = kcalData.data.values || [];
-    const gewichtRows = gewichtData.data.values || [];
+    const kcalRows = kcalRes.data.values || [];
 
-    const kcalText = kcalRows.map(r => `${r[0]}: ${r[3]} kcal`).join("\n").slice(0, 3000);
-    const gewichtText = gewichtRows.map(r => `${r[0]}: ${r[1]} kg`).join("\n").slice(0, 3000);
+    // 📉 Gewicht
+    const gewichtRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: id,
+      range: "Gewicht!A2:B",
+    });
 
+    const gewichtRows = gewichtRes.data.values || [];
+
+    // 📦 Daten als Text vorbereiten
+    const kcalText = kcalRows
+      .map(r => `${r[0]} ${r[1] ?? ""} - ${r[3]} kcal`) // Datum, Uhrzeit, Kcal
+      .join("\n")
+      .slice(0, 3000);
+
+    const gewichtText = gewichtRows
+      .map(r => `${r[0]}: ${r[1]} kg`)
+      .join("\n")
+      .slice(0, 3000);
+
+    // 🤖 GPT Prompt
     const prompt = `
-Du bist ein Ernährungs- und Gesundheitscoach. Analysiere die folgenden Kalorien- und Gewichtsdaten.
+Du bist ein Gesundheitscoach und analysierst Essverhalten.
 
-Gib eine Zusammenfassung im Stil:
-- Durchschnittliches Defizit
+Du erhältst Kalorien- und Gewichtsdaten. Bitte analysiere:
+
+- Durchschnittliches Kaloriendefizit
 - Entwicklung des Gewichts
-- Geschätzte Zielreichweite
-- Motivation oder Hinweis
+- Tägliche Schwankungen
+- Wochenend-/Wochentags-Muster
+- Uhrzeit-Muster (wenn möglich)
+- Mögliche Fehler oder Ausreißer (z. B. 0 kcal-Tage, unrealistisch hohe Einträge)
+- Gib am Ende eine freundliche Empfehlung oder Ermutigung
 
-Kalorienverbrauch:
+Kalorien-Daten (Datum Uhrzeit kcal):
 ${kcalText}
 
-Gewicht:
+Gewicht (Datum + kg):
 ${gewichtText}
 `;
 
@@ -47,7 +68,7 @@ ${gewichtText}
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "Du bist ein Ernährungscoach." },
+          { role: "system", content: "Du bist ein einfühlsamer, analytischer Ernährungscoach." },
           { role: "user", content: prompt },
         ],
         temperature: 0.7,
@@ -55,7 +76,7 @@ ${gewichtText}
     });
 
     const result = await gptRes.json();
-    const analyse = result.choices?.[0]?.message?.content || null;
+    const analyse = result.choices?.[0]?.message?.content || "Keine Analyse verfügbar.";
 
     res.status(200).json({ analyse });
   } catch (err) {
