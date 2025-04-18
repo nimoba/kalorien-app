@@ -1,8 +1,9 @@
 import { useState } from "react";
-import FloatingForm from "../components/FloatingForm";
-import { GaugeChart } from "../components/charts/GaugeChart";
+import { KalorienHalbkreis } from "../components/charts/KalorienHalbkreis";
+import { MakroBalken } from "../components/charts/MakroBalken";
 import { TagesLineChart } from "../components/charts/TagesLineChart";
 import { WochenChart } from "../components/charts/WochenChart";
+import FloatingForm from "../components/FloatingForm";
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
@@ -24,12 +25,14 @@ export default function Dashboard() {
       <h1>📊 Dein Dashboard</h1>
 
       {/* Gauge Charts */}
-      <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        <GaugeChart label="Kalorien" value={todayData.kalorien} max={todayData.ziel} color="#ff6384" />
-        <GaugeChart label="Eiweiß" value={todayData.eiweiss} max={todayData.eiweissZiel} color="#36a2eb" />
-        <GaugeChart label="Fett" value={todayData.fett} max={todayData.fettZiel} color="#ffcd56" />
-        <GaugeChart label="Kohlenhydrate" value={todayData.kh} max={todayData.khZiel} color="#4bc0c0" />
+      <KalorienHalbkreis gegessen={1450} ziel={2200} />
+
+      <div style={{ marginTop: 40 }}>
+        <MakroBalken label="Kohlenhydrate" value={154} ziel={451} farbe="#36a2eb" />
+        <MakroBalken label="Eiweiß" value={69} ziel={180} farbe="#4bc0c0" />
+        <MakroBalken label="Fett" value={47} ziel={119} farbe="#ffcd56" />
       </div>
+
 
       {/* Line Chart – Tagesverlauf */}
       <div style={{ marginTop: 40 }}>
