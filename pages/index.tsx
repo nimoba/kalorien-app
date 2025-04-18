@@ -11,6 +11,7 @@ import { useZiele } from "../hooks/useZiele";
 import FloatingActionMenu from "../components/FloatingActionMenu";
 import GewichtForm from "../components/GewichtForm";
 import FloatingTabBar from "../components/FloatingTabBar";
+import KcalBilanzChart from "../components/charts/KcalBilanzChart";
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
@@ -74,6 +75,9 @@ export default function Dashboard() {
       {/* Monatsverlauf */}
       <div style={{ marginTop: 40 }}>
         <WochenChart />
+      </div>
+      <div style={{ marginTop: 40 }}>
+        <KcalBilanzChart />
       </div>
 
       {/* Floating Action Menu */}
