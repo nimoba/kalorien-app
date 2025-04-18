@@ -43,7 +43,7 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
   };
 
   const progress = Math.min(gegessen / ziel, 1); // Max 100%
-  const winkel = (progress * 180)+270; // 0-180°
+  const winkel = (progress * 180); // 0-180°
 
   return (
     <div style={{
@@ -75,8 +75,8 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
           position: "absolute",
           top: "50%",
           left: "50%",
-          transform: `translate(-50%, -100%) rotate(${winkel}deg)`,
-          transformOrigin: "center 130px", // NEU: fixierte Höhe vom Mittelpunkt
+          transform: `translate(-50%, -100%) rotate(${winkel + 270}deg)`,
+          transformOrigin: "center 130px", // ggf. feintunen
           zIndex: 10,
         }}
       >
@@ -84,20 +84,20 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
         <div
           style={{
             width: 2,
-            height: 40,
+            height: 36, // etwas kürzer
             backgroundColor: "#1e1e1e",
-            marginBottom: 2,
           }}
         />
-        {/* Dreieck */}
+        {/* Dreieck direkt auf dem Strich */}
         <div
           style={{
+            marginTop: -1, // leicht überlappend
             width: 0,
             height: 0,
             borderLeft: "6px solid transparent",
             borderRight: "6px solid transparent",
             borderTop: "10px solid #1e1e1e",
-            margin: "auto",
+            alignSelf: "center",
           }}
         />
       </div>
