@@ -1,4 +1,6 @@
-import { useState } from "react";
+'use client';
+
+import { useState, useEffect } from "react";
 import { KalorienHalbkreis } from "../components/charts/KalorienHalbkreis";
 import { MakroBalken } from "../components/charts/MakroBalken";
 import { TagesLineChart } from "../components/charts/TagesLineChart";
@@ -7,18 +9,26 @@ import FloatingForm from "../components/FloatingForm";
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
+  const [daten, setDaten] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Dummy-Daten – später aus API holen
-  const todayData = {
-    kalorien: 1450,
-    ziel: 2200,
-    eiweiss: 80,
-    eiweissZiel: 130,
-    fett: 50,
-    fettZiel: 70,
-    kh: 160,
-    khZiel: 250,
-  };
+  useEffect(() => {
+    fetch("/api/overview")
+      .then((res) => res.json())
+      .then((data) => {
+        setDaten(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <p style={{ color: "#fff", textAlign: "center" }}>⏳ Lade Tagesdaten...</p>;
+  }
+
+  if (!daten) {
+    return <p style={{ color: "#fff", textAlign: "center" }}>❌ Fehler beim Laden der Daten.</p>;
+  }
 
   return (
     <div
@@ -26,27 +36,26 @@ export default function Dashboard() {
         padding: "24px",
         fontFamily: "sans-serif",
         position: "relative",
-        backgroundColor: "#2c2c2c", // 💡 Dark gray background
+        backgroundColor: "#2c2c2c",
         minHeight: "100vh",
-        color: "#ffffff" // optional: white text
+        color: "#ffffff",
       }}
     >
-
       <h1>📊 Dein Dashboard</h1>
 
-      {/* Gauge Charts */}
-      <KalorienHalbkreis gegessen={1000} ziel={2200} />
+      {/* Kalorien Halbkreis */}
+      <KalorienHalbkreis gegessen={daten.kalorien} ziel={daten.ziel} />
 
+      {/* Makro-Balken */}
       <div style={{ marginTop: 40 }}>
-        <MakroBalken label="Kohlenhydrate" value={390} ziel={451} farbe="#36a2eb" />
-        <MakroBalken label="Eiweiß" value={69} ziel={180} farbe="#4bc0c0" />
-        <MakroBalken label="Fett" value={47} ziel={119} farbe="#ffcd56" />
+        <MakroBalken label="Kohlenhydrate" value={daten.kh} ziel={250} farbe="#36a2eb" />
+        <MakroBalken label="Eiweiß" value={daten.eiweiss} ziel={130} farbe="#4bc0c0" />
+        <MakroBalken label="Fett" value={daten.fett} ziel={70} farbe="#ffcd56" />
       </div>
 
-
-      {/* Line Chart – Tagesverlauf */}
+      {/* Tagesverlauf */}
       <div style={{ marginTop: 40 }}>
-        <TagesLineChart />
+        <TagesLineChart eintraege={daten.eintraege} ziel={daten.ziel} />
       </div>
 
       {/* Wochenverlauf */}
@@ -75,7 +84,6 @@ export default function Dashboard() {
         +
       </button>
 
-      {/* Overlay-Form */}
       {showForm && <FloatingForm onClose={() => setShowForm(false)} />}
     </div>
   );

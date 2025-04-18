@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
-    const range = "Tabelle1!A:F"; // ⬅️ Spalten: Datum | Beschreibung | kcal | Eiweiß | Fett | KH
+    const range = "Tabelle1!A:G"; // Spalten: Datum | Uhrzeit | Eingabe | Kalorien | Eiweiß | Fett | KH
 
     const sheetData = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
@@ -18,8 +18,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const rows = sheetData.data.values || [];
-
-    // ✅ Heute als "TT.MM.JJJJ" im deutschen Format
     const heute = new Date().toLocaleDateString("de-DE");
 
     let sumKcal = 0;
@@ -33,18 +31,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }[] = [];
 
     for (const row of rows.slice(1)) {
-      const [datum, , kcal, eiw, fett, kh] = row;
+      const [datum, uhrzeit, , kcal, eiw, fett, kh] = row;
 
       if (datum !== heute) continue;
 
-      sumKcal += Number(kcal) || 0;
-      sumEiweiss += Number(eiw) || 0;
-      sumFett += Number(fett) || 0;
-      sumKh += Number(kh) || 0;
+      const kcalNum = Number(kcal) || 0;
+      const eiwNum = Number(eiw) || 0;
+      const fettNum = Number(fett) || 0;
+      const khNum = Number(kh) || 0;
+
+      sumKcal += kcalNum;
+      sumEiweiss += eiwNum;
+      sumFett += fettNum;
+      sumKh += khNum;
 
       eintraegeMitUhrzeit.push({
-        zeit: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }), // später aus Sheet ableitbar
-        kcal: Number(kcal) || 0,
+        zeit: uhrzeit || "??:??",
+        kcal: kcalNum,
       });
     }
 
@@ -53,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       eiweiss: sumEiweiss,
       fett: sumFett,
       kh: sumKh,
-      ziel: 2200, // später dynamisch machbar
+      ziel: 2200,
       eintraege: eintraegeMitUhrzeit,
     });
   } catch (err) {
