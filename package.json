@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "chart.js": "^4.4.9",
+    "framer-motion": "^12.7.4",
     "googleapis": "^148.0.0",
     "html5-qrcode": "^2.3.8",
     "next": "15.3.0",

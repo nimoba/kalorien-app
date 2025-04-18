@@ -84,7 +84,11 @@ export default function Dashboard() {
         +
       </button>
 
-      {showForm && <FloatingForm onClose={() => setShowForm(false)} />}
+      {showForm && <FloatingForm
+        onClose={() => setShowForm(false)}
+        onRefresh={() => window.location.reload()} // oder setState neu triggern
+      />
+      }
     </div>
   );
 }
