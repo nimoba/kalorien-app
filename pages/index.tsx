@@ -6,13 +6,19 @@ import { MakroBalken } from "../components/charts/MakroBalken";
 import { TagesLineChart } from "../components/charts/TagesLineChart";
 import { WochenChart } from "../components/charts/WochenChart";
 import FloatingForm from "../components/FloatingForm";
+import SettingsForm from "../components/SettingsForm";
+import { useZiele } from "../hooks/useZiele";
+import FloatingActionMenu from "../components/FloatingActionMenu";
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [daten, setDaten] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshZiele, setRefreshZiele] = useState(0);
+  const ziele = useZiele(refreshZiele);
 
-  useEffect(() => {
+  const loadDaten = () => {
     fetch("/api/overview")
       .then((res) => res.json())
       .then((data) => {
@@ -20,6 +26,10 @@ export default function Dashboard() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadDaten();
   }, []);
 
   if (loading) {
@@ -44,51 +54,50 @@ export default function Dashboard() {
       <h1>📊 Dein Dashboard</h1>
 
       {/* Kalorien Halbkreis */}
-      <KalorienHalbkreis gegessen={daten.kalorien} ziel={daten.ziel} />
+      <KalorienHalbkreis gegessen={daten.kalorien} ziel={ziele.zielKcal} />
 
       {/* Makro-Balken */}
       <div style={{ marginTop: 40 }}>
-        <MakroBalken label="Kohlenhydrate" value={daten.kh} ziel={250} farbe="#36a2eb" />
-        <MakroBalken label="Eiweiß" value={daten.eiweiss} ziel={130} farbe="#4bc0c0" />
-        <MakroBalken label="Fett" value={daten.fett} ziel={70} farbe="#ffcd56" />
+        <MakroBalken label="Kohlenhydrate" value={daten.kh} ziel={ziele.zielKh} farbe="#36a2eb" />
+        <MakroBalken label="Eiweiß" value={daten.eiweiss} ziel={ziele.zielEiweiss} farbe="#4bc0c0" />
+        <MakroBalken label="Fett" value={daten.fett} ziel={ziele.zielFett} farbe="#ffcd56" />
       </div>
 
       {/* Tagesverlauf */}
       <div style={{ marginTop: 40 }}>
-        <TagesLineChart eintraege={daten.eintraege} ziel={daten.ziel} />
+        <TagesLineChart eintraege={daten.eintraege} ziel={ziele.zielKcal} />
       </div>
 
-      {/* Wochenverlauf */}
+      {/* Monatsverlauf */}
       <div style={{ marginTop: 40 }}>
         <WochenChart />
       </div>
 
-      {/* Floating Action Button */}
-      <button
-        onClick={() => setShowForm(true)}
-        style={{
-          position: "fixed",
-          bottom: 30,
-          right: 30,
-          width: 60,
-          height: 60,
-          borderRadius: "50%",
-          backgroundColor: "#36a2eb",
-          color: "#fff",
-          fontSize: 30,
-          border: "none",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-          cursor: "pointer",
-        }}
-      >
-        +
-      </button>
-
-      {showForm && <FloatingForm
-        onClose={() => setShowForm(false)}
-        onRefresh={() => window.location.reload()} // oder setState neu triggern
+      {/* Floating Action Menu */}
+      <FloatingActionMenu
+        onOpenForm={() => setShowForm(true)}
+        onOpenSettings={() => setShowSettings(true)}
       />
-      }
+
+      {/* Eingabeformular */}
+      {showForm && (
+        <FloatingForm
+          onClose={() => setShowForm(false)}
+          onRefresh={loadDaten}
+        />
+      )}
+
+      {/* Einstellungen */}
+      {showSettings && (
+        <SettingsForm
+          onClose={() => {
+            setShowSettings(false);
+            loadDaten();
+            setRefreshZiele((v) => v + 1); // 🆕 zwingt den Hook zum Neuladen
+          }}
+        />
+      
+      )}
     </div>
   );
 }
