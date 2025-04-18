@@ -2,36 +2,53 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { stil, kalorienProzent, essensarten, budget, zeit } = req.body;
+    const { stil, kalorienProzent, essensarten, budget, zeit, wochenplan } = req.body;
 
     // GPT Prompt zusammensetzen
     const prompt = `
-Du bist ein Ernährungsberater in Deutschland. Der Nutzer möchte auf Basis seiner noch übrigen Kalorien eine passende Mahlzeit (oder mehrere kleine) planen.
+Du bist ein deutscher Ernährungsberater. Der Nutzer möchte basierend auf seinen restlichen Kalorien Vorschläge bekommen, um seine Makronährstoffziele zu erreichen.
 
-🔢 Nutzbare Kalorien: ${kalorienProzent}% des Tagesbedarfs (z. B. bei 2200 kcal wären das ${Math.round((kalorienProzent / 100) * 2200)} kcal)
-🍳 Essensarten: ${essensarten.length > 0 ? essensarten.join(", ") : "beliebig"}
-🌱 Stil: ${stil === "vegetarisch" ? "vegetarisch, keine tierischen Produkte außer Milch, Käse, Eier" : "alles erlaubt"}
-💸 On a Budget: ${budget ? "ja" : "nein"}
-⏱️ Zeitaufwand: ${zeit}/100 (je höher, desto mehr Kochaufwand ist akzeptabel)
+Essensstil: ${stil}
+Budgetfokus: ${budget ? "JA" : "Nein"}
+Zeitaufwand: ${zeit}/100
+Essensarten: ${essensarten.length > 0 ? essensarten.join(", ") : "flexibel"}
+Kalorienbudget: ${kalorienProzent}% des Tagesbedarfs (z. B. ca. ${Math.round((kalorienProzent / 100) * 2200)} kcal)
 
-💡 Ziel: Mache dem Nutzer eine sinnvolle Empfehlung, was er essen könnte, um seine Makronährstoffziele zu erreichen. 
+${wochenplan
+  ? `⚠️ Der Nutzer möchte einen kompletten Wochenplan (7 Tage). Achte darauf, dass Zutaten effizient verwendet werden. Beispiel: Wenn Paprika, Brokkoli oder Linsen in einem Rezept vorkommen, nutze Reste in anderen Gerichten weiter. 
+Beachte typische Supermarkt-Packungsgrößen (z. B. 3 Paprika-Packung, 500g Nudeln, 200g Feta).`
+  : `Der Nutzer möchte nur 1–2 Vorschläge für heute.`}
 
-Gib die Antwort **im folgenden JSON-Format** zurück (als Array mit 1–2 Vorschlägen):
-[
-  {
-    "gericht": "Bowl mit Quinoa und gebratenem Gemüse",
-    "zutaten": ["Quinoa", "Paprika", "Zucchini", "Feta", "Olivenöl"],
-    "rezept": "Quinoa kochen. Gemüse anbraten. Alles in einer Bowl anrichten und mit Feta bestreuen.",
-    "makros": {
-      "kcal": 650,
-      "eiweiss": 25,
-      "fett": 22,
-      "kh": 65
+Deine Antwort soll **ausschließlich im folgenden JSON-Format** erfolgen:
+
+${
+  wochenplan
+    ? `{
+  "tage": [
+    {
+      "tag": "Montag",
+      "gerichte": [
+        {
+          "gericht": "Gemüsepfanne mit Tofu",
+          "zutaten": ["Paprika", "Zucchini", "Tofu", "Reis"],
+          "rezept": "Alles anbraten, mit Sojasoße ablöschen.",
+          "makros": { "kcal": 620, "eiweiss": 28, "fett": 22, "kh": 65 },
+          "preis": "ca. 2.90 €"
+        }
+      ]
     },
-    "preis": "ca. 3.20 €"
-  }
-]
-Gib nur das JSON zurück – keine Erklärungen, keine Formatierung, keine Kommentare.
+    ...
+  ]
+}`
+    : `[{
+  "gericht": "Reis mit Gemüse und Erdnusssauce",
+  "zutaten": ["Reis", "Brokkoli", "Paprika", "Erdnussbutter"],
+  "rezept": "Gemüse dünsten, Erdnusssauce zubereiten, alles mischen.",
+  "makros": { "kcal": 550, "eiweiss": 18, "fett": 19, "kh": 65 },
+  "preis": "ca. 3.00 €"
+}]`
+}
+Gib **nur den JSON-Code zurück**, keine Kommentare, keine Erklärung.
 `;
 
     const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {

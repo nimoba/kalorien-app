@@ -37,6 +37,14 @@ export default function EmpfehlungTab() {
   return (
     <div style={{ padding: 24, color: "#fff", background: "#2c2c2c", minHeight: "100vh" }}>
       <h1>🍽️ Essensempfehlung</h1>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+        <input
+            type="checkbox"
+            checked={wochenplan}
+            onChange={() => setWochenplan(!wochenplan)}
+        />
+        🗓️ Ganze Woche planen (Zutaten clever verteilen)
+      </label>
 
       {/* Toggle Stil */}
       <div style={{ display: "flex", marginBottom: 16, background: "#444", borderRadius: 12 }}>
