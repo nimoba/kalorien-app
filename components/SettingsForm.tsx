@@ -13,6 +13,7 @@ export interface Ziele {
   zielEiweiss: number;
   zielFett: number;
   zielKh: number;
+  zielGewicht?: number | null;
 }
 
 export default function SettingsForm({ onClose, onSave }: Props) {
@@ -21,8 +22,8 @@ export default function SettingsForm({ onClose, onSave }: Props) {
   const [fett, setFett] = useState(70);
   const [kh, setKh] = useState(250);
   const [startgewicht, setStartgewicht] = useState(0);
+  const [zielGewicht, setZielGewicht] = useState<number | null>(null);
 
-  // 🔄 Optional: aus localStorage laden
   useEffect(() => {
     const stored = localStorage.getItem("settings");
     if (stored) {
@@ -31,7 +32,8 @@ export default function SettingsForm({ onClose, onSave }: Props) {
       setEiweiss(parsed.eiweiss);
       setFett(parsed.fett);
       setKh(parsed.kh);
-      setStartgewicht(parsed.startgewicht); // 🆕 optional wenn lokal
+      setStartgewicht(parsed.startgewicht);
+      setZielGewicht(parsed.zielGewicht ?? null);
     }
   }, []);
 
@@ -39,17 +41,16 @@ export default function SettingsForm({ onClose, onSave }: Props) {
     const res = await fetch("/api/save-settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kcal, kh, eiweiss, fett, startgewicht }),
+      body: JSON.stringify({ kcal, kh, eiweiss, fett, startgewicht, zielGewicht }),
     });
-  
+
     if (res.ok) {
-      if (onSave) onSave({ zielKcal: kcal, zielEiweiss: eiweiss, zielFett: fett, zielKh: kh });
+      if (onSave) onSave({ zielKcal: kcal, zielEiweiss: eiweiss, zielFett: fett, zielKh: kh, zielGewicht });
       onClose();
     } else {
       alert("❌ Fehler beim Speichern der Ziele");
     }
   };
-  
 
   return (
     <div style={{
@@ -129,10 +130,18 @@ export default function SettingsForm({ onClose, onSave }: Props) {
 
         <label>Startgewicht (kg):</label>
         <input
-        type="number"
-        value={startgewicht}
-        onChange={(e) => setStartgewicht(Number(e.target.value))}
-        style={inputStyle}
+          type="number"
+          value={startgewicht}
+          onChange={(e) => setStartgewicht(Number(e.target.value))}
+          style={inputStyle}
+        />
+
+        <label>Zielgewicht (kg):</label>
+        <input
+          type="number"
+          value={zielGewicht ?? ""}
+          onChange={(e) => setZielGewicht(Number(e.target.value))}
+          style={inputStyle}
         />
 
         <button
