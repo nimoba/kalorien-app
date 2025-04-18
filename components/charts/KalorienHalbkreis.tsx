@@ -8,6 +8,7 @@ import {
   DoughnutController,
 } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import { getProgressColor } from "../../utils/colors";
 
 ChartJS.register(ArcElement, Tooltip, Legend, DoughnutController);
 
@@ -24,10 +25,11 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
     datasets: [
       {
         data: [gegessen, rest],
-        backgroundColor: ["#4bc0c0", "#e0e0e0"],
+        backgroundColor: [getProgressColor(gegessen / ziel), "#e0e0e0"],
         borderWidth: 0,
         circumference: 180,
         rotation: -90,
+        
       },
     ],
   };
@@ -52,7 +54,7 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
   
       <div style={{
         position: "absolute",
-        top: "50%",
+        top: "70%",
         left: "50%",
         transform: "translate(-50%, -60%)",
         fontSize: 22,

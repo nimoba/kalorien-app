@@ -15,7 +15,7 @@ import {
 
 import { Chart } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
-
+import { getOvershootColor } from "../../utils/colors"; // 👈 make sure this is created
 
 // Register everything needed for mixed chart
 ChartJS.register(
@@ -30,13 +30,14 @@ ChartJS.register(
   LineController
 );
 
-
 export function WochenChart() {
   const labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
   const daten = [1800, 2000, 2200, 2100, 1900, 2300, 2150];
   const ziel = 2200;
 
-  // ✅ Chart data with mixed types
+  // 🟢 Bar colors: only red if value > 110% of goal
+  const barColors = daten.map((val) => getOvershootColor(val, ziel, "#36a2eb"));
+
   const data: ChartData<"bar" | "line"> = {
     labels,
     datasets: [
@@ -44,7 +45,7 @@ export function WochenChart() {
         type: "bar",
         label: "Kalorien",
         data: daten,
-        backgroundColor: "#36a2eb",
+        backgroundColor: barColors,
         borderRadius: 6,
       },
       {
@@ -59,7 +60,6 @@ export function WochenChart() {
     ],
   };
 
-  // ✅ Options for bar + line combined
   const options: ChartOptions<"bar" | "line"> = {
     responsive: true,
     plugins: {

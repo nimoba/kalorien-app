@@ -1,4 +1,5 @@
 'use client';
+import { getProgressColor } from "../../utils/colors";
 
 interface Props {
   label: string;
@@ -22,7 +23,7 @@ export function MakroBalken({ label, value, ziel, farbe }: Props) {
         <div style={{
           width: `${prozent}%`,
           height: "100%",
-          backgroundColor: farbe,
+          backgroundColor: getProgressColor(value / ziel),
           borderRadius: 12,
           transition: "width 0.3s ease"
         }} />

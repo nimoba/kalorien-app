@@ -13,6 +13,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
+import { getOvershootColor } from "../../utils/colors";
 
 ChartJS.register(
   LineElement,
@@ -25,7 +26,6 @@ ChartJS.register(
   LineController
 );
 
-
 export function TagesLineChart() {
   // Dummy-Daten – später via API dynamisch
   const stunden = [
@@ -33,17 +33,22 @@ export function TagesLineChart() {
   ];
 
   const intake = [0, 120, 350, 780, 900, 1050, 1300, 1450, 1450];
-  const ziel = new Array(stunden.length).fill(2200); // gestrichelte Ziel-Linie
+  const zielWert = 2200;
+  const ziel = new Array(stunden.length).fill(zielWert);
 
-  const data = {
+  // Max-Wert prüfen für Farblogik
+  const maxIntake = Math.max(...intake);
+  const farbe = getOvershootColor(maxIntake, zielWert, "#36a2eb");
+
+  const data: ChartData<"line"> = {
     labels: stunden,
     datasets: [
       {
         label: "Kalorienverlauf",
         data: intake,
         fill: true,
-        borderColor: "#36a2eb",
-        backgroundColor: "rgba(54,162,235,0.2)",
+        borderColor: farbe,
+        backgroundColor: farbe + "33", // leichte Transparenz
         tension: 0.3,
       },
       {
@@ -58,11 +63,11 @@ export function TagesLineChart() {
     ],
   };
 
-  const options = {
+  const options: ChartOptions<"line"> = {
     responsive: true,
     plugins: {
       legend: {
-        position: "bottom" as const,
+        position: "bottom",
       },
     },
     scales: {
