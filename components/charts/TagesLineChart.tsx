@@ -32,10 +32,23 @@ interface Props {
 }
 
 export function TagesLineChart({ eintraege, ziel }: Props) {
-  const labels = eintraege.map((e) => e.zeit);
-  const werte = eintraege.map((e) => e.kcal);
-  const zielArray = new Array(labels.length).fill(ziel);
+  // ✅ 1. Sortiere nach Uhrzeit (string → HH:MM → numerisch)
+  const sortierteEintraege = [...eintraege].sort((a, b) => {
+    const [hA, mA] = a.zeit.split(":").map(Number);
+    const [hB, mB] = b.zeit.split(":").map(Number);
+    return hA !== hB ? hA - hB : mA - mB;
+  });
 
+  // ✅ 2. Kumulativ summieren
+  const labels = sortierteEintraege.map((e) => e.zeit);
+  const werte: number[] = [];
+  let sum = 0;
+  for (const e of sortierteEintraege) {
+    sum += e.kcal;
+    werte.push(sum);
+  }
+
+  const zielArray = new Array(labels.length).fill(ziel);
   const maxKcal = Math.max(...werte);
   const farbe = getOvershootColor(maxKcal, ziel, "#36a2eb");
 
