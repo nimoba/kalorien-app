@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { kcal, kh, eiweiss, fett } = req.body;
+    const { kcal, kh, eiweiss, fett, startgewicht } = req.body;
 
   if (!kcal || !kh || !eiweiss || !fett) {
     return res.status(400).json({ error: "Ungültige Daten" });
@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       range: "Ziele!A2:D2",
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[kcal, kh, eiweiss, fett]],
+        values: [[kcal, kh, eiweiss, fett, startgewicht]],
       },
     });
 

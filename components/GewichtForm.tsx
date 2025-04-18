@@ -1,55 +1,46 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 
 interface Props {
   onClose: () => void;
-  onSave?: (settings: Ziele) => void;
+  onRefresh?: () => void;
 }
 
-export interface Ziele {
-  zielKcal: number;
-  zielEiweiss: number;
-  zielFett: number;
-  zielKh: number;
-}
-
-export default function SettingsForm({ onClose, onSave }: Props) {
-  const [kcal, setKcal] = useState(2200);
-  const [eiweiss, setEiweiss] = useState(130);
-  const [fett, setFett] = useState(70);
-  const [kh, setKh] = useState(250);
-  const [startgewicht, setStartgewicht] = useState(0);
-
-  // 🔄 Optional: aus localStorage laden
-  useEffect(() => {
-    const stored = localStorage.getItem("settings");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setKcal(parsed.kcal);
-      setEiweiss(parsed.eiweiss);
-      setFett(parsed.fett);
-      setKh(parsed.kh);
-      setStartgewicht(parsed.startgewicht); // 🆕 optional wenn lokal
-    }
-  }, []);
+export default function GewichtForm({ onClose, onRefresh }: Props) {
+  const [gewicht, setGewicht] = useState("");
+  const [fett, setFett] = useState("");
+  const [muskel, setMuskel] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const speichern = async () => {
-    const res = await fetch("/api/save-settings", {
+    if (!gewicht) {
+      alert("⚠️ Bitte Gewicht eingeben");
+      return;
+    }
+
+    setLoading(true);
+
+    const res = await fetch("/api/save-gewicht", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kcal, kh, eiweiss, fett, startgewicht }),
+      body: JSON.stringify({
+        gewicht: parseFloat(gewicht),
+        fett: fett ? parseFloat(fett) : null,
+        muskel: muskel ? parseFloat(muskel) : null,
+      }),
     });
-  
+
+    setLoading(false);
+
     if (res.ok) {
-      if (onSave) onSave({ zielKcal: kcal, zielEiweiss: eiweiss, zielFett: fett, zielKh: kh });
+      onRefresh?.();
       onClose();
     } else {
-      alert("❌ Fehler beim Speichern der Ziele");
+      alert("❌ Fehler beim Speichern");
     }
   };
-  
 
   return (
     <div style={{
@@ -77,6 +68,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           position: "relative"
         }}
       >
+        {/* X Button */}
         <button
           onClick={onClose}
           style={{
@@ -93,50 +85,35 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           ✕
         </button>
 
-        <h2>⚙️ Ziele anpassen</h2>
+        <h2>🏋️ Gewicht eintragen</h2>
 
-        <label>Kalorien-Ziel (kcal):</label>
+        <label>Gewicht (kg)*</label>
         <input
           type="number"
-          value={kcal}
-          onChange={(e) => setKcal(Number(e.target.value))}
+          value={gewicht}
+          onChange={(e) => setGewicht(e.target.value)}
           style={inputStyle}
         />
 
-        <label>Eiweiß-Ziel (g):</label>
-        <input
-          type="number"
-          value={eiweiss}
-          onChange={(e) => setEiweiss(Number(e.target.value))}
-          style={inputStyle}
-        />
-
-        <label>Fett-Ziel (g):</label>
+        <label>Körperfett (%)</label>
         <input
           type="number"
           value={fett}
-          onChange={(e) => setFett(Number(e.target.value))}
+          onChange={(e) => setFett(e.target.value)}
           style={inputStyle}
         />
 
-        <label>Kohlenhydrate-Ziel (g):</label>
+        <label>Muskelmasse (%)</label>
         <input
           type="number"
-          value={kh}
-          onChange={(e) => setKh(Number(e.target.value))}
+          value={muskel}
+          onChange={(e) => setMuskel(e.target.value)}
           style={inputStyle}
-        />
-
-        <label>Startgewicht (kg):</label>
-        <input
-        type="number"
-        value={startgewicht}
-        onChange={(e) => setStartgewicht(Number(e.target.value))}
-        style={inputStyle}
         />
 
         <button
           onClick={speichern}
+          disabled={loading}
           style={{
             marginTop: 20,
             backgroundColor: "#3cb043",
@@ -149,7 +126,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
             width: "100%",
           }}
         >
-          ✅ Speichern
+          {loading ? "Speichere..." : "✅ Eintragen"}
         </button>
       </motion.div>
     </div>

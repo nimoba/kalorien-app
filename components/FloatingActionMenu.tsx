@@ -5,11 +5,18 @@ import { useState } from "react";
 
 interface Props {
   onOpenForm: () => void;
+  onOpenWeight: () => void;
   onOpenSettings: () => void;
 }
 
-export default function FloatingActionMenu({ onOpenForm, onOpenSettings }: Props) {
+
+export default function FloatingActionMenu({
+  onOpenForm,
+  onOpenWeight,
+  onOpenSettings,
+}: Props) {
   const [open, setOpen] = useState(false);
+
 
   return (
     <div style={{ position: "fixed", bottom: 30, right: 30, zIndex: 1000 }}>
@@ -17,9 +24,10 @@ export default function FloatingActionMenu({ onOpenForm, onOpenSettings }: Props
       <AnimatePresence>
         {open && (
           <>
+            {/* ➕ Neuer Eintrag */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -130 }}
+              animate={{ opacity: 1, y: -180 }}
               exit={{ opacity: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
@@ -31,11 +39,27 @@ export default function FloatingActionMenu({ onOpenForm, onOpenSettings }: Props
               ➕
             </motion.button>
 
+            {/* 🏋️ Gewicht */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -70 }}
+              animate={{ opacity: 1, y: -120 }}
               exit={{ opacity: 0, y: 0 }}
-              transition={{ type: "spring", stiffness: 300, delay: 0.05 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              onClick={() => {
+                onOpenWeight();
+                setOpen(false);
+              }}
+              style={subButtonStyle}
+            >
+              🏋️
+            </motion.button>
+
+            {/* ⚙️ Einstellungen */}
+            <motion.button
+              initial={{ opacity: 0, y: 0 }}
+              animate={{ opacity: 1, y: -60 }}
+              exit={{ opacity: 0, y: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
                 onOpenSettings();
                 setOpen(false);
@@ -47,6 +71,7 @@ export default function FloatingActionMenu({ onOpenForm, onOpenSettings }: Props
           </>
         )}
       </AnimatePresence>
+
 
       {/* Main FAB */}
       <motion.button

@@ -9,6 +9,7 @@ import FloatingForm from "../components/FloatingForm";
 import SettingsForm from "../components/SettingsForm";
 import { useZiele } from "../hooks/useZiele";
 import FloatingActionMenu from "../components/FloatingActionMenu";
+import GewichtForm from "../components/GewichtForm";
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshZiele, setRefreshZiele] = useState(0);
   const ziele = useZiele(refreshZiele);
+  const [showWeight, setShowWeight] = useState(false);
 
   const loadDaten = () => {
     fetch("/api/overview")
@@ -76,8 +78,10 @@ export default function Dashboard() {
       {/* Floating Action Menu */}
       <FloatingActionMenu
         onOpenForm={() => setShowForm(true)}
+        onOpenWeight={() => setShowWeight(true)}
         onOpenSettings={() => setShowSettings(true)}
       />
+
 
       {/* Eingabeformular */}
       {showForm && (
@@ -98,6 +102,14 @@ export default function Dashboard() {
         />
       
       )}
+
+      {showWeight && (
+        <GewichtForm
+          onClose={() => setShowWeight(false)}
+          onRefresh={() => {}} // falls du irgendwann etwas reloaden willst
+        />
+      )}
+
     </div>
   );
 }
