@@ -31,8 +31,18 @@ ChartJS.register(
 );
 
 export function WochenChart() {
-  const labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-  const daten = [1800, 2000, 2200, 2100, 1900, 2300, 2150];
+  // Labels für die letzten 30 Tage
+  const today = new Date();
+  const labels = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (29 - i));
+    return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  });
+
+  // Dummy-Daten – später durch echte ersetzt
+  const daten = Array.from({ length: 30 }, () =>
+    Math.round(Math.random() * 2400)
+  );
   const ziel = 2200;
 
   // 🟢 Bar colors: only red if value > 110% of goal
