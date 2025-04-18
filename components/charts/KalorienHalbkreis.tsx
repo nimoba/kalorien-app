@@ -55,7 +55,7 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
       position: "relative"
     }}>
       <Doughnut data={data} options={options} />
-
+  
       {/* Text zentriert */}
       <div style={{
         position: "absolute",
@@ -68,39 +68,41 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
       }}>
         {gegessen} / {ziel} kcal
       </div>
-
-      {/* Dynamischer Trenner-Strich */}
+  
+      {/* Neuer rotierender Container für Trenner */}
       <div
         style={{
           position: "absolute",
-          top: 0,
+          top: "50%",
           left: "50%",
-          width: 2,
-          height: "25%",
-          backgroundColor: "#1e1e1e",
-          transform: `translateX(-50%) rotate(${winkel}deg)`,
-          transformOrigin: "bottom center",
-          zIndex: 3,
+          transform: `translate(-50%, -100%) rotate(${winkel}deg)`,
+          transformOrigin: "center bottom",
+          zIndex: 10,
         }}
-      />
-
-      {/* Dreieck als Spitze */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: "50%",
-          transform: `translateX(-50%) rotate(${winkel}deg)`,
-          transformOrigin: "bottom center",
-          width: 0,
-          height: 0,
-          borderLeft: "6px solid transparent",
-          borderRight: "6px solid transparent",
-          borderBottom: "10px solid #1e1e1e",
-          zIndex: 4,
-        }}
-      />
+      >
+        {/* Strich */}
+        <div
+          style={{
+            width: 2,
+            height: 40,
+            backgroundColor: "#1e1e1e",
+            marginBottom: 2,
+          }}
+        />
+        {/* Dreieck */}
+        <div
+          style={{
+            width: 0,
+            height: 0,
+            borderLeft: "6px solid transparent",
+            borderRight: "6px solid transparent",
+            borderTop: "10px solid #1e1e1e",
+            margin: "auto",
+          }}
+        />
+      </div>
     </div>
   );
+  
 
 }
