@@ -12,13 +12,16 @@ export default function FloatingTabBar() {
       bottom: 0,
       left: 0,
       right: 0,
-      height: 60,
+      height: 64,
       backgroundColor: "#1e1e1e",
       display: "flex",
       justifyContent: "space-around",
       alignItems: "center",
       borderTop: "1px solid #333",
-      zIndex: 900, // unterhalb von Forms
+      zIndex: 999, // über allem außer FloatingForm
+      backdropFilter: "blur(8px)",
+      boxShadow: "0 -2px 10px rgba(0,0,0,0.3)",
+      paddingBottom: "env(safe-area-inset-bottom)", // für iOS-Support
     }}>
       <TabButton
         label="Dashboard"
@@ -59,8 +62,10 @@ function TabButton({ label, emoji, active, onClick }: {
       flexDirection: "column",
       alignItems: "center",
       cursor: "pointer",
+      flex: 1,
+      paddingTop: 6,
     }}>
-      <span>{emoji}</span>
+      <span style={{ fontSize: 22 }}>{emoji}</span>
       <span style={{ fontSize: 12 }}>{label}</span>
     </button>
   );

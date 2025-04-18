@@ -12,6 +12,7 @@ export default function EmpfehlungTab() {
   const [zeit, setZeit] = useState(50);
   const [loading, setLoading] = useState(false);
   const [vorschlaege, setVorschlaege] = useState<any[] | null>(null);
+  const [wochenplan, setWochenplan] = useState(false);
 
   const toggleEssensart = (art: string) => {
     setEssensarten((prev) =>
@@ -35,7 +36,7 @@ export default function EmpfehlungTab() {
   };
 
   return (
-    <div style={{ padding: 24, color: "#fff", background: "#2c2c2c", minHeight: "100vh" }}>
+    <div style={{ padding: 24, color: "#fff", background: "#2c2c2c", minHeight: "100vh", paddingBottom: "100px"}}>
       <h1>🍽️ Essensempfehlung</h1>
       <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
         <input

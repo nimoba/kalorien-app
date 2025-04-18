@@ -53,6 +53,7 @@ export default function Dashboard() {
         backgroundColor: "#2c2c2c",
         minHeight: "100vh",
         color: "#ffffff",
+        paddingBottom: "100px", // für die Höhe der Tabbar + etwas Abstand
       }}
     >
       <h1>📊 Dein Dashboard</h1>

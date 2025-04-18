@@ -31,7 +31,7 @@ Antwort nur im JSON-Format, keine weiteren Erklärungen.
     body: JSON.stringify({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: "Du bist ein Ernährungsexperte." },
+        { role: "system", content: "Du bist ein Ernährungsexperte. Der Experte darin ist durch einen einfachen Blick, die Nährwerte eines Essens zuerkennen." },
         {
           role: "user",
           content: [

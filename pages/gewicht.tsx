@@ -64,17 +64,18 @@ export default function GewichtSeite() {
   const diff = (letzte - startgewicht).toFixed(1);
   const farbe = parseFloat(diff) < 0 ? "#3cb043" : "#d62e79";
 
-  // 📅 Zielreichweite
-  const letzteTheorie = theoriewerte[theoriewerte.length - 1] || startgewicht;
-  const deltaTheorie = startgewicht - letzteTheorie;
-  const gesamtDefizit = deltaTheorie * 7700;
-  const tage = theoriewerte.length;
-  const defizitØ = gesamtDefizit / tage;
-
-  const restGewicht = letzte - zielGewicht;
-  const tageBisZiel = zielGewicht && defizitØ > 0
-    ? (restGewicht * 7700) / defizitØ
+  // 📅 Zielreichweite auf Basis der Trendlinie
+  const trendEnd = trendlinie[trendlinie.length - 1] ?? letzte;
+  const zielDifferenz = letzte - zielGewicht;
+  const trendDifferenz = trendEnd - letzte;
+  const verbleibendeTage = trendDifferenz !== 0
+    ? Math.ceil(zielDifferenz / trendDifferenz * trend.length)
     : null;
+
+  const zieltext =
+    verbleibendeTage && verbleibendeTage > 0
+      ? `🎯 Zielgewicht in ca. ${verbleibendeTage} Tagen`
+      : "🎯 Zielgewicht erreicht oder Trend zu flach";
 
   const chartData = {
     labels,
@@ -120,7 +121,7 @@ export default function GewichtSeite() {
         borderDash: [2, 2],
         tension: 0,
       }
-    ].filter(Boolean), // remove false/null entries
+    ].filter(Boolean),
   };
 
   const options = {
@@ -139,6 +140,7 @@ export default function GewichtSeite() {
     <div
       style={{
         padding: "24px",
+        paddingBottom: 100, // Platz für FloatingTabBar
         backgroundColor: "#2c2c2c",
         minHeight: "100vh",
         color: "#fff",
@@ -157,15 +159,13 @@ export default function GewichtSeite() {
           : `${Math.abs(parseFloat(diff))} kg zugenommen 🤷‍♂️`}
       </motion.h2>
 
-      {tageBisZiel && (
-        <motion.p
-          style={{ fontStyle: "italic", marginTop: 4, color: "#aaa" }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          🏁 Wenn du so weitermachst, erreichst du dein Ziel in {Math.round(tageBisZiel)} Tagen
-        </motion.p>
-      )}
+      <motion.p
+        style={{ fontStyle: "italic", marginTop: 4, color: "#aaa" }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        {zieltext}
+      </motion.p>
 
       <button
         onClick={handleAnalyse}
