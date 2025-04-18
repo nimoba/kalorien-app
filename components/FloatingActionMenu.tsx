@@ -21,7 +21,7 @@ export default function FloatingActionMenu({ onOpenForm, onOpenSettings }: Props
               initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: -130 }}
               exit={{ opacity: 0, y: 0 }}
-              transition={{ type: "spring", stiffness: 300 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
                 onOpenForm();
                 setOpen(false);
