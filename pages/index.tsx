@@ -35,10 +35,10 @@ export default function Dashboard() {
       <h1>📊 Dein Dashboard</h1>
 
       {/* Gauge Charts */}
-      <KalorienHalbkreis gegessen={1450} ziel={2200} />
+      <KalorienHalbkreis gegessen={1000} ziel={2200} />
 
       <div style={{ marginTop: 40 }}>
-        <MakroBalken label="Kohlenhydrate" value={154} ziel={451} farbe="#36a2eb" />
+        <MakroBalken label="Kohlenhydrate" value={390} ziel={451} farbe="#36a2eb" />
         <MakroBalken label="Eiweiß" value={69} ziel={180} farbe="#4bc0c0" />
         <MakroBalken label="Fett" value={47} ziel={119} farbe="#ffcd56" />
       </div>

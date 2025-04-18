@@ -76,31 +76,46 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
           top: "50%",
           left: "50%",
           transform: `translate(-50%, -100%) rotate(${winkel + 270}deg)`,
-          transformOrigin: "center 130px", // ggf. feintunen
+          transformOrigin: "center 114px", // ggf. feintunen
           zIndex: 10,
         }}
       >
-        {/* Strich */}
+        {/* Wrapper für Strich + Dreieck */}
         <div
           style={{
-            width: 2,
-            height: 36, // etwas kürzer
-            backgroundColor: "#1e1e1e",
+            transform: "translateY(-32px)", // Strich & Dreieck gemeinsam nach außen
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
-        />
-        {/* Dreieck direkt auf dem Strich */}
-        <div
-          style={{
-            marginTop: -1, // leicht überlappend
-            width: 0,
-            height: 0,
-            borderLeft: "6px solid transparent",
-            borderRight: "6px solid transparent",
-            borderTop: "10px solid #1e1e1e",
-            alignSelf: "center",
-          }}
-        />
+        >
+
+          {/* Dreieck */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 36, // gleiche Höhe wie der Strich
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 0,
+              height: 0,
+              borderLeft: "6px solid transparent",
+              borderRight: "6px solid transparent",
+              borderTop: "10px solid #4da3ee", // gleiche Farbe wie Strich
+              zIndex: 5,
+            }}
+          />
+          {/* Strich */}
+          <div
+            style={{
+              width: 4,
+              height: 39,
+              backgroundColor: "#4da3ee",
+            }}
+          />
+        </div>
       </div>
+
 
     </div>
   );
