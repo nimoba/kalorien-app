@@ -66,24 +66,24 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
         {gegessen} / {ziel} kcal
       </div>
 
-      {/* Trennlinie */}
+      {/* Trennlinie – kurz, oben */}
       <div style={{
         position: "absolute",
-        top: 0,
+        top: "8%",
         left: "50%",
         width: 2,
-        height: "70%",
-        backgroundColor: "#1e1e1e", // passe an deinen Hintergrund an
+        height: "25%",
+        backgroundColor: "#1e1e1e", // an deinen Hintergrund anpassen
         transform: "translateX(-50%)",
         zIndex: 3,
       }} />
 
-      {/* Dreieck oben */}
+      {/* Dreieck – Spitze nach unten */}
       <div style={{
         position: "absolute",
-        top: -6,
+        top: "5%",
         left: "50%",
-        transform: "translateX(-50%)",
+        transform: "translateX(-50%) rotate(180deg)",
         width: 0,
         height: 0,
         borderLeft: "6px solid transparent",
