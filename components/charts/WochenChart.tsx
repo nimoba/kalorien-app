@@ -15,9 +15,9 @@ import {
 
 import { Chart } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
-import { getOvershootColor } from "../../utils/colors"; // 👈 make sure this is created
+import { getOvershootColor } from "../../utils/colors";
+import { useEffect, useState } from "react";
 
-// Register everything needed for mixed chart
 ChartJS.register(
   BarElement,
   CategoryScale,
@@ -31,21 +31,26 @@ ChartJS.register(
 );
 
 export function WochenChart() {
-  // Labels für die letzten 30 Tage
-  const today = new Date();
-  const labels = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - (29 - i));
-    return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
-  });
-
-  // Dummy-Daten – später durch echte ersetzt
-  const daten = Array.from({ length: 30 }, () =>
-    Math.round(Math.random() * 2800)
-  );
+  const [history, setHistory] = useState<{ datum: string; kalorien: number }[]>([]);
+  const [loading, setLoading] = useState(true);
   const ziel = 2200;
 
-  // 🟢 Bar colors: only red if value > 110% of goal
+  useEffect(() => {
+    fetch("/api/history")
+      .then((res) => res.json())
+      .then((data) => {
+        setHistory(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <p style={{ color: "#fff" }}>⏳ Lade Monatsverlauf...</p>;
+  }
+
+  const labels = history.map((e) => e.datum);
+  const daten = history.map((e) => e.kalorien);
   const barColors = daten.map((val) => getOvershootColor(val, ziel, "#36a2eb"));
 
   const data: ChartData<"bar" | "line"> = {
@@ -86,7 +91,7 @@ export function WochenChart() {
 
   return (
     <div>
-      <h3 style={{ marginBottom: 12 }}>📆 Kalorien im Wochenverlauf</h3>
+      <h3 style={{ marginBottom: 12 }}>📆 Kalorien im Monatsverlauf</h3>
       <Chart type="bar" data={data} options={options} />
     </div>
   );

@@ -113,7 +113,8 @@ export default function FloatingForm({ onClose }: Props) {
       zIndex: 999,
     }}>
       <div style={{
-        background: "#fff",
+        background: "#2a2a2a",
+        color: "#fff",
         padding: 24,
         borderRadius: 12,
         width: "90%",
