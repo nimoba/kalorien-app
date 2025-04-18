@@ -42,6 +42,9 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
     },
   };
 
+  const progress = Math.min(gegessen / ziel, 1); // Max 100%
+  const winkel = progress * 180; // 0-180°
+
   return (
     <div style={{
       width: "100%",
@@ -66,31 +69,38 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
         {gegessen} / {ziel} kcal
       </div>
 
-      {/* Trennlinie – kurz, oben */}
-      <div style={{
-        position: "absolute",
-        top: "8%",
-        left: "50%",
-        width: 2,
-        height: "25%",
-        backgroundColor: "#1e1e1e", // an deinen Hintergrund anpassen
-        transform: "translateX(-50%)",
-        zIndex: 3,
-      }} />
+      {/* Dynamischer Trenner-Strich */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: "50%",
+          width: 2,
+          height: "25%",
+          backgroundColor: "#1e1e1e",
+          transform: `translateX(-50%) rotate(${winkel}deg)`,
+          transformOrigin: "bottom center",
+          zIndex: 3,
+        }}
+      />
 
-      {/* Dreieck – Spitze nach unten */}
-      <div style={{
-        position: "absolute",
-        top: "5%",
-        left: "50%",
-        transform: "translateX(-50%) rotate(180deg)",
-        width: 0,
-        height: 0,
-        borderLeft: "6px solid transparent",
-        borderRight: "6px solid transparent",
-        borderBottom: "10px solid #1e1e1e", // gleiche Farbe wie Hintergrund
-        zIndex: 4,
-      }} />
+      {/* Dreieck als Spitze */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: "50%",
+          transform: `translateX(-50%) rotate(${winkel}deg)`,
+          transformOrigin: "bottom center",
+          width: 0,
+          height: 0,
+          borderLeft: "6px solid transparent",
+          borderRight: "6px solid transparent",
+          borderBottom: "10px solid #1e1e1e",
+          zIndex: 4,
+        }}
+      />
     </div>
   );
+
 }
