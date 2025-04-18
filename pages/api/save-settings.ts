@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: "Ziele!A2:D2",
+      range: "Ziele!A2:E2",
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: [[kcal, kh, eiweiss, fett, startgewicht]],

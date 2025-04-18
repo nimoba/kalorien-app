@@ -10,6 +10,7 @@ import SettingsForm from "../components/SettingsForm";
 import { useZiele } from "../hooks/useZiele";
 import FloatingActionMenu from "../components/FloatingActionMenu";
 import GewichtForm from "../components/GewichtForm";
+import FloatingTabBar from "../components/FloatingTabBar";
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
@@ -110,6 +111,7 @@ export default function Dashboard() {
         />
       )}
 
+      {!showForm && !showSettings && !showWeight && <FloatingTabBar />}
     </div>
   );
 }
