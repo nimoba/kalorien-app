@@ -152,12 +152,66 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
 
-        <button
-          onClick={() => setScanning(true)}
-          style={{ ...buttonStyle, backgroundColor: "#444", border: "1px solid #666" }}
-        >
-          📷 Barcode scannen
-        </button>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <button
+            onClick={() => setScanning(true)}
+            style={{ ...buttonStyle, flex: 1, backgroundColor: "#444", border: "1px solid #666" }}
+          >
+            📷 Barcode
+          </button>
+
+          <label style={{
+            flex: 1,
+            backgroundColor: "#444",
+            border: "1px solid #666",
+            borderRadius: 8,
+            padding: "10px 12px",
+            fontSize: 16,
+            cursor: "pointer",
+            textAlign: "center",
+          }}>
+            📸 Foto
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment" // 👈 öffnet direkt Rückkamera
+              style={{ display: "none" }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                  const base64 = reader.result?.toString().split(",")[1];
+                  if (!base64) return;
+
+                  const res = await fetch("/api/kalorien-bild", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: base64 }),
+                  });
+
+                  const data = await res.json();
+                  if (res.ok) {
+                    setPreviewData({
+                      name: data.name || "Foto-Schätzung",
+                      kcal: data.kcal,
+                      eiweiss: data.eiweiss,
+                      fett: data.fett,
+                      kh: data.kh,
+                    });
+                    setGramm("100");
+                    setEingabe("");
+                  } else {
+                    alert("❌ Foto konnte nicht analysiert werden");
+                  }
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+
+          </label>
+        </div>
 
         {scanning && (
           <div style={{ marginBottom: 12 }}>
