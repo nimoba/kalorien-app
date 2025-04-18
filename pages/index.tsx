@@ -26,7 +26,7 @@ export default function Dashboard() {
         padding: "24px",
         fontFamily: "sans-serif",
         position: "relative",
-        backgroundColor: "#474747", // 💡 Dark gray background
+        backgroundColor: "#2c2c2c", // 💡 Dark gray background
         minHeight: "100vh",
         color: "#ffffff" // optional: white text
       }}

@@ -40,7 +40,14 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
   };
 
   return (
-    <div style={{ width: 200, height: 150, margin: "auto", textAlign: "center" }}>
+    <div style={{
+        width: 200,
+        height: 150,
+        margin: "auto",
+        textAlign: "center",
+        position: "relative" // 🔧 Fix!
+      }}>
+      
       <Doughnut data={data} options={options} />
       <div style={{
         position: "absolute",
