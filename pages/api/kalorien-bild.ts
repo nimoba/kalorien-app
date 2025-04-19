@@ -62,7 +62,8 @@ Antworte ausschließlich im JSON-Format. Keine Erklärungen.
     }
 
     try {
-      const parsed = JSON.parse(content);
+        const cleaned = content.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(cleaned);        
       return res.status(200).json(parsed);
     } catch (e) {
       console.error("❌ Fehler beim Parsen der GPT-Antwort:", content);
