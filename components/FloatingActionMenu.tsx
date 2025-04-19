@@ -27,7 +27,7 @@ export default function FloatingActionMenu({
             {/* ⚙️ Einstellungen */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -180 }}
+              animate={{ opacity: 1, y: -240 }}
               exit={{ opacity: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
@@ -42,7 +42,7 @@ export default function FloatingActionMenu({
             {/* 🏋️ Gewicht */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -130 }}
+              animate={{ opacity: 1, y: -180 }}
               exit={{ opacity: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
@@ -57,7 +57,7 @@ export default function FloatingActionMenu({
             {/* 🏃 Sport */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -80 }}
+              animate={{ opacity: 1, y: -120 }}
               exit={{ opacity: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
@@ -72,7 +72,7 @@ export default function FloatingActionMenu({
             {/* ➕ Neuer Eintrag */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -30 }}
+              animate={{ opacity: 1, y: -60 }}
               exit={{ opacity: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
