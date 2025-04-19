@@ -12,6 +12,7 @@ import FloatingActionMenu from "../components/FloatingActionMenu";
 import GewichtForm from "../components/GewichtForm";
 import FloatingTabBar from "../components/FloatingTabBar";
 import KcalBilanzChart from "../components/charts/KcalBilanzChart";
+import SportForm from "../components/SportForm";
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
@@ -21,6 +22,7 @@ export default function Dashboard() {
   const [refreshZiele, setRefreshZiele] = useState(0);
   const ziele = useZiele(refreshZiele);
   const [showWeight, setShowWeight] = useState(false);
+  const [showSport, setShowSport] = useState(false);
 
   const loadDaten = () => {
     fetch("/api/overview")
@@ -86,6 +88,7 @@ export default function Dashboard() {
         onOpenForm={() => setShowForm(true)}
         onOpenWeight={() => setShowWeight(true)}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenSport={() => setShowSport(true)}
       />
 
 
@@ -107,6 +110,13 @@ export default function Dashboard() {
           }}
         />
       
+      )}
+      
+      {showSport && (
+        <SportForm
+          onClose={() => setShowSport(false)}
+          onRefresh={loadDaten} // oder was du brauchst
+        />
       )}
 
       {showWeight && (

@@ -14,6 +14,7 @@ export interface Ziele {
   zielFett: number;
   zielKh: number;
   zielGewicht?: number | null;
+  tdee?: number | null;
 }
 
 export default function SettingsForm({ onClose, onSave }: Props) {
@@ -23,6 +24,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
   const [kh, setKh] = useState(250);
   const [startgewicht, setStartgewicht] = useState(0);
   const [zielGewicht, setZielGewicht] = useState<number | null>(null);
+  const [tdee, setTdee] = useState<number | null>(2600);
 
   useEffect(() => {
     const stored = localStorage.getItem("settings");
@@ -34,6 +36,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
       setKh(parsed.kh);
       setStartgewicht(parsed.startgewicht);
       setZielGewicht(parsed.zielGewicht ?? null);
+      setTdee(parsed.tdee ?? null);
     }
   }, []);
 
@@ -41,11 +44,20 @@ export default function SettingsForm({ onClose, onSave }: Props) {
     const res = await fetch("/api/save-settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kcal, kh, eiweiss, fett, startgewicht, zielGewicht }),
+      body: JSON.stringify({ kcal, kh, eiweiss, fett, startgewicht, zielGewicht, tdee }),
     });
 
     if (res.ok) {
-      if (onSave) onSave({ zielKcal: kcal, zielEiweiss: eiweiss, zielFett: fett, zielKh: kh, zielGewicht });
+      if (onSave) {
+        onSave({
+          zielKcal: kcal,
+          zielEiweiss: eiweiss,
+          zielFett: fett,
+          zielKh: kh,
+          zielGewicht,
+          tdee
+        });
+      }
       onClose();
     } else {
       alert("❌ Fehler beim Speichern der Ziele");
@@ -141,6 +153,14 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           type="number"
           value={zielGewicht ?? ""}
           onChange={(e) => setZielGewicht(Number(e.target.value))}
+          style={inputStyle}
+        />
+
+        <label>Täglicher Energieverbrauch (TDEE, kcal):</label>
+        <input
+          type="number"
+          value={tdee ?? ""}
+          onChange={(e) => setTdee(Number(e.target.value))}
           style={inputStyle}
         />
 

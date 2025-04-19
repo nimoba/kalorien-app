@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: id,
-      range: "Tabelle1!A2:G",
+      range: "Tabelle1!A2:G2",
     });
 
     const rows = response.data.values || [];

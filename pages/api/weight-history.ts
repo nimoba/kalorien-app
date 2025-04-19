@@ -45,13 +45,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kalorienProTag[d] += kcalNum;
     }
 
-    // 📊 Ziel-Kcal aus Ziele-Tabelle
-    const zielKcalRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range: "Ziele!A2:A2",
+    // 📊 Ziel-Kcal und TDEE aus Ziele-Tabelle
+    const zielRes = await sheets.spreadsheets.values.get({
+        spreadsheetId: sheetId,
+        range: "Ziele!A2:G2", // A: kcal, G: TDEE
     });
-
-    const zielKcal = Number(zielKcalRes.data.values?.[0]?.[0]) || 2200;
+    
+    const [zielKcalRaw, , , , , , tdeeRaw] = zielRes.data.values?.[0] || [];
+    
+    const zielKcal = Number(zielKcalRaw) || 2200;
+    const tdee = Number(tdeeRaw) || 2600;
+    
 
     // 📌 Zielgewicht (optional)
     const zielGewichtRes = await sheets.spreadsheets.values.get({
@@ -84,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     for (const tag of sortierteTage) {
       const konsumiert = kalorienProTag[tag];
-      const defizit = zielKcal - konsumiert;
+      const defizit = tdee - konsumiert;
       kumuliertesDefizit += defizit;
 
       const deltaKg = kumuliertesDefizit / 7700;
@@ -121,15 +125,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const trend = lineRegression(verlauf.map(v => v.gewicht));
 
     res.status(200).json({
-      startgewicht,
-      verlauf,
-      theoretisch: theoriewerte,
-      geglättet: smoothed,
-      trend,
-      fett,
-      muskel,
-      zielGewicht,
-    });
+        startgewicht,
+        verlauf,
+        theoretisch: theoriewerte,
+        geglättet: smoothed,
+        trend,
+        fett,
+        muskel,
+        zielGewicht,
+        zielKcal,
+        tdee
+      });      
   } catch (err) {
     console.error("Fehler in /api/weight-history:", err);
     res.status(500).json({ error: "Fehler beim Abrufen der Daten" });

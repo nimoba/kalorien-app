@@ -7,13 +7,16 @@ interface Props {
   onOpenForm: () => void;
   onOpenWeight: () => void;
   onOpenSettings: () => void;
+  onOpenSport: () => void; // 👈 NEU
 }
+
 
 
 export default function FloatingActionMenu({
   onOpenForm,
   onOpenWeight,
   onOpenSettings,
+  onOpenSport,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -38,8 +41,22 @@ export default function FloatingActionMenu({
             >
               ➕
             </motion.button>
+            {/* 🏋️ Aktivität */}
+            <motion.button
+              initial={{ opacity: 0, y: 0 }}
+              animate={{ opacity: 1, y: -150 }}
+              exit={{ opacity: 0, y: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              onClick={() => {
+                onOpenSport();
+                setOpen(false);
+              }}
+              style={subButtonStyle}
+            >
+              🏃
+            </motion.button>
 
-            {/* 🏋️ Gewicht */}
+            {/*  Gewicht */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: -120 }}

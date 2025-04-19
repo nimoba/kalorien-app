@@ -27,6 +27,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const gewichtRows = gewichtRes.data.values || [];
 
+    // 🔥 TDEE-Wert aus "Ziele"
+    const zielRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: id,
+      range: "Ziele!G2:G2", // G: TDEE
+    });
+
+    const tdee = Number(zielRes.data.values?.[0]?.[0]) || 2600;
+
     // 📦 Daten als Text vorbereiten
     const kcalText = kcalRows
       .map(r => `${r[0]} ${r[1] ?? ""} - ${r[3]} kcal`) // Datum, Uhrzeit, Kcal
@@ -42,9 +50,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const prompt = `
 Du bist ein Gesundheitscoach und analysierst Essverhalten.
 
-Du erhältst Kalorien- und Gewichtsdaten. Bitte analysiere:
+Du erhältst Kalorien- und Gewichtsdaten. Der geschätzte tägliche Kalorienverbrauch (TDEE) der Person liegt bei **${tdee} kcal**.
 
-- Durchschnittliches Kaloriendefizit
+Bitte analysiere:
+
+- Durchschnittliches Kaloriendefizit im Vergleich zu TDEE
 - Entwicklung des Gewichts
 - Tägliche Schwankungen
 - Wochenend-/Wochentags-Muster

@@ -4,12 +4,14 @@ import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale
 import { Line } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { useEffect, useState } from "react";
+import { useZiele } from "../../hooks/useZiele"; // ⬅️ Import!
+
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 export default function KcalBilanzChart() {
   const [data, setData] = useState<any[]>([]);
-
+  const ziele = useZiele();
   useEffect(() => {
     fetch("/api/kcal-history")
       .then((res) => res.json())
@@ -20,7 +22,7 @@ export default function KcalBilanzChart() {
 
   const labels = data.map((e) => e.datum);
   const gegessen = data.map((e) => e.kcalKumuliert);
-  const verbraucht = data.map((e) => e.verbrauchKumuliert);
+  const verbraucht = labels.map((_, i) => (i + 1) * ziele.tdee!); // ⬅️ geschätzter kumulierter Verbrauch
 
   const chartData: ChartData<"line"> = {
     labels,

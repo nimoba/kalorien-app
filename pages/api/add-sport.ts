@@ -2,13 +2,9 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { kcal, kh, eiweiss, fett, startgewicht, zielGewicht, tdee } = req.body;
-
-  if (
-    !kcal || !kh || !eiweiss || !fett ||
-    typeof startgewicht === "undefined"
-  ) {
-    return res.status(400).json({ error: "Ungültige Daten" });
+  const { beschreibung, kcal } = req.body;
+  if (!beschreibung || !kcal) {
+    return res.status(400).json({ error: "Ungültige Eingaben" });
   }
 
   try {
@@ -20,20 +16,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
 
-    const values = [[kcal, kh, eiweiss, fett, startgewicht, zielGewicht ?? "", tdee]];
+    const datum = new Date().toLocaleDateString("de-DE");
+    const uhrzeit = new Date().toLocaleTimeString("de-DE", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-    await sheets.spreadsheets.values.update({
+    await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: "Ziele!A2:G2", // F2 = Zielgewicht
+      range: "Aktivitäten!A:D",
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values,
+        values: [[datum, beschreibung, kcal, uhrzeit]],
       },
     });
 
     res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Fehler beim Speichern der Ziele:", err);
+    console.error("Fehler beim Speichern der Aktivität:", err);
     res.status(500).json({ error: "Speichern fehlgeschlagen" });
   }
 }
