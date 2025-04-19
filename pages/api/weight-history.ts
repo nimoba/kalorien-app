@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const kcalRows = kcalData.data.values || [];
     const kalorienProTag: Record<string, number> = {};
     for (const row of kcalRows) {
-      const [datum, , kcal] = row;
+      const [datum, , , kcal] = row;
       if (!datum || !kcal) continue;
       const d = datum.trim();
       kalorienProTag[d] = (kalorienProTag[d] || 0) + Number(kcal);
