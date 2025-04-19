@@ -7,10 +7,8 @@ interface Props {
   onOpenForm: () => void;
   onOpenWeight: () => void;
   onOpenSettings: () => void;
-  onOpenSport: () => void; // 👈 NEU
+  onOpenSport: () => void;
 }
-
-
 
 export default function FloatingActionMenu({
   onOpenForm,
@@ -20,46 +18,31 @@ export default function FloatingActionMenu({
 }: Props) {
   const [open, setOpen] = useState(false);
 
-
   return (
     <div style={{ position: "fixed", bottom: 80, right: 30, zIndex: 1000 }}>
       {/* Sub-Buttons */}
       <AnimatePresence>
         {open && (
           <>
-            {/* ➕ Neuer Eintrag */}
+            {/* ⚙️ Einstellungen */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: -180 }}
               exit={{ opacity: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
-                onOpenForm();
+                onOpenSettings();
                 setOpen(false);
               }}
               style={subButtonStyle}
             >
-              ➕
-            </motion.button>
-            {/* 🏋️ Aktivität */}
-            <motion.button
-              initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -150 }}
-              exit={{ opacity: 0, y: 0 }}
-              transition={{ type: "spring", stiffness: 500, damping: 25 }}
-              onClick={() => {
-                onOpenSport();
-                setOpen(false);
-              }}
-              style={subButtonStyle}
-            >
-              🏃
+              ⚙️
             </motion.button>
 
-            {/*  Gewicht */}
+            {/* 🏋️ Gewicht */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -120 }}
+              animate={{ opacity: 1, y: -130 }}
               exit={{ opacity: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
@@ -71,24 +54,38 @@ export default function FloatingActionMenu({
               🏋️
             </motion.button>
 
-            {/* ⚙️ Einstellungen */}
+            {/* 🏃 Sport */}
             <motion.button
               initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -60 }}
+              animate={{ opacity: 1, y: -80 }}
               exit={{ opacity: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               onClick={() => {
-                onOpenSettings();
+                onOpenSport();
                 setOpen(false);
               }}
               style={subButtonStyle}
             >
-              ⚙️
+              🏃
+            </motion.button>
+
+            {/* ➕ Neuer Eintrag */}
+            <motion.button
+              initial={{ opacity: 0, y: 0 }}
+              animate={{ opacity: 1, y: -30 }}
+              exit={{ opacity: 0, y: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              onClick={() => {
+                onOpenForm();
+                setOpen(false);
+              }}
+              style={subButtonStyle}
+            >
+              ➕
             </motion.button>
           </>
         )}
       </AnimatePresence>
-
 
       {/* Main FAB */}
       <motion.button
