@@ -121,15 +121,17 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         <button onClick={onClose} style={closeStyle}>✕</button>
         <h2>➕ Neuer Eintrag</h2>
 
+        <label>GPT Beschreibung:</label>
         <textarea
           value={gptInput}
           onChange={(e) => setGptInput(e.target.value)}
-          placeholder="Was hast du gegessen?"
+          placeholder="z. B. 2 Eier und Toast"
           rows={2}
           style={inputStyle}
         />
         <button onClick={handleGPT} style={buttonStyle}>💡 GPT Schätzen</button>
 
+        <label>Produktname:</label>
         <input
           placeholder="Name"
           value={name}
@@ -137,53 +139,61 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
 
+        <label>Menge (g/ml):</label>
         <input
           type="number"
-          placeholder="Menge (g/ml)"
           value={menge}
           onChange={(e) => setMenge(e.target.value)}
           style={inputStyle}
         />
 
+        <label>Kalorien:</label>
         <input
           type="number"
-          placeholder="Kalorien"
           value={kcal.toFixed(1)}
           onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)}
           style={inputStyle}
         />
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <input
-            type="number"
-            placeholder="KH"
-            value={kh.toFixed(1)}
-            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
-            style={miniInputStyle}
-          />
-          <input
-            type="number"
-            placeholder="Fett"
-            value={fett.toFixed(1)}
-            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
-            style={miniInputStyle}
-          />
-          <input
-            type="number"
-            placeholder="Eiweiß"
-            value={eiweiss.toFixed(1)}
-            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
-            style={miniInputStyle}
-          />
+        <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ flex: 1 }}>
+            <label style={miniLabel}>KH</label>
+            <input
+              type="number"
+              value={kh.toFixed(1)}
+              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
+              style={miniInputStyle}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={miniLabel}>F</label>
+            <input
+              type="number"
+              value={fett.toFixed(1)}
+              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
+              style={miniInputStyle}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={miniLabel}>P</label>
+            <input
+              type="number"
+              value={eiweiss.toFixed(1)}
+              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
+              style={miniInputStyle}
+            />
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <button
-            onClick={() => setScanning(true)}
-            style={{ ...buttonStyle, flex: 1, marginBottom: 0 }}
-          >
+        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+          <label style={fotoButtonStyle}>
             📷 Barcode
-          </button>
+            <input
+              type="button"
+              onClick={() => setScanning(true)}
+              style={{ display: "none" }}
+            />
+          </label>
 
           <label style={fotoButtonStyle}>
             📸 Foto
@@ -221,6 +231,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   );
 }
 
+// STYLES
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   top: 0, left: 0, right: 0, bottom: 0,
@@ -259,7 +270,7 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: 10,
   fontSize: 14,
-  marginBottom: 10,
+  marginBottom: 12,
   borderRadius: 8,
   border: "1px solid #555",
   backgroundColor: "#1e1e1e",
@@ -267,13 +278,21 @@ const inputStyle: React.CSSProperties = {
 };
 
 const miniInputStyle: React.CSSProperties = {
-  flex: 1,
-  padding: 10,
-  fontSize: 14,
-  borderRadius: 8,
+  width: "100%",
+  padding: 8,
+  fontSize: 13,
+  marginBottom: 8,
+  borderRadius: 6,
   border: "1px solid #555",
   backgroundColor: "#1e1e1e",
   color: "#fff",
+};
+
+const miniLabel: React.CSSProperties = {
+  fontSize: 12,
+  marginBottom: 4,
+  color: "#aaa",
+  display: "block",
 };
 
 const buttonStyle: React.CSSProperties = {
