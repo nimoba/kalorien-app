@@ -19,7 +19,7 @@ export default function FloatingActionMenu({
 
 
   return (
-    <div style={{ position: "fixed", bottom: 30, right: 30, zIndex: 1000 }}>
+    <div style={{ position: "fixed", bottom: 80, right: 30, zIndex: 1000 }}>
       {/* Sub-Buttons */}
       <AnimatePresence>
         {open && (
