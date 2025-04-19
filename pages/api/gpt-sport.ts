@@ -3,7 +3,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function schaetzeMitGPT(req: NextApiRequest, res: NextApiResponse) {
-  const { beschreibung, gewicht } = req.body;
+    console.log("💡 GPT-Schätzung gestartet");
+    const { beschreibung, gewicht } = req.body;
 
   if (!beschreibung || !gewicht) {
     return res.status(400).json({ error: "Beschreibung und Gewicht sind erforderlich." });

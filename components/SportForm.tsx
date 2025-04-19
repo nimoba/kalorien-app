@@ -45,7 +45,7 @@ export default function SportForm({ onClose, onRefresh }: Props) {
   const schaetzeMitGPT = async () => {
     if (!desc) return alert("Bitte Beschreibung eingeben");
     if (!gewicht) return alert("❌ Gewicht konnte nicht geladen werden");
-
+    console.log("💡 Gewicht verwendet für GPT:", gewicht);
     setLoading(true);
 
     const res = await fetch("/api/sport-gpt", {
