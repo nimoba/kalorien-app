@@ -11,22 +11,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: "v4", auth });
     const id = process.env.GOOGLE_SHEET_ID;
 
-    // 🔢 TDEE laden (optional)
+    // ✅ TDEE holen
     const tdeeRes = await sheets.spreadsheets.values.get({
       spreadsheetId: id,
       range: "Ziele!G2:G2",
     });
     const tdee = Number(tdeeRes.data.values?.[0]?.[0]) || 2500;
 
-    // 📊 Kalorien-Einträge
+    // ✅ Kalorien-Einträge holen
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: id,
-      range: "Tabelle1!A2:G",
+      range: "Tabelle1!A2:G", // Alle Zeilen!
     });
 
     const rows = response.data.values || [];
 
     const kcalTage: Record<string, number> = {};
+
     for (const row of rows) {
       const [datum, , kcal] = row;
       if (!datum || !kcal) continue;
@@ -36,7 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kcalTage[key] += num;
     }
 
-    // 🔠 Chronologisch sortieren
     const sorted = Object.entries(kcalTage).sort(([a], [b]) => {
       const [t1, m1, j1] = a.split(".");
       const [t2, m2, j2] = b.split(".");
