@@ -65,15 +65,20 @@ export default function SettingsForm({ onClose, onSave }: Props) {
   };
 
   return (
-    <div style={{
-      position: "fixed",
-      top: 0, left: 0, right: 0, bottom: 0,
-      background: "rgba(0,0,0,0.6)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 999,
-    }}>
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0,0,0,0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 999,
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -86,8 +91,10 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           borderRadius: 16,
           width: "90%",
           maxWidth: 400,
+          maxHeight: "90vh",         // ⬅️ Begrenze die Höhe
+          overflowY: "auto",         // ⬅️ Scrollbar bei Bedarf
           boxShadow: "0 5px 20px rgba(0,0,0,0.3)",
-          position: "relative"
+          position: "relative",
         }}
       >
         <button
@@ -100,14 +107,14 @@ export default function SettingsForm({ onClose, onSave }: Props) {
             color: "#fff",
             fontSize: 20,
             border: "none",
-            cursor: "pointer"
+            cursor: "pointer",
           }}
         >
           ✕
         </button>
-
+  
         <h2>⚙️ Ziele anpassen</h2>
-
+  
         <label>Kalorien-Ziel (kcal):</label>
         <input
           type="number"
@@ -115,7 +122,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           onChange={(e) => setKcal(Number(e.target.value))}
           style={inputStyle}
         />
-
+  
         <label>Eiweiß-Ziel (g):</label>
         <input
           type="number"
@@ -123,7 +130,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           onChange={(e) => setEiweiss(Number(e.target.value))}
           style={inputStyle}
         />
-
+  
         <label>Fett-Ziel (g):</label>
         <input
           type="number"
@@ -131,7 +138,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           onChange={(e) => setFett(Number(e.target.value))}
           style={inputStyle}
         />
-
+  
         <label>Kohlenhydrate-Ziel (g):</label>
         <input
           type="number"
@@ -139,7 +146,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           onChange={(e) => setKh(Number(e.target.value))}
           style={inputStyle}
         />
-
+  
         <label>Startgewicht (kg):</label>
         <input
           type="number"
@@ -147,7 +154,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           onChange={(e) => setStartgewicht(Number(e.target.value))}
           style={inputStyle}
         />
-
+  
         <label>Zielgewicht (kg):</label>
         <input
           type="number"
@@ -155,7 +162,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           onChange={(e) => setZielGewicht(Number(e.target.value))}
           style={inputStyle}
         />
-
+  
         <label>Täglicher Energieverbrauch (TDEE, kcal):</label>
         <input
           type="number"
@@ -163,7 +170,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           onChange={(e) => setTdee(Number(e.target.value))}
           style={inputStyle}
         />
-
+  
         <button
           onClick={speichern}
           style={{
@@ -183,6 +190,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
       </motion.div>
     </div>
   );
+  
 }
 
 const inputStyle: React.CSSProperties = {
