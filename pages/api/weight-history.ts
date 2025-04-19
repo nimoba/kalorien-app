@@ -19,7 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const gewichtRows = gewichtData.data.values || [];
     const gewichtMap: Record<string, { gewicht: number; fett: number | null; muskel: number | null }> = {};
-
     for (const row of gewichtRows) {
       const datum = row[0];
       if (!datum) continue;
@@ -45,18 +44,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kalorienProTag[d] = (kalorienProTag[d] || 0) + Number(kcal);
     }
 
-    // 🏃 Aktivität einlesen
+    // 🏃 Aktivitätsdaten einlesen
     const aktivitaetRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "Aktivitäten!A2:C",
     });
 
     const aktivitaetRows = aktivitaetRes.data.values || [];
+    const aktivitaetMap: Record<string, number> = {};
     for (const row of aktivitaetRows) {
       const [datum, , kcal] = row;
       if (!datum || !kcal) continue;
       const d = datum.trim();
-      kalorienProTag[d] = (kalorienProTag[d] || 0) - Number(kcal); // 🔥 als NEGATIVER Verbrauch
+      aktivitaetMap[d] = (aktivitaetMap[d] || 0) + Number(kcal);
     }
 
     // 📊 Ziel-Kcal und TDEE aus Ziele-Tabelle
@@ -75,7 +75,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fett: { datum: string; wert: number | null }[] = [];
     const muskel: { datum: string; wert: number | null }[] = [];
 
-    const sortierteTage = Object.keys(kalorienProTag).sort((a, b) => {
+    const sortierteTage = Object.keys({
+      ...kalorienProTag,
+      ...aktivitaetMap
+    }).sort((a, b) => {
       const [t1, m1, j1] = a.split(".");
       const [t2, m2, j2] = b.split(".");
       return new Date(`${j1}-${m1}-${t1}`).getTime() - new Date(`${j2}-${m2}-${t2}`).getTime();
@@ -87,8 +90,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let lastMuskel: number | null = null;
 
     for (const tag of sortierteTage) {
-      const konsumiert = kalorienProTag[tag];
-      const defizit = tdee - konsumiert;
+      const konsumiert = kalorienProTag[tag] || 0;
+      const aktiv = aktivitaetMap[tag] || 0;
+      const defizit = (tdee + aktiv) - konsumiert;
+
       kumuliertesDefizit += defizit;
 
       const deltaKg = kumuliertesDefizit / 7700;
