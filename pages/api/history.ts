@@ -10,46 +10,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
-    const range = "Tabelle1!A:D"; // A = Datum, D = Kalorien
 
-    const result = await sheets.spreadsheets.values.get({
+    const kcalRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range,
+      range: "Tabelle1!A2:D",
     });
 
-    const rows = result.data.values || [];
-    const header = rows[0];
-    const datenSpalte = header.indexOf("Datum");
-    const kcalSpalte = header.indexOf("Kalorien");
+    const aktivRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: "Aktivität!A2:C",
+    });
 
-    if (datenSpalte === -1 || kcalSpalte === -1) {
-      return res.status(400).json({ error: "Spalten nicht gefunden" });
-    }
+    const kcalRows = kcalRes.data.values || [];
+    const aktivRows = aktivRes.data.values || [];
 
     const today = new Date();
     const datenMap = new Map<string, number>();
 
-    for (const row of rows.slice(1)) {
-      const rawDate = row[datenSpalte];
-      const kcal = Number(row[kcalSpalte]) || 0;
-      if (!rawDate) continue;
+    for (const row of kcalRows) {
+      const [datum, , , kcal] = row;
+      const num = Number(kcal);
+      if (!datum || isNaN(num)) continue;
 
-      const datum = rawDate.trim();
+      const [d, m, y] = datum.split(".");
+      const entryDate = new Date(`${y}-${m}-${d}`);
+      const diff = (today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (diff < 0 || diff > 30) continue;
 
-      // Nur letzten 30 Tage
-      const [day, month, year] = datum.split(".");
-      const entryDate = new Date(`${year}-${month}-${day}`);
-      const diffDays = (today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
-
-      if (diffDays < 0 || diffDays > 30) continue;
-
-      if (!datenMap.has(datum)) {
-        datenMap.set(datum, 0);
-      }
-      datenMap.set(datum, datenMap.get(datum)! + kcal);
+      datenMap.set(datum, (datenMap.get(datum) || 0) + num);
     }
 
-    // Sortiere nach Datum (alt → neu)
+    for (const row of aktivRows) {
+      const [datum, , kcal] = row;
+      const num = Number(kcal);
+      if (!datum || isNaN(num)) continue;
+
+      const [d, m, y] = datum.split(".");
+      const entryDate = new Date(`${y}-${m}-${d}`);
+      const diff = (today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (diff < 0 || diff > 30) continue;
+
+      datenMap.set(datum, (datenMap.get(datum) || 0) + num);
+    }
+
     const sorted = Array.from(datenMap.entries())
       .sort(([a], [b]) => {
         const [da, ma, ja] = a.split(".").map(Number);

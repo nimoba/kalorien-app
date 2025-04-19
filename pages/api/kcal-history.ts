@@ -11,72 +11,71 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: "v4", auth });
     const id = process.env.GOOGLE_SHEET_ID;
 
-    // ✅ TDEE holen
-    const tdeeRes = await sheets.spreadsheets.values.get({
+    // Ziel-TDEE laden
+    const zielRes = await sheets.spreadsheets.values.get({
       spreadsheetId: id,
       range: "Ziele!G2:G2",
     });
-    const tdee = Number(tdeeRes.data.values?.[0]?.[0]) || 2500;
-    console.log("🔥 TDEE geladen:", tdee);
+    const tdee = Number(zielRes.data.values?.[0]?.[0]) || 2500;
 
-    // ✅ Kalorien-Einträge holen
-    const response = await sheets.spreadsheets.values.get({
+    // Kalorien-Einträge
+    const eintragRes = await sheets.spreadsheets.values.get({
       spreadsheetId: id,
-      range: "Tabelle1!A2:G",
+      range: "Tabelle1!A2:D", // A = Datum, D = Kalorien
     });
 
-    const rows = response.data.values || [];
-    console.log("📄 Anzahl Kalorien-Zeilen:", rows.length);
+    // Aktivitätseinträge
+    const aktivRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: id,
+      range: "Aktivität!A2:C", // A = Datum, C = kcal
+    });
 
-    const kcalTage: Record<string, number> = {};
+    const kcalRows = eintragRes.data.values || [];
+    const aktivRows = aktivRes.data.values || [];
 
-    for (const row of rows) {
-      console.log("🔍 Zeile:", row);
+    const kcalProTag: Record<string, number> = {};
+    for (const row of kcalRows) {
       const [datum, , , kcal] = row;
-
-      if (!datum || !kcal) {
-        console.log("⛔️ Ungültige Zeile übersprungen:", row);
-        continue;
-      }
-
-      const key = datum.trim();
-      const num = parseFloat(String(kcal).replace(/[^\d.,-]/g, "").replace(",", "."));
-
-      if (isNaN(num)) {
-        console.log("⛔️ Keine gültige kcal-Zahl:", kcal, "→", row);
-        continue;
-      }
-
-      if (!kcalTage[key]) kcalTage[key] = 0;
-      kcalTage[key] += num;
+      const num = Number(kcal);
+      if (!datum || isNaN(num)) continue;
+      kcalProTag[datum] = (kcalProTag[datum] || 0) + num;
     }
 
-    console.log("📆 Aggregierte kcal pro Tag:", kcalTage);
+    const aktivProTag: Record<string, number> = {};
+    for (const row of aktivRows) {
+      const [datum, , kcal] = row;
+      const num = Number(kcal);
+      if (!datum || isNaN(num)) continue;
+      aktivProTag[datum] = (aktivProTag[datum] || 0) + num;
+    }
 
-    const sorted = Object.entries(kcalTage).sort(([a], [b]) => {
+    const alleTage = Array.from(new Set([
+      ...Object.keys(kcalProTag),
+      ...Object.keys(aktivProTag),
+    ])).sort((a, b) => {
       const [t1, m1, j1] = a.split(".");
       const [t2, m2, j2] = b.split(".");
       return new Date(`${j1}-${m1}-${t1}`).getTime() - new Date(`${j2}-${m2}-${t2}`).getTime();
     });
 
-    let kumuliertGegessen = 0;
-    let kumuliertVerbrauch = 0;
+    let kumKcal = 0;
+    let kumVerbrauch = 0;
+    const result = [];
 
-    const result = sorted.map(([datum, kcal]) => {
-      kumuliertGegessen += kcal;
-      kumuliertVerbrauch += tdee;
-      return {
-        datum,
-        kcalKumuliert: kumuliertGegessen,
-        verbrauchKumuliert: kumuliertVerbrauch,
-      };
-    });
+    for (const tag of alleTage) {
+      kumKcal += kcalProTag[tag] || 0;
+      kumVerbrauch += tdee + (aktivProTag[tag] || 0);
 
-    console.log("📊 Ergebnis für Chart:", result);
+      result.push({
+        datum: tag,
+        kcalKumuliert: kumKcal,
+        verbrauchKumuliert: kumVerbrauch,
+      });
+    }
 
     res.status(200).json(result);
   } catch (err) {
-    console.error("❌ Fehler bei /api/kcal-history:", err);
+    console.error("Fehler bei /api/kcal-history:", err);
     res.status(500).json({ error: "Fehler beim Abrufen der Kcal-Historie" });
   }
 }
