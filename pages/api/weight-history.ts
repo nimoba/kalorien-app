@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     }
 
-    // 📘 Kalorienverlauf
+    // 📘 Kalorien-Einträge
     const kcalData = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "Tabelle1!A2:G",
@@ -45,6 +45,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kalorienProTag[d] = (kalorienProTag[d] || 0) + Number(kcal);
     }
 
+    // 🏃 Aktivität einlesen
+    const aktivitaetRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: "Aktivitäten!A2:C",
+    });
+
+    const aktivitaetRows = aktivitaetRes.data.values || [];
+    for (const row of aktivitaetRows) {
+      const [datum, , kcal] = row;
+      if (!datum || !kcal) continue;
+      const d = datum.trim();
+      kalorienProTag[d] = (kalorienProTag[d] || 0) - Number(kcal); // 🔥 als NEGATIVER Verbrauch
+    }
+
     // 📊 Ziel-Kcal und TDEE aus Ziele-Tabelle
     const zielRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
@@ -52,11 +66,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const [zielKcalRaw, , , , , zielGewichtRaw, tdeeRaw] = zielRes.data.values?.[0] || [];
-    const zielKcal = Number(zielKcalRaw) || 2200;
     const zielGewicht = zielGewichtRaw ? Number(zielGewichtRaw) : null;
     const tdee = Number(tdeeRaw) || 2600;
 
-    // 📐 Theoretischer Gewichtsverlauf + synchronisierter Verlauf
+    // 📐 Verläufe
     const theoriewerte: { datum: string; gewicht: number }[] = [];
     const verlauf: { datum: string; gewicht: number }[] = [];
     const fett: { datum: string; wert: number | null }[] = [];
@@ -74,15 +87,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let lastMuskel: number | null = null;
 
     for (const tag of sortierteTage) {
-      const kcal = kalorienProTag[tag];
-      const defizit = tdee - kcal;
+      const konsumiert = kalorienProTag[tag];
+      const defizit = tdee - konsumiert;
       kumuliertesDefizit += defizit;
 
       const deltaKg = kumuliertesDefizit / 7700;
       const theoGewicht = parseFloat((letztesGewicht - deltaKg).toFixed(2));
       theoriewerte.push({ datum: tag, gewicht: theoGewicht });
 
-      // Verlaufsdaten synchron zum Kalorienverlauf
       const g = gewichtMap[tag];
       if (g) {
         letztesGewicht = g.gewicht;
@@ -95,14 +107,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       muskel.push({ datum: tag, wert: lastMuskel });
     }
 
-    // 📊 Gleitender Durchschnitt (7-Tage-Mittel)
     const smoothed = verlauf.map((_, i, arr) => {
       const slice = arr.slice(Math.max(i - 3, 0), i + 4);
       const avg = slice.reduce((sum, e) => sum + e.gewicht, 0) / slice.length;
       return { datum: verlauf[i].datum, gewicht: Number(avg.toFixed(2)) };
     });
 
-    // 📈 Lineare Regression (Trend)
     function lineRegression(yVals: number[]) {
       const x = yVals.map((_, i) => i);
       const y = yVals;
@@ -132,7 +142,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fett,
       muskel,
       zielGewicht,
-      zielKcal,
       tdee,
     });
   } catch (err) {

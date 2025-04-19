@@ -11,22 +11,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
 
+    // ✅ Ziel-Kcal laden (statt TDEE)
+    const zielRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: "Ziele!A2:A2", // Spalte A: Kcal-Ziel
+    });
+
+    const zielKcal = Number(zielRes.data.values?.[0]?.[0]) || 2200;
+
+    // 📄 Kalorien-Einträge
     const kcalRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "Tabelle1!A2:D",
     });
 
+    // 🏃 Aktivitäten
     const aktivRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "Aktivitäten!A2:C",
     });
-
-    const zieleRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range: "Ziele!G2:G2", // TDEE
-    });
-
-    const tdee = Number(zieleRes.data.values?.[0]?.[0]) || 2500;
 
     const today = new Date();
     const kcalRows = kcalRes.data.values || [];
@@ -35,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const kalorienMap = new Map<string, number>();
     const aktivitaetMap = new Map<string, number>();
 
-    // 🍽 Essen
+    // 🍽 Kalorien summieren
     for (const row of kcalRows) {
       const [datum, , , kcal] = row;
       const num = Number(kcal);
@@ -49,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kalorienMap.set(datum, (kalorienMap.get(datum) || 0) + num);
     }
 
-    // 🏃‍♂️ Aktivität (nur zum Ziel)
+    // 🏃 Aktivität summieren
     for (const row of aktivRows) {
       const [datum, , kcal] = row;
       const num = Number(kcal);
@@ -63,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       aktivitaetMap.set(datum, (aktivitaetMap.get(datum) || 0) + num);
     }
 
-    // 🎯 Ergebnis
+    // 🎯 Zusammenführen
     const allDates = new Set([...kalorienMap.keys(), ...aktivitaetMap.keys()]);
     const sorted = Array.from(allDates)
       .sort((a, b) => {
@@ -74,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .map((datum) => ({
         datum,
         kalorien: kalorienMap.get(datum) || 0,
-        ziel: tdee + (aktivitaetMap.get(datum) || 0),
+        ziel: zielKcal + (aktivitaetMap.get(datum) || 0),
       }));
 
     res.status(200).json(sorted);
