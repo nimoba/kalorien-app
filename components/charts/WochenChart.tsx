@@ -17,6 +17,7 @@ import { Chart } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { getOvershootColor } from "../../utils/colors";
 import { useEffect, useState } from "react";
+import { useZiele } from "../../hooks/useZiele"
 
 ChartJS.register(
   BarElement,
@@ -33,7 +34,8 @@ ChartJS.register(
 export function WochenChart() {
   const [history, setHistory] = useState<{ datum: string; kalorien: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const ziel = 2200;
+  const ziele = useZiele();
+  const ziel = ziele.zielKcal;
 
   useEffect(() => {
     fetch("/api/history")

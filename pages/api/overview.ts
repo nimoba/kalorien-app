@@ -10,16 +10,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
-
     const heute = new Date().toLocaleDateString("de-DE");
 
     // ✅ Zielwerte aus "Ziele" laden
     const zieleRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Ziele!A2:G2", // A: Kcal, B: KH, C: Eiweiß, D: Fett, E: Startgewicht, F: Zielgewicht, G: TDEE
+      range: "Ziele!A2:G2", // A: Kcal, B: KH, C: Eiweiß, D: Fett
     });
 
-    const [zielKcalRaw, zielKhRaw, zielEiweissRaw, zielFettRaw] = zieleRes.data.values?.[0] || [];
+    const zielRaw = zieleRes.data.values?.[0];
+    if (!zielRaw || zielRaw.length < 4) {
+      throw new Error("❌ Zielwerte konnten nicht geladen werden");
+    }
+
+    const [zielKcalRaw, zielKhRaw, zielEiweissRaw, zielFettRaw] = zielRaw;
 
     const zielKcal = Number(zielKcalRaw) || 2200;
     const zielKh = Number(zielKhRaw) || 250;
@@ -38,8 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .reduce((sum, row) => sum + (Number(row[2]) || 0), 0);
 
     // ✅ Skalierungsfaktor für Makros (Verhältnis TAGESZIEL + VERBRAUCH)
-    const skalierungsFaktor =
-      zielKcal > 0 ? (zielKcal + aktivitaetHeute) / zielKcal : 1;
+    const skalierungsFaktor = zielKcal > 0 ? (zielKcal + aktivitaetHeute) / zielKcal : 1;
 
     // ✅ Tagesdaten laden
     const datenRes = await sheets.spreadsheets.values.get({
@@ -90,7 +93,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       eintraege: eintraegeMitUhrzeit,
     });
   } catch (err) {
-    console.error("Fehler in /api/overview:", err);
-    res.status(500).json({ error: "Fehler beim Abrufen der Tagesdaten" });
+    console.error("❌ Fehler in /api/overview:", err);
+    res.status(500).json({
+      error: err instanceof Error ? err.message : "Fehler beim Abrufen der Tagesdaten",
+    });
   }
 }
