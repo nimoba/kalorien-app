@@ -165,7 +165,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             backgroundColor: "#444",
             border: "1px solid #666",
             borderRadius: 8,
-            padding: "10px 12px",
             fontSize: 16,
             cursor: "pointer",
             textAlign: "center",
