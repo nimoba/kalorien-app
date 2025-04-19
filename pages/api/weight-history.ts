@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     }
 
-    // 📘 Kalorien-Einträge
+    // 📘 Kalorien-Einträge (Konsum)
     const kcalData = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "Tabelle1!A2:G",
@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kalorienProTag[d] = (kalorienProTag[d] || 0) + Number(kcal);
     }
 
-    // 🏃 Aktivitätsdaten einlesen
+    // 🏃 Aktivitätsdaten
     const aktivitaetRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "Aktivitäten!A2:C",
@@ -75,10 +75,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fett: { datum: string; wert: number | null }[] = [];
     const muskel: { datum: string; wert: number | null }[] = [];
 
-    const sortierteTage = Object.keys({
-      ...kalorienProTag,
-      ...aktivitaetMap
-    }).sort((a, b) => {
+    const alleTage = Object.keys({ ...kalorienProTag, ...aktivitaetMap });
+    const sortierteTage = alleTage.sort((a, b) => {
       const [t1, m1, j1] = a.split(".");
       const [t2, m2, j2] = b.split(".");
       return new Date(`${j1}-${m1}-${t1}`).getTime() - new Date(`${j2}-${m2}-${t2}`).getTime();
@@ -92,8 +90,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (const tag of sortierteTage) {
       const konsumiert = kalorienProTag[tag] || 0;
       const aktiv = aktivitaetMap[tag] || 0;
-      const defizit = (tdee + aktiv) - konsumiert;
+      const verbraucht = tdee + aktiv;
 
+      const defizit = verbraucht - konsumiert;
       kumuliertesDefizit += defizit;
 
       const deltaKg = kumuliertesDefizit / 7700;
