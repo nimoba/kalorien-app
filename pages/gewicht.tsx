@@ -128,7 +128,20 @@ export default function GewichtSeite() {
     responsive: true,
     plugins: {
       legend: { position: "bottom" as const },
+      tooltip: {
+        enabled: true,
+        mode: "index" as const,
+        intersect: false,
+        callbacks: {
+            label: (context: import("chart.js").TooltipItem<"line">) =>
+                `${context.dataset.label}: ${context.formattedValue} kg`,
+                      },
+      },
     },
+    interaction: {
+        mode: "index" as const,
+        intersect: false,
+      },      
     scales: {
       y: {
         beginAtZero: false,
