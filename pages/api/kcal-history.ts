@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     for (const row of rows) {
       console.log("🔍 Zeile:", row);
-      const [datum, , kcal] = row;
+      const [datum, , , kcal] = row;
 
       if (!datum || !kcal) {
         console.log("⛔️ Ungültige Zeile übersprungen:", row);
