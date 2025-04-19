@@ -9,20 +9,24 @@ import { useZiele } from "../../hooks/useZiele"; // ⬅️ Import!
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-export default function KcalBilanzChart() {
+export default function KcalBilanzChart({ refresh }: { refresh: number }) {
     const [data, setData] = useState<any[]>([]);
   
-    useEffect(() => {
+    const load = () => {
       fetch("/api/kcal-history")
         .then((res) => res.json())
         .then((res) => setData(res));
-    }, []);
+    };
+  
+    useEffect(() => {
+      load();
+    }, [refresh]); // ⬅️ bei jeder Änderung neu laden
   
     if (data.length === 0) return null;
   
     const labels = data.map((e) => e.datum);
     const gegessen = data.map((e) => e.kcalKumuliert);
-    const verbraucht = data.map((e) => e.verbrauchKumuliert); // ⬅️ direkt aus API
+    const verbraucht = data.map((e) => e.verbrauchKumuliert);
   
     const chartData: ChartData<"line"> = {
       labels,
@@ -50,9 +54,7 @@ export default function KcalBilanzChart() {
         legend: { position: "bottom" },
       },
       scales: {
-        y: {
-          beginAtZero: false,
-        },
+        y: { beginAtZero: false },
       },
     };
   
@@ -63,4 +65,5 @@ export default function KcalBilanzChart() {
       </div>
     );
   }
+  
   

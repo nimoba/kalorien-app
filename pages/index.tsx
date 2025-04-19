@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showWeight, setShowWeight] = useState(false);
   const [showSport, setShowSport] = useState(false);
+  const [refreshBilanz, setRefreshBilanz] = useState(0);
 
   const loadDaten = () => {
     fetch("/api/overview")
@@ -34,6 +35,11 @@ export default function Dashboard() {
   useEffect(() => {
     loadDaten();
   }, []);
+
+  const refreshAll = () => {
+    loadDaten();
+    setRefreshBilanz((v) => v + 1);
+  };
 
   if (loading) {
     return <p style={{ color: "#fff", textAlign: "center" }}>⏳ Lade Tagesdaten...</p>;
@@ -74,11 +80,12 @@ export default function Dashboard() {
 
       {/* Monatsverlauf */}
       <div style={{ marginTop: 40 }}>
-        <WochenChart />
+        <WochenChart refresh={refreshBilanz} />
       </div>
 
+      {/* Bilanz-Chart */}
       <div style={{ marginTop: 40 }}>
-        <KcalBilanzChart />
+        <KcalBilanzChart refresh={refreshBilanz} />
       </div>
 
       {/* Floating Action Menu */}
@@ -92,7 +99,7 @@ export default function Dashboard() {
       {showForm && (
         <FloatingForm
           onClose={() => setShowForm(false)}
-          onRefresh={loadDaten}
+          onRefresh={refreshAll}
         />
       )}
 
@@ -100,7 +107,7 @@ export default function Dashboard() {
         <SettingsForm
           onClose={() => {
             setShowSettings(false);
-            loadDaten();
+            refreshAll();
           }}
         />
       )}
@@ -108,18 +115,18 @@ export default function Dashboard() {
       {showSport && (
         <SportForm
           onClose={() => setShowSport(false)}
-          onRefresh={loadDaten}
+          onRefresh={refreshAll}
         />
       )}
 
       {showWeight && (
         <GewichtForm
           onClose={() => setShowWeight(false)}
-          onRefresh={() => {}} // optional
+          onRefresh={refreshAll}
         />
       )}
 
-      {!showForm && !showSettings && !showWeight && <FloatingTabBar />}
+      {!showForm && !showSettings && !showWeight && !showSport && <FloatingTabBar />}
     </div>
   );
 }
