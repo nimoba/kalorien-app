@@ -155,24 +155,36 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           <button
             onClick={() => setScanning(true)}
-            style={{ ...buttonStyle, flex: 1, backgroundColor: "#444", border: "1px solid #666" }}
+            style={{
+              flex: 1,
+              backgroundColor: "#444",
+              border: "1px solid #666",
+              borderRadius: 8,
+              fontSize: 16,
+              padding: "10px 12px",
+              height: 48,
+              cursor: "pointer",
+              textAlign: "center",
+            }}
           >
             📷 Barcode
           </button>
 
-          <label style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#444",
-            border: "1px solid #666",
-            borderRadius: 8,
-            fontSize: 16,
-            cursor: "pointer",
-            textAlign: "center",
-            height: 48, // gleiche Höhe wie bei Barcode
-          }}>
+          <label
+            style={{
+              flex: 1,
+              backgroundColor: "#444",
+              border: "1px solid #666",
+              borderRadius: 8,
+              fontSize: 16,
+              height: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              textAlign: "center",
+            }}
+          >
             📸 Foto
             <input
               type="file"
@@ -215,8 +227,8 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
               }}
             />
           </label>
-
         </div>
+
 
         {scanning && (
           <div style={{ marginBottom: 12 }}>

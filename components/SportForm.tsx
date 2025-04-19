@@ -11,6 +11,7 @@ interface Props {
 export default function SportForm({ onClose, onRefresh }: Props) {
   const [desc, setDesc] = useState("");
   const [kcal, setKcal] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const speichern = async () => {
     const res = await fetch("/api/add-sport", {
@@ -24,6 +25,29 @@ export default function SportForm({ onClose, onRefresh }: Props) {
       onClose();
     } else {
       alert("❌ Fehler beim Speichern");
+    }
+  };
+
+  const schaetzeMitGPT = async () => {
+    if (!desc) return alert("Bitte Beschreibung eingeben");
+    setLoading(true);
+
+    const res = await fetch("/api/sport-gpt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        beschreibung: desc,
+        gewicht: 80, // ggf. später dynamisch machen
+      }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (res.ok) {
+      setKcal(String(data.kcal));
+    } else {
+      alert("❌ GPT konnte nichts berechnen");
     }
   };
 
@@ -45,13 +69,32 @@ export default function SportForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
 
-        <input
-          type="number"
-          placeholder="Verbrauchte kcal"
-          value={kcal}
-          onChange={(e) => setKcal(e.target.value)}
-          style={inputStyle}
-        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            type="number"
+            placeholder="Verbrauchte kcal"
+            value={kcal}
+            onChange={(e) => setKcal(e.target.value)}
+            style={{ ...inputStyle, flex: 1, marginBottom: 0 }}
+          />
+          <button
+            onClick={schaetzeMitGPT}
+            style={{
+              backgroundColor: "#444",
+              color: "#fff",
+              border: "1px solid #666",
+              borderRadius: 8,
+              padding: "10px 12px",
+              fontSize: 14,
+              cursor: "pointer",
+              flexShrink: 0,
+              minWidth: 40,
+            }}
+            disabled={loading}
+          >
+            {loading ? "..." : "💡"}
+          </button>
+        </div>
 
         <button onClick={speichern} style={saveStyle}>✅ Speichern</button>
       </motion.div>
@@ -59,7 +102,7 @@ export default function SportForm({ onClose, onRefresh }: Props) {
   );
 }
 
-// Style-Blöcke
+// Styles wie gehabt ...
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   top: 0, left: 0, right: 0, bottom: 0,
