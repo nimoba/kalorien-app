@@ -155,47 +155,43 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
 
-        <div style={{ display: "flex", gap: 6 }}>
-          <div style={{ flex: 1 }}>
-            <label style={miniLabel}>KH</label>
-            <input
-              type="number"
-              value={kh.toFixed(1)}
-              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
-              style={miniInputStyle}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={miniLabel}>F</label>
-            <input
-              type="number"
-              value={fett.toFixed(1)}
-              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
-              style={miniInputStyle}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={miniLabel}>P</label>
-            <input
-              type="number"
-              value={eiweiss.toFixed(1)}
-              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
-              style={miniInputStyle}
-            />
-          </div>
+        {/* Kompakte Makros */}
+        <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16 }}>
+          <label style={macroLabelStyle}>KH</label>
+          <input
+            type="number"
+            value={kh.toFixed(1)}
+            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
+            style={macroInputStyle}
+          />
+
+          <label style={macroLabelStyle}>F</label>
+          <input
+            type="number"
+            value={fett.toFixed(1)}
+            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
+            style={macroInputStyle}
+          />
+
+          <label style={macroLabelStyle}>P</label>
+          <input
+            type="number"
+            value={eiweiss.toFixed(1)}
+            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
+            style={macroInputStyle}
+          />
         </div>
 
-        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-          <label style={fotoButtonStyle}>
+        {/* Foto & Barcode Buttons weiter oben */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+          <button
+            onClick={() => setScanning(true)}
+            style={{ ...fotoButtonStyle, flex: 1 }}
+          >
             📷 Barcode
-            <input
-              type="button"
-              onClick={() => setScanning(true)}
-              style={{ display: "none" }}
-            />
-          </label>
+          </button>
 
-          <label style={fotoButtonStyle}>
+          <label style={{ ...fotoButtonStyle, flex: 1 }}>
             📸 Foto
             <input
               type="file"
@@ -277,24 +273,6 @@ const inputStyle: React.CSSProperties = {
   color: "#fff",
 };
 
-const miniInputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: 8,
-  fontSize: 13,
-  marginBottom: 8,
-  borderRadius: 6,
-  border: "1px solid #555",
-  backgroundColor: "#1e1e1e",
-  color: "#fff",
-};
-
-const miniLabel: React.CSSProperties = {
-  fontSize: 12,
-  marginBottom: 4,
-  color: "#aaa",
-  display: "block",
-};
-
 const buttonStyle: React.CSSProperties = {
   backgroundColor: "#36a2eb",
   color: "#fff",
@@ -308,14 +286,29 @@ const buttonStyle: React.CSSProperties = {
 };
 
 const fotoButtonStyle: React.CSSProperties = {
-  flex: 1,
   backgroundColor: "#444",
   border: "1px solid #666",
   borderRadius: 8,
   fontSize: 14,
   height: 42,
+  padding: "0 12px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
+};
+
+const macroInputStyle: React.CSSProperties = {
+  width: 50,
+  padding: 6,
+  fontSize: 13,
+  borderRadius: 6,
+  border: "1px solid #555",
+  backgroundColor: "#1e1e1e",
+  color: "#fff",
+};
+
+const macroLabelStyle: React.CSSProperties = {
+  fontSize: 12,
+  marginRight: 4,
 };
