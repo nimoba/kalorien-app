@@ -95,7 +95,9 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           overflowY: "auto",         // ⬅️ Scrollbar bei Bedarf
           boxShadow: "0 5px 20px rgba(0,0,0,0.3)",
           position: "relative",
-        }}
+          scrollbarWidth: "thin", // Firefox
+          scrollbarColor: "#555 #2a2a2a"
+        }as any}
       >
         <button
           onClick={onClose}
