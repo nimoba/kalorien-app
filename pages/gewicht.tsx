@@ -93,6 +93,7 @@ export default function GewichtSeite() {
         borderColor: "#ff6384",
         borderDash: [5, 5],
         pointRadius: 0,
+        pointHoverRadius: 5,
         tension: 0.2,
       },
       {
@@ -101,6 +102,7 @@ export default function GewichtSeite() {
         borderColor: "#f4d35e",
         borderWidth: 1,
         pointRadius: 0,
+        pointHoverRadius: 5,
         tension: 0.25,
       },
       {
