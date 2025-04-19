@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import BarcodeScanner from "./BarcodeScanner";
 
@@ -11,10 +11,10 @@ interface Props {
 
 export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [name, setName] = useState("");
-  const [kcal100, setKcal100] = useState("");
-  const [eiweiss100, setEiweiss100] = useState("");
-  const [fett100, setFett100] = useState("");
-  const [kh100, setKh100] = useState("");
+  const [basisKcal, setBasisKcal] = useState("");
+  const [basisEiweiss, setBasisEiweiss] = useState("");
+  const [basisFett, setBasisFett] = useState("");
+  const [basisKh, setBasisKh] = useState("");
   const [menge, setMenge] = useState("100");
   const [scanning, setScanning] = useState(false);
   const [gptInput, setGptInput] = useState("");
@@ -22,10 +22,15 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const parse = (val: string) => parseFloat(val || "0");
   const mengeVal = parse(menge);
 
-  const kcal = (parse(kcal100) / 100) * mengeVal;
-  const eiweiss = (parse(eiweiss100) / 100) * mengeVal;
-  const fett = (parse(fett100) / 100) * mengeVal;
-  const kh = (parse(kh100) / 100) * mengeVal;
+  const kcal = (parse(basisKcal) / 100) * mengeVal;
+  const eiweiss = (parse(basisEiweiss) / 100) * mengeVal;
+  const fett = (parse(basisFett) / 100) * mengeVal;
+  const kh = (parse(basisKh) / 100) * mengeVal;
+
+  const updateBasis = (value: number, setter: (v: string) => void) => {
+    const basis = (value / mengeVal) * 100;
+    setter(basis.toFixed(2));
+  };
 
   const handleGPT = async () => {
     if (!gptInput) return;
@@ -37,12 +42,12 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     const data = await res.json();
     if (res.ok) {
       setName(gptInput);
-      setKcal100(String(data.Kalorien));
-      setEiweiss100(String(data.Eiweiß));
-      setFett100(String(data.Fett));
-      setKh100(String(data.Kohlenhydrate));
-      setGptInput("");
+      setBasisKcal(String(data.Kalorien));
+      setBasisEiweiss(String(data.Eiweiß));
+      setBasisFett(String(data.Fett));
+      setBasisKh(String(data.Kohlenhydrate));
       setMenge("100");
+      setGptInput("");
     } else {
       alert("❌ Fehler bei GPT");
     }
@@ -54,10 +59,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     const data = await res.json();
     if (res.ok) {
       setName(data.name);
-      setKcal100(String(data.Kalorien));
-      setEiweiss100(String(data.Eiweiß));
-      setFett100(String(data.Fett));
-      setKh100(String(data.Kohlenhydrate));
+      setBasisKcal(String(data.Kalorien));
+      setBasisEiweiss(String(data.Eiweiß));
+      setBasisFett(String(data.Fett));
+      setBasisKh(String(data.Kohlenhydrate));
       setMenge("100");
     } else {
       alert("❌ Produkt nicht gefunden");
@@ -74,10 +79,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     const data = await res.json();
     if (res.ok) {
       setName(data.name || "Foto-Schätzung");
-      setKcal100(String(data.kcal));
-      setEiweiss100(String(data.eiweiss));
-      setFett100(String(data.fett));
-      setKh100(String(data.kh));
+      setBasisKcal(String(data.kcal));
+      setBasisEiweiss(String(data.eiweiss));
+      setBasisFett(String(data.fett));
+      setBasisKh(String(data.kh));
       setMenge("100");
     } else {
       alert("❌ Foto konnte nicht analysiert werden");
@@ -114,50 +119,73 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         style={formStyle}
       >
         <button onClick={onClose} style={closeStyle}>✕</button>
-        <h2 style={{ marginBottom: 16 }}>🍽️ Eintrag</h2>
+        <h2>➕ Neuer Eintrag</h2>
 
         <textarea
           value={gptInput}
           onChange={(e) => setGptInput(e.target.value)}
-          placeholder="z. B. 2 Eier und Toast"
+          placeholder="Was hast du gegessen?"
           rows={2}
           style={inputStyle}
         />
         <button onClick={handleGPT} style={buttonStyle}>💡 GPT Schätzen</button>
 
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" style={inputStyle} />
+        <input
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={inputStyle}
+        />
+
+        <input
+          type="number"
+          placeholder="Menge (g/ml)"
+          value={menge}
+          onChange={(e) => setMenge(e.target.value)}
+          style={inputStyle}
+        />
+
+        <input
+          type="number"
+          placeholder="Kalorien"
+          value={kcal.toFixed(1)}
+          onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)}
+          style={inputStyle}
+        />
 
         <div style={{ display: "flex", gap: 8 }}>
           <input
             type="number"
-            min="1"
-            value={menge}
-            onChange={(e) => setMenge(e.target.value)}
-            style={{ ...inputStyle, flex: 1 }}
-            placeholder="Menge (g/ml)"
+            placeholder="KH"
+            value={kh.toFixed(1)}
+            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
+            style={miniInputStyle}
           />
+          <input
+            type="number"
+            placeholder="Fett"
+            value={fett.toFixed(1)}
+            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
+            style={miniInputStyle}
+          />
+          <input
+            type="number"
+            placeholder="Eiweiß"
+            value={eiweiss.toFixed(1)}
+            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
+            style={miniInputStyle}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           <button
             onClick={() => setScanning(true)}
             style={{ ...buttonStyle, flex: 1, marginBottom: 0 }}
           >
             📷 Barcode
           </button>
-        </div>
 
-        <label style={labelStyle}>Kalorien: <span>{kcal.toFixed(1)} kcal</span></label>
-        <input type="number" value={kcal100} onChange={(e) => setKcal100(e.target.value)} style={inputStyle} />
-
-        <label style={labelStyle}>Eiweiß: <span>{eiweiss.toFixed(1)} g</span></label>
-        <input type="number" value={eiweiss100} onChange={(e) => setEiweiss100(e.target.value)} style={inputStyle} />
-
-        <label style={labelStyle}>Fett: <span>{fett.toFixed(1)} g</span></label>
-        <input type="number" value={fett100} onChange={(e) => setFett100(e.target.value)} style={inputStyle} />
-
-        <label style={labelStyle}>Kohlenhydrate: <span>{kh.toFixed(1)} g</span></label>
-        <input type="number" value={kh100} onChange={(e) => setKh100(e.target.value)} style={inputStyle} />
-
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <label style={fotoButton}>
+          <label style={fotoButtonStyle}>
             📸 Foto
             <input
               type="file"
@@ -193,7 +221,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   );
 }
 
-// 💄 Style
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   top: 0, left: 0, right: 0, bottom: 0,
@@ -239,10 +266,14 @@ const inputStyle: React.CSSProperties = {
   color: "#fff",
 };
 
-const labelStyle: React.CSSProperties = {
-  fontSize: 13,
-  marginBottom: 4,
-  color: "#aaa",
+const miniInputStyle: React.CSSProperties = {
+  flex: 1,
+  padding: 10,
+  fontSize: 14,
+  borderRadius: 8,
+  border: "1px solid #555",
+  backgroundColor: "#1e1e1e",
+  color: "#fff",
 };
 
 const buttonStyle: React.CSSProperties = {
@@ -257,17 +288,15 @@ const buttonStyle: React.CSSProperties = {
   marginBottom: 12,
 };
 
-const fotoButton: React.CSSProperties = {
+const fotoButtonStyle: React.CSSProperties = {
+  flex: 1,
   backgroundColor: "#444",
   border: "1px solid #666",
   borderRadius: 8,
   fontSize: 14,
   height: 42,
-  padding: "0 12px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
-  flex: 1,
 };
-
