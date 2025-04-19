@@ -109,6 +109,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       verlauf.push({ datum: tag, gewicht: parseFloat(letztesGewicht.toFixed(2)) });
       fett.push({ datum: tag, wert: lastFett });
       muskel.push({ datum: tag, wert: lastMuskel });
+      console.log(`📅 ${tag}`);
+      console.log(`➡️ TDEE: ${tdee}`);
+      console.log(`➡️ Aktivität: ${aktiv}`);
+      console.log(`➡️ Konsumiert: ${konsumiert}`);
+      console.log(`➡️ Defizit: ${defizit}`);
+      console.log(`➡️ Kumuliertes Defizit: ${kumuliertesDefizit}`);
+      console.log(`➡️ Gewicht: ${theoGewicht}`);
+
     }
 
     const smoothed = verlauf.map((_, i, arr) => {
