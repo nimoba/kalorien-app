@@ -29,6 +29,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     }
 
+    // ✅ Fixierter Startwert für theoretische Kurve
+    const startgewicht = gewichtRows[0]?.[1] ? Number(gewichtRows[0][1]) : 0;
+
     // 📘 Kalorien-Einträge (Konsum)
     const kcalData = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
@@ -83,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     let kumuliertesDefizit = 0;
-    let letztesGewicht = gewichtRows[0]?.[1] ? Number(gewichtRows[0][1]) : 0;
+    let letztesGewicht = startgewicht;
     let lastFett: number | null = null;
     let lastMuskel: number | null = null;
 
@@ -96,7 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kumuliertesDefizit += defizit;
 
       const deltaKg = kumuliertesDefizit / 7700;
-      const theoGewicht = parseFloat((letztesGewicht - deltaKg).toFixed(2));
+      const theoGewicht = parseFloat((startgewicht - deltaKg).toFixed(2));
       theoriewerte.push({ datum: tag, gewicht: theoGewicht });
 
       const g = gewichtMap[tag];
@@ -109,14 +112,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       verlauf.push({ datum: tag, gewicht: parseFloat(letztesGewicht.toFixed(2)) });
       fett.push({ datum: tag, wert: lastFett });
       muskel.push({ datum: tag, wert: lastMuskel });
-      console.log(`📅 ${tag}`);
-      console.log(`➡️ TDEE: ${tdee}`);
-      console.log(`➡️ Aktivität: ${aktiv}`);
-      console.log(`➡️ Konsumiert: ${konsumiert}`);
-      console.log(`➡️ Defizit: ${defizit}`);
-      console.log(`➡️ Kumuliertes Defizit: ${kumuliertesDefizit}`);
-      console.log(`➡️ Gewicht: ${theoGewicht}`);
-
     }
 
     const smoothed = verlauf.map((_, i, arr) => {
@@ -146,7 +141,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const trend = lineRegression(verlauf.map(v => v.gewicht));
 
     res.status(200).json({
-      startgewicht: verlauf[0]?.gewicht || 0,
+      startgewicht,
       verlauf,
       theoretisch: theoriewerte,
       geglättet: smoothed,
