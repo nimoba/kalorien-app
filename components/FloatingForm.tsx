@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import BarcodeScanner from "./BarcodeScanner";
 
@@ -11,14 +11,21 @@ interface Props {
 
 export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [name, setName] = useState("");
-  const [kcal, setKcal] = useState("");
-  const [eiweiss, setEiweiss] = useState("");
-  const [fett, setFett] = useState("");
-  const [kh, setKh] = useState("");
-  const [gramm, setGramm] = useState("100");
-  const [menge, setMenge] = useState("1");
+  const [kcal100, setKcal100] = useState("");
+  const [eiweiss100, setEiweiss100] = useState("");
+  const [fett100, setFett100] = useState("");
+  const [kh100, setKh100] = useState("");
+  const [menge, setMenge] = useState("100");
   const [scanning, setScanning] = useState(false);
   const [gptInput, setGptInput] = useState("");
+
+  const parse = (val: string) => parseFloat(val || "0");
+  const mengeVal = parse(menge);
+
+  const kcal = (parse(kcal100) / 100) * mengeVal;
+  const eiweiss = (parse(eiweiss100) / 100) * mengeVal;
+  const fett = (parse(fett100) / 100) * mengeVal;
+  const kh = (parse(kh100) / 100) * mengeVal;
 
   const handleGPT = async () => {
     if (!gptInput) return;
@@ -30,12 +37,12 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     const data = await res.json();
     if (res.ok) {
       setName(gptInput);
-      setKcal(String(data.Kalorien));
-      setEiweiss(String(data.Eiweiß));
-      setFett(String(data.Fett));
-      setKh(String(data.Kohlenhydrate));
-      setGramm("100");
+      setKcal100(String(data.Kalorien));
+      setEiweiss100(String(data.Eiweiß));
+      setFett100(String(data.Fett));
+      setKh100(String(data.Kohlenhydrate));
       setGptInput("");
+      setMenge("100");
     } else {
       alert("❌ Fehler bei GPT");
     }
@@ -43,15 +50,15 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 
   const handleBarcode = async (code: string) => {
     setScanning(false);
-    const res = await fetch(`/api/barcode?code=${code}&menge=${menge}`);
+    const res = await fetch(`/api/barcode?code=${code}&menge=1`);
     const data = await res.json();
     if (res.ok) {
       setName(data.name);
-      setKcal(String(data.Kalorien));
-      setEiweiss(String(data.Eiweiß));
-      setFett(String(data.Fett));
-      setKh(String(data.Kohlenhydrate));
-      setGramm("100");
+      setKcal100(String(data.Kalorien));
+      setEiweiss100(String(data.Eiweiß));
+      setFett100(String(data.Fett));
+      setKh100(String(data.Kohlenhydrate));
+      setMenge("100");
     } else {
       alert("❌ Produkt nicht gefunden");
     }
@@ -67,11 +74,11 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     const data = await res.json();
     if (res.ok) {
       setName(data.name || "Foto-Schätzung");
-      setKcal(String(data.kcal));
-      setEiweiss(String(data.eiweiss));
-      setFett(String(data.fett));
-      setKh(String(data.kh));
-      setGramm("100");
+      setKcal100(String(data.kcal));
+      setEiweiss100(String(data.eiweiss));
+      setFett100(String(data.fett));
+      setKh100(String(data.kh));
+      setMenge("100");
     } else {
       alert("❌ Foto konnte nicht analysiert werden");
     }
@@ -83,10 +90,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
-        kcal: (parseFloat(kcal) / 100) * parseFloat(gramm),
-        eiweiss: (parseFloat(eiweiss) / 100) * parseFloat(gramm),
-        fett: (parseFloat(fett) / 100) * parseFloat(gramm),
-        kh: (parseFloat(kh) / 100) * parseFloat(gramm),
+        kcal,
+        eiweiss,
+        fett,
+        kh,
       }),
     });
 
@@ -99,82 +106,58 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   };
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }}>
+    <div style={overlayStyle}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
-        style={{
-          backgroundColor: "#2a2a2a",
-          color: "#fff",
-          padding: 24,
-          borderRadius: 16,
-          width: "90%",
-          maxWidth: 400,
-          boxShadow: "0 5px 20px rgba(0,0,0,0.3)",
-          position: "relative"
-        }}
+        style={formStyle}
       >
-        <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, background: "transparent", color: "#fff", fontSize: 20, border: "none", cursor: "pointer" }}>✕</button>
-
-        <h2>➕ Neuer Eintrag</h2>
+        <button onClick={onClose} style={closeStyle}>✕</button>
+        <h2 style={{ marginBottom: 16 }}>🍽️ Eintrag</h2>
 
         <textarea
           value={gptInput}
           onChange={(e) => setGptInput(e.target.value)}
-          placeholder="GPT Beschreibung (z.B. 2 Eier und Toast)"
+          placeholder="z. B. 2 Eier und Toast"
           rows={2}
           style={inputStyle}
         />
         <button onClick={handleGPT} style={buttonStyle}>💡 GPT Schätzen</button>
 
-        <label>Produktname:</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" style={inputStyle} />
 
-        <label>Kalorien / 100g:</label>
-        <input type="number" value={kcal} onChange={(e) => setKcal(e.target.value)} style={inputStyle} />
-
-        <label>Eiweiß / 100g:</label>
-        <input type="number" value={eiweiss} onChange={(e) => setEiweiss(e.target.value)} style={inputStyle} />
-
-        <label>Fett / 100g:</label>
-        <input type="number" value={fett} onChange={(e) => setFett(e.target.value)} style={inputStyle} />
-
-        <label>Kohlenhydrate / 100g:</label>
-        <input type="number" value={kh} onChange={(e) => setKh(e.target.value)} style={inputStyle} />
-
-        <label>Gramm / ml:</label>
-        <input type="number" value={gramm} onChange={(e) => setGramm(e.target.value)} style={inputStyle} />
-
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            type="number"
+            min="1"
+            value={menge}
+            onChange={(e) => setMenge(e.target.value)}
+            style={{ ...inputStyle, flex: 1 }}
+            placeholder="Menge (g/ml)"
+          />
           <button
             onClick={() => setScanning(true)}
-            style={{
-              flex: 1,
-              backgroundColor: "#444",
-              border: "1px solid #666",
-              borderRadius: 8,
-              fontSize: 16,
-              padding: "10px 12px",
-              height: 48,
-              cursor: "pointer",
-            }}
+            style={{ ...buttonStyle, flex: 1, marginBottom: 0 }}
           >
             📷 Barcode
           </button>
+        </div>
 
-          <label style={{
-            flex: 1,
-            backgroundColor: "#444",
-            border: "1px solid #666",
-            borderRadius: 8,
-            fontSize: 16,
-            height: 48,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}>
+        <label style={labelStyle}>Kalorien: <span>{kcal.toFixed(1)} kcal</span></label>
+        <input type="number" value={kcal100} onChange={(e) => setKcal100(e.target.value)} style={inputStyle} />
+
+        <label style={labelStyle}>Eiweiß: <span>{eiweiss.toFixed(1)} g</span></label>
+        <input type="number" value={eiweiss100} onChange={(e) => setEiweiss100(e.target.value)} style={inputStyle} />
+
+        <label style={labelStyle}>Fett: <span>{fett.toFixed(1)} g</span></label>
+        <input type="number" value={fett100} onChange={(e) => setFett100(e.target.value)} style={inputStyle} />
+
+        <label style={labelStyle}>Kohlenhydrate: <span>{kh.toFixed(1)} g</span></label>
+        <input type="number" value={kh100} onChange={(e) => setKh100(e.target.value)} style={inputStyle} />
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <label style={fotoButton}>
             📸 Foto
             <input
               type="file"
@@ -202,7 +185,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           </div>
         )}
 
-        <button onClick={handleSpeichern} style={{ ...buttonStyle, backgroundColor: "#3cb043", width: "100%" }}>
+        <button onClick={handleSpeichern} style={{ ...buttonStyle, backgroundColor: "#3cb043" }}>
           ✅ Eintragen
         </button>
       </motion.div>
@@ -210,15 +193,56 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   );
 }
 
+// 💄 Style
+const overlayStyle: React.CSSProperties = {
+  position: "fixed",
+  top: 0, left: 0, right: 0, bottom: 0,
+  background: "rgba(0,0,0,0.6)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 999,
+};
+
+const formStyle: React.CSSProperties = {
+  backgroundColor: "#2a2a2a",
+  color: "#fff",
+  padding: 24,
+  borderRadius: 16,
+  width: "90%",
+  maxWidth: 400,
+  maxHeight: "90vh",
+  overflowY: "auto",
+  boxShadow: "0 5px 20px rgba(0,0,0,0.3)",
+  position: "relative",
+};
+
+const closeStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 12,
+  right: 12,
+  background: "transparent",
+  color: "#fff",
+  fontSize: 20,
+  border: "none",
+  cursor: "pointer",
+};
+
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: 12,
-  fontSize: 16,
-  marginBottom: 12,
+  padding: 10,
+  fontSize: 14,
+  marginBottom: 10,
   borderRadius: 8,
   border: "1px solid #555",
   backgroundColor: "#1e1e1e",
   color: "#fff",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 13,
+  marginBottom: 4,
+  color: "#aaa",
 };
 
 const buttonStyle: React.CSSProperties = {
@@ -226,9 +250,24 @@ const buttonStyle: React.CSSProperties = {
   color: "#fff",
   border: "none",
   borderRadius: 8,
-  padding: "10px 16px",
-  fontSize: 16,
+  padding: "10px 12px",
+  fontSize: 14,
   cursor: "pointer",
   width: "100%",
-  marginBottom: 16,
+  marginBottom: 12,
 };
+
+const fotoButton: React.CSSProperties = {
+  backgroundColor: "#444",
+  border: "1px solid #666",
+  borderRadius: 8,
+  fontSize: 14,
+  height: 42,
+  padding: "0 12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  flex: 1,
+};
+
