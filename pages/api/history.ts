@@ -21,12 +21,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       range: "Aktivitäten!A2:C",
     });
 
+    const zieleRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: "Ziele!G2:G2", // TDEE
+    });
+
+    const tdee = Number(zieleRes.data.values?.[0]?.[0]) || 2500;
+
+    const today = new Date();
     const kcalRows = kcalRes.data.values || [];
     const aktivRows = aktivRes.data.values || [];
 
-    const today = new Date();
-    const datenMap = new Map<string, number>();
+    const kalorienMap = new Map<string, number>();
+    const aktivitaetMap = new Map<string, number>();
 
+    // 🍽 Essen
     for (const row of kcalRows) {
       const [datum, , , kcal] = row;
       const num = Number(kcal);
@@ -37,9 +46,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const diff = (today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
       if (diff < 0 || diff > 30) continue;
 
-      datenMap.set(datum, (datenMap.get(datum) || 0) + num);
+      kalorienMap.set(datum, (kalorienMap.get(datum) || 0) + num);
     }
 
+    // 🏃‍♂️ Aktivität (nur zum Ziel)
     for (const row of aktivRows) {
       const [datum, , kcal] = row;
       const num = Number(kcal);
@@ -50,16 +60,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const diff = (today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
       if (diff < 0 || diff > 30) continue;
 
-      datenMap.set(datum, (datenMap.get(datum) || 0) + num);
+      aktivitaetMap.set(datum, (aktivitaetMap.get(datum) || 0) + num);
     }
 
-    const sorted = Array.from(datenMap.entries())
-      .sort(([a], [b]) => {
+    // 🎯 Ergebnis
+    const allDates = new Set([...kalorienMap.keys(), ...aktivitaetMap.keys()]);
+    const sorted = Array.from(allDates)
+      .sort((a, b) => {
         const [da, ma, ja] = a.split(".").map(Number);
         const [db, mb, jb] = b.split(".").map(Number);
         return new Date(ja, ma - 1, da).getTime() - new Date(jb, mb - 1, db).getTime();
       })
-      .map(([datum, kalorien]) => ({ datum, kalorien }));
+      .map((datum) => ({
+        datum,
+        kalorien: kalorienMap.get(datum) || 0,
+        ziel: tdee + (aktivitaetMap.get(datum) || 0),
+      }));
 
     res.status(200).json(sorted);
   } catch (err) {
