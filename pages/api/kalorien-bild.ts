@@ -8,20 +8,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const prompt = `
-Du siehst ein Bild von einem Gericht.
-Bitte schätze realistisch, was es ist, und gib folgendes im JSON-Format zurück:
-
-{
-  "name": "Beispielgericht",
-  "kcal": 540,
-  "eiweiss": 25,
-  "fett": 20,
-  "kh": 60
-}
-
-Antworte ausschließlich im JSON-Format. Keine Erklärungen.
-`;
-
+  Du siehst ein Bild von einem Gericht.
+  Bitte schätze realistisch:
+  
+  - was es ist (Name),
+  - die Kalorien und Makros (für die dargestellte Menge),
+  - und die Menge in Gramm oder ml.
+  
+  Antworte **nur** im folgenden JSON-Format:
+  
+  {
+    "name": "Beispielgericht",
+    "kcal": 540,
+    "eiweiss": 25,
+    "fett": 20,
+    "kh": 60,
+    "menge": 400
+  }
+  `;
+  
   try {
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",

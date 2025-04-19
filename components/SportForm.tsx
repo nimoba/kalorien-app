@@ -15,7 +15,7 @@ export default function SportForm({ onClose, onRefresh }: Props) {
   const [gewicht, setGewicht] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("../api/gewicht-latest")
+    fetch("/api/gewicht-latest")
       .then((res) => res.json())
       .then((data) => {
         if (data.gewicht) {

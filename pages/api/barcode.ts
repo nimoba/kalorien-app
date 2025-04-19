@@ -19,7 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let eiweiß = safe(p.nutriments?.["proteins_100g"]);
     let fett = safe(p.nutriments?.["fat_100g"]);
     let kohlenhydrate = safe(p.nutriments?.["carbohydrates_100g"]);
-    
 
     const isMissing = (val: any) => val === undefined || val === null;
 
@@ -29,6 +28,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       isMissing(p.nutriments?.["fat_100g"]) ||
       isMissing(p.nutriments?.["carbohydrates_100g"]);
 
+    // 🔍 MENGE schätzen
+    let menge = 100; // Fallback
+    if (typeof p.serving_quantity === "number") {
+      menge = p.serving_quantity;
+    } else if (typeof p.serving_size === "string") {
+      const match = p.serving_size.match(/(\d+)[ ]?(g|ml)?/i);
+      if (match) {
+        menge = parseInt(match[1], 10);
+      }
+    }
 
     if (fehlenMakros) {
       const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -43,14 +52,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           messages: [
             {
               role: "system",
-              content: `Du bist ein Ernährungsberater. Gib nur geschätzte Nährwerte für ein bekanntes Produkt aus – **nicht pro 100g**, sondern realistisch für **eine konsumierte Portion**. Verwende dabei allgemeine Marktstandards:
-              - z. B. 1 Happy Hippo = 20g ≈ 118kcal
-              - z. B. 1 Dose Red Bull = 250ml ≈ 112 kcal
-              Gib die Werte im JSON-Format aus: {"Kalorien":..., "Eiweiß":..., "Fett":..., "Kohlenhydrate":...}`
+              content: `Du bist ein Ernährungsberater. Gib nur geschätzte Nährwerte für ein bekanntes Produkt aus – **nicht pro 100g**, sondern realistisch für **eine konsumierte Portion**. Verwende dabei allgemeine Marktstandards.
+              
+Antwort **nur** im folgenden JSON-Format:
+
+{
+  "Kalorien": ...,
+  "Eiweiß": ...,
+  "Fett": ...,
+  "Kohlenhydrate": ...,
+  "menge": ...
+}`,
             },
             {
               role: "user",
-              content: `Ich habe das Produkt „${produktname}“ gegessen. Bitte schätze Kalorien, Eiweiß, Fett, Kohlenhydrate für eine normale Portion.`,
+              content: `Ich habe das Produkt „${produktname}“ gegessen. Bitte schätze Kalorien, Eiweiß, Fett, Kohlenhydrate und Menge (in g oder ml) für eine normale Portion.`,
             },
           ],
         }),
@@ -64,6 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       eiweiß = parsed.Eiweiß;
       fett = parsed.Fett;
       kohlenhydrate = parsed.Kohlenhydrate;
+      menge = parsed.menge ?? menge; // GPT liefert Menge → falls vorhanden, übernehmen
     }
 
     // ✅ Nur Daten zurückgeben – NICHT speichern
@@ -73,6 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       Eiweiß: eiweiß,
       Fett: fett,
       Kohlenhydrate: kohlenhydrate,
+      menge,
       quelle: fehlenMakros ? "gpt" : "openfoodfacts",
     });
   } catch (err) {

@@ -46,7 +46,11 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisEiweiss(String(data.Eiweiß));
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
-      setMenge("100");
+      if (data.menge) {
+        setMenge(String(data.menge));
+      } else {
+        setMenge("100");
+      }
       setGptInput("");
     } else {
       alert("❌ Fehler bei GPT");
@@ -57,17 +61,23 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     setScanning(false);
     const res = await fetch(`/api/barcode?code=${code}&menge=1`);
     const data = await res.json();
+  
     if (res.ok) {
       setName(data.name);
       setBasisKcal(String(data.Kalorien));
       setBasisEiweiss(String(data.Eiweiß));
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
-      setMenge("100");
+      if (data.menge) {
+        setMenge(String(data.menge));
+      } else {
+        setMenge("100");
+      }
     } else {
       alert("❌ Produkt nicht gefunden");
     }
   };
+  
 
   const handleFoto = async (base64: string) => {
     const res = await fetch("/api/kalorien-bild", {
@@ -83,7 +93,11 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisEiweiss(String(data.eiweiss));
       setBasisFett(String(data.fett));
       setBasisKh(String(data.kh));
-      setMenge("100");
+      if (data.menge) {
+        setMenge(String(data.menge));
+      } else {
+        setMenge("100");
+      }
     } else {
       alert("❌ Foto konnte nicht analysiert werden");
     }
@@ -119,7 +133,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         style={formStyle}
       >
         <button onClick={onClose} style={closeStyle}>✕</button>
-        <h2>➕ Neuer Eintrag</h2>
+        <h2 style={{ marginBottom: 12 }}>➕ Neuer Eintrag</h2>
 
         <label>GPT Beschreibung:</label>
         <textarea
@@ -132,58 +146,47 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         <button onClick={handleGPT} style={buttonStyle}>💡 GPT Schätzen</button>
 
         <label>Produktname:</label>
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={inputStyle}
-        />
+        <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
 
         <label>Menge (g/ml):</label>
-        <input
-          type="number"
-          value={menge}
-          onChange={(e) => setMenge(e.target.value)}
-          style={inputStyle}
-        />
+        <input type="number" value={menge} onChange={(e) => setMenge(e.target.value)} style={inputStyle} />
 
         <label>Kalorien:</label>
-        <input
-          type="number"
-          value={kcal.toFixed(1)}
-          onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)}
-          style={inputStyle}
-        />
+        <input type="number" value={kcal.toFixed(1)} onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)} style={inputStyle} />
 
         {/* Kompakte Makros */}
-        <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16 }}>
-          <label style={macroLabelStyle}>KH</label>
-          <input
-            type="number"
-            value={kh.toFixed(1)}
-            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
-            style={macroInputStyle}
-          />
-
-          <label style={macroLabelStyle}>F</label>
-          <input
-            type="number"
-            value={fett.toFixed(1)}
-            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
-            style={macroInputStyle}
-          />
-
-          <label style={macroLabelStyle}>P</label>
-          <input
-            type="number"
-            value={eiweiss.toFixed(1)}
-            onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
-            style={macroInputStyle}
-          />
+        <div style={macroRow}>
+          <div style={macroGroup}>
+            <label style={macroLabel}>KH</label>
+            <input
+              type="number"
+              value={kh.toFixed(1)}
+              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
+              style={macroInput}
+            />
+          </div>
+          <div style={macroGroup}>
+            <label style={macroLabel}>F</label>
+            <input
+              type="number"
+              value={fett.toFixed(1)}
+              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
+              style={macroInput}
+            />
+          </div>
+          <div style={macroGroup}>
+            <label style={macroLabel}>P</label>
+            <input
+              type="number"
+              value={eiweiss.toFixed(1)}
+              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
+              style={macroInput}
+            />
+          </div>
         </div>
 
-        {/* Foto & Barcode Buttons weiter oben */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+        {/* Barcode + Foto */}
+        <div style={{ display: "flex", gap: 8, marginTop: 8, marginBottom: 16 }}>
           <button
             onClick={() => setScanning(true)}
             style={{ ...fotoButtonStyle, flex: 1 }}
@@ -227,7 +230,8 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   );
 }
 
-// STYLES
+// === STYLES ===
+
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   top: 0, left: 0, right: 0, bottom: 0,
@@ -241,7 +245,7 @@ const overlayStyle: React.CSSProperties = {
 const formStyle: React.CSSProperties = {
   backgroundColor: "#2a2a2a",
   color: "#fff",
-  padding: 24,
+  padding: 16,
   borderRadius: 16,
   width: "90%",
   maxWidth: 400,
@@ -264,9 +268,9 @@ const closeStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: 10,
+  padding: 8,
   fontSize: 14,
-  marginBottom: 12,
+  marginBottom: 6,
   borderRadius: 8,
   border: "1px solid #555",
   backgroundColor: "#1e1e1e",
@@ -278,11 +282,11 @@ const buttonStyle: React.CSSProperties = {
   color: "#fff",
   border: "none",
   borderRadius: 8,
-  padding: "10px 12px",
+  padding: "8px 10px",
   fontSize: 14,
   cursor: "pointer",
   width: "100%",
-  marginBottom: 12,
+  marginBottom: 10,
 };
 
 const fotoButtonStyle: React.CSSProperties = {
@@ -290,25 +294,37 @@ const fotoButtonStyle: React.CSSProperties = {
   border: "1px solid #666",
   borderRadius: 8,
   fontSize: 14,
-  height: 42,
-  padding: "0 12px",
+  height: 40,
+  padding: "0 10px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
 };
 
-const macroInputStyle: React.CSSProperties = {
-  width: 50,
-  padding: 6,
-  fontSize: 13,
+const macroRow: React.CSSProperties = {
+  display: "flex",
+  gap: 8,
+  marginBottom: 6,
+};
+
+const macroGroup: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+};
+
+const macroLabel: React.CSSProperties = {
+  fontSize: 12,
+  color: "#aaa",
+};
+
+const macroInput: React.CSSProperties = {
+  width: 40,
+  padding: 4,
+  fontSize: 12,
   borderRadius: 6,
   border: "1px solid #555",
   backgroundColor: "#1e1e1e",
   color: "#fff",
-};
-
-const macroLabelStyle: React.CSSProperties = {
-  fontSize: 12,
-  marginRight: 4,
 };
