@@ -23,8 +23,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error("❌ Zielwerte konnten nicht geladen werden");
     }
 
-    const [zielKcalRaw, zielKhRaw, zielEiweissRaw, zielFettRaw] = zielRaw;
-
+    const ziele = zieleRes.data.values;
+    if (!ziele || !Array.isArray(ziele) || ziele.length === 0) {
+      throw new Error("Zielwerte aus 'Ziele' konnten nicht geladen werden.");
+    }
+    
+    const [zielKcalRaw, zielKhRaw, zielEiweissRaw, zielFettRaw] = ziele[0];
+    
     const zielKcal = Number(zielKcalRaw) || 2200;
     const zielKh = Number(zielKhRaw) || 250;
     const zielEiweiss = Number(zielEiweissRaw) || 130;
