@@ -7,7 +7,6 @@ import { TagesLineChart } from "../components/charts/TagesLineChart";
 import { WochenChart } from "../components/charts/WochenChart";
 import FloatingForm from "../components/FloatingForm";
 import SettingsForm from "../components/SettingsForm";
-import { useZiele } from "../hooks/useZiele";
 import FloatingActionMenu from "../components/FloatingActionMenu";
 import GewichtForm from "../components/GewichtForm";
 import FloatingTabBar from "../components/FloatingTabBar";
@@ -19,8 +18,6 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [daten, setDaten] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshZiele, setRefreshZiele] = useState(0);
-  const ziele = useZiele(refreshZiele);
   const [showWeight, setShowWeight] = useState(false);
   const [showSport, setShowSport] = useState(false);
 
@@ -55,30 +52,31 @@ export default function Dashboard() {
         backgroundColor: "#2c2c2c",
         minHeight: "100vh",
         color: "#ffffff",
-        paddingBottom: "100px", // für die Höhe der Tabbar + etwas Abstand
+        paddingBottom: "100px",
       }}
     >
       <h1>📊 Dein Dashboard</h1>
 
       {/* Kalorien Halbkreis */}
-      <KalorienHalbkreis gegessen={daten.kalorien} ziel={ziele.zielKcal} />
+      <KalorienHalbkreis gegessen={daten.kalorien} ziel={daten.ziel} />
 
       {/* Makro-Balken */}
       <div style={{ marginTop: 40 }}>
-        <MakroBalken label="Kohlenhydrate" value={daten.kh} ziel={ziele.zielKh} farbe="#36a2eb" />
-        <MakroBalken label="Eiweiß" value={daten.eiweiss} ziel={ziele.zielEiweiss} farbe="#4bc0c0" />
-        <MakroBalken label="Fett" value={daten.fett} ziel={ziele.zielFett} farbe="#ffcd56" />
+        <MakroBalken label="Kohlenhydrate" value={daten.kh} ziel={daten.zielKh} farbe="#36a2eb" />
+        <MakroBalken label="Eiweiß" value={daten.eiweiss} ziel={daten.zielEiweiss} farbe="#4bc0c0" />
+        <MakroBalken label="Fett" value={daten.fett} ziel={daten.zielFett} farbe="#ffcd56" />
       </div>
 
       {/* Tagesverlauf */}
       <div style={{ marginTop: 40 }}>
-        <TagesLineChart eintraege={daten.eintraege} ziel={ziele.zielKcal} />
+        <TagesLineChart eintraege={daten.eintraege} ziel={daten.ziel} />
       </div>
 
       {/* Monatsverlauf */}
       <div style={{ marginTop: 40 }}>
         <WochenChart />
       </div>
+
       <div style={{ marginTop: 40 }}>
         <KcalBilanzChart />
       </div>
@@ -91,8 +89,6 @@ export default function Dashboard() {
         onOpenSport={() => setShowSport(true)}
       />
 
-
-      {/* Eingabeformular */}
       {showForm && (
         <FloatingForm
           onClose={() => setShowForm(false)}
@@ -100,29 +96,26 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Einstellungen */}
       {showSettings && (
         <SettingsForm
           onClose={() => {
             setShowSettings(false);
             loadDaten();
-            setRefreshZiele((v) => v + 1); // 🆕 zwingt den Hook zum Neuladen
           }}
         />
-      
       )}
-      
+
       {showSport && (
         <SportForm
           onClose={() => setShowSport(false)}
-          onRefresh={loadDaten} // oder was du brauchst
+          onRefresh={loadDaten}
         />
       )}
 
       {showWeight && (
         <GewichtForm
           onClose={() => setShowWeight(false)}
-          onRefresh={() => {}} // falls du irgendwann etwas reloaden willst
+          onRefresh={() => {}} // optional
         />
       )}
 
