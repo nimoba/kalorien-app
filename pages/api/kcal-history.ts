@@ -31,12 +31,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const kcalTage: Record<string, number> = {};
 
     for (const row of rows) {
+      console.log("🔍 Zeile:", row);
       const [datum, , kcal] = row;
-      if (!datum || !kcal) continue;
+
+      if (!datum || !kcal) {
+        console.log("⛔️ Ungültige Zeile übersprungen:", row);
+        continue;
+      }
 
       const key = datum.trim();
-      const num = Number(kcal);
-      if (isNaN(num)) continue;
+      const num = parseFloat(String(kcal).replace(/[^\d.,-]/g, "").replace(",", "."));
+
+      if (isNaN(num)) {
+        console.log("⛔️ Keine gültige kcal-Zahl:", kcal, "→", row);
+        continue;
+      }
 
       if (!kcalTage[key]) kcalTage[key] = 0;
       kcalTage[key] += num;
