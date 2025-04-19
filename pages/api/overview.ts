@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 🏃 Aktivität von heute
     const aktivitaetRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Aktivität!A2:C",
+      range: "Aktivitäten!A2:C",
     });
 
     const aktivitaetRows = aktivitaetRes.data.values || [];
