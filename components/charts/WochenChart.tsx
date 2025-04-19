@@ -32,13 +32,11 @@ ChartJS.register(
 );
 
 export function WochenChart() {
-  const [history, setHistory] = useState<{ datum: string; kalorien: number }[]>([]);
+  const [history, setHistory] = useState<{ datum: string; kalorien: number; ziel: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const ziele = useZiele();
-  const ziel = ziele.zielKcal;
 
   useEffect(() => {
-    fetch("/api/history")
+    fetch("/api/history") // ⬅️ erwartet jetzt auch ziel mit
       .then((res) => res.json())
       .then((data) => {
         setHistory(data);
@@ -53,7 +51,8 @@ export function WochenChart() {
 
   const labels = history.map((e) => e.datum);
   const daten = history.map((e) => e.kalorien);
-  const barColors = daten.map((val) => getOvershootColor(val, ziel, "#36a2eb"));
+  const ziele = history.map((e) => e.ziel);
+  const barColors = daten.map((val, i) => getOvershootColor(val, ziele[i], "#36a2eb"));
 
   const data: ChartData<"bar" | "line"> = {
     labels,
@@ -67,8 +66,8 @@ export function WochenChart() {
       },
       {
         type: "line",
-        label: "Ziel",
-        data: new Array(labels.length).fill(ziel),
+        label: "Tagesziel",
+        data: ziele,
         borderColor: "#ff6384",
         borderDash: [5, 5],
         pointRadius: 0,
