@@ -10,15 +10,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
-    const range = "Tabelle1!A:G"; // Spalten: Datum | Uhrzeit | Eingabe | Kalorien | Eiweiß | Fett | KH
 
-    const sheetData = await sheets.spreadsheets.values.get({
+    const heute = new Date().toLocaleDateString("de-DE");
+
+    // ✅ Zielwerte aus "Ziele" laden
+    const zieleRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range,
+      range: "Ziele!A2:G2", // A: Kcal, B: KH, C: Eiweiß, D: Fett, E: Start, F: Zielgewicht, G: TDEE
     });
 
-    const rows = sheetData.data.values || [];
-    const heute = new Date().toLocaleDateString("de-DE");
+    const [zielKcalRaw, zielKhRaw, zielEiweissRaw, zielFettRaw] = zieleRes.data.values?.[0] || [];
+
+    const zielKcal = Number(zielKcalRaw) || 2200;
+    const zielKh = Number(zielKhRaw) || 250;
+    const zielEiweiss = Number(zielEiweissRaw) || 130;
+    const zielFett = Number(zielFettRaw) || 70;
+
+    // ✅ Aktivitätsdaten laden
+    const aktivitaetRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: "Aktivität!A2:C",
+    });
+
+    const aktivitaetRows = aktivitaetRes.data.values || [];
+    const aktivitaetHeute = aktivitaetRows
+      .filter((row) => row[0] === heute)
+      .reduce((sum, row) => sum + (Number(row[2]) || 0), 0);
+
+    // ✅ Skalierungsfaktor basierend auf Aktivität
+    const skalierungsFaktor = (zielKcal + aktivitaetHeute) / zielKcal;
+
+    // ✅ Tagesdaten aus "Tabelle1" laden
+    const datenRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: "Tabelle1!A:G", // Datum | Uhrzeit | Eingabe | Kcal | Eiweiß | Fett | KH
+    });
+
+    const rows = datenRes.data.values || [];
 
     let sumKcal = 0;
     let sumEiweiss = 0;
@@ -56,7 +84,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       eiweiss: sumEiweiss,
       fett: sumFett,
       kh: sumKh,
-      ziel: 2200,
+      ziel: zielKcal + aktivitaetHeute,
+      zielEiweiss: Math.round(zielEiweiss * skalierungsFaktor),
+      zielFett: Math.round(zielFett * skalierungsFaktor),
+      zielKh: Math.round(zielKh * skalierungsFaktor),
       eintraege: eintraegeMitUhrzeit,
     });
   } catch (err) {
