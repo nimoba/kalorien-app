@@ -162,47 +162,41 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 
           <label style={{
             flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             backgroundColor: "#444",
             border: "1px solid #666",
             borderRadius: 8,
             fontSize: 16,
             cursor: "pointer",
             textAlign: "center",
+            height: 48, // gleiche Höhe wie bei Barcode
           }}>
             📸 Foto
             <input
               type="file"
               accept="image/*"
-              capture="environment" // 👈 öffnet direkt Rückkamera
+              capture="environment"
               style={{ display: "none" }}
               onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-              
-                console.log("📸 Bild ausgewählt:", file.name);
-              
+
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                   const base64 = reader.result?.toString().split(",")[1];
-                  if (!base64) {
-                    console.warn("⚠️ Kein Base64-Inhalt gefunden");
-                    return;
-                  }
-              
-                  console.log("🧬 Base64 Länge:", base64.length);
-                  console.log("🚀 Sende an /api/kalorien-bild");
-              
+                  if (!base64) return;
+
                   const res = await fetch("/api/kalorien-bild", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ image: base64 }),
                   });
-              
+
                   const data = await res.json();
-              
+
                   if (res.ok) {
-                    console.log("✅ Antwort erhalten von /api/kalorien-bild:", data);
-              
                     setPreviewData({
                       name: data.name || "Foto-Schätzung",
                       kcal: data.kcal,
@@ -213,17 +207,15 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
                     setGramm("100");
                     setEingabe("");
                   } else {
-                    console.error("❌ Fehler beim Analysieren des Fotos:", data);
                     alert("❌ Foto konnte nicht analysiert werden");
                   }
                 };
-              
+
                 reader.readAsDataURL(file);
               }}
-              
             />
-
           </label>
+
         </div>
 
         {scanning && (
