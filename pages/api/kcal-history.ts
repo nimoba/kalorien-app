@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Aktivitätseinträge
     const aktivRes = await sheets.spreadsheets.values.get({
       spreadsheetId: id,
-      range: "Aktivität!A2:C", // A = Datum, C = kcal
+      range: "Aktivitäten!A2:C", // A = Datum, C = kcal
     });
 
     const kcalRows = eintragRes.data.values || [];

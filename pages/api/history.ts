@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const aktivRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Aktivität!A2:C",
+      range: "Aktivitäten!A2:C",
     });
 
     const kcalRows = kcalRes.data.values || [];
