@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 interface Props {
@@ -12,6 +12,20 @@ export default function SportForm({ onClose, onRefresh }: Props) {
   const [desc, setDesc] = useState("");
   const [kcal, setKcal] = useState("");
   const [loading, setLoading] = useState(false);
+  const [gewicht, setGewicht] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/gewicht-latest")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.gewicht) {
+          setGewicht(data.gewicht);
+        }
+      })
+      .catch((err) => {
+        console.warn("⚠️ Gewicht konnte nicht geladen werden", err);
+      });
+  }, []);
 
   const speichern = async () => {
     const res = await fetch("/api/add-sport", {
@@ -30,6 +44,8 @@ export default function SportForm({ onClose, onRefresh }: Props) {
 
   const schaetzeMitGPT = async () => {
     if (!desc) return alert("Bitte Beschreibung eingeben");
+    if (!gewicht) return alert("❌ Gewicht konnte nicht geladen werden");
+
     setLoading(true);
 
     const res = await fetch("/api/sport-gpt", {
@@ -37,7 +53,7 @@ export default function SportForm({ onClose, onRefresh }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         beschreibung: desc,
-        gewicht: 80, // ggf. später dynamisch machen
+        gewicht,
       }),
     });
 
@@ -90,7 +106,7 @@ export default function SportForm({ onClose, onRefresh }: Props) {
               flexShrink: 0,
               minWidth: 40,
             }}
-            disabled={loading}
+            disabled={loading || !gewicht}
           >
             {loading ? "..." : "💡"}
           </button>
