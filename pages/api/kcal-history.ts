@@ -11,6 +11,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: "v4", auth });
     const id = process.env.GOOGLE_SHEET_ID;
 
+    // 🔢 TDEE laden (optional)
+    const tdeeRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: id,
+      range: "Ziele!G2:G2",
+    });
+    const tdee = Number(tdeeRes.data.values?.[0]?.[0]) || 2500;
+
+    // 📊 Kalorien-Einträge
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: id,
       range: "Tabelle1!A2:G",
@@ -28,6 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kcalTage[key] += num;
     }
 
+    // 🔠 Chronologisch sortieren
     const sorted = Object.entries(kcalTage).sort(([a], [b]) => {
       const [t1, m1, j1] = a.split(".");
       const [t2, m2, j2] = b.split(".");
@@ -36,11 +45,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let kumuliertGegessen = 0;
     let kumuliertVerbrauch = 0;
-    const tagesVerbrauch = 2500;
 
     const result = sorted.map(([datum, kcal]) => {
       kumuliertGegessen += kcal;
-      kumuliertVerbrauch += tagesVerbrauch;
+      kumuliertVerbrauch += tdee;
       return {
         datum,
         kcalKumuliert: kumuliertGegessen,
