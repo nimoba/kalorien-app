@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // ✅ Zielwerte aus "Ziele" laden
     const zieleRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Ziele!A2:G2", // A: Kcal, B: KH, C: Eiweiß, D: Fett, E: Start, F: Zielgewicht, G: TDEE
+      range: "Ziele!A2:G2", // A: Kcal, B: KH, C: Eiweiß, D: Fett, E: Startgewicht, F: Zielgewicht, G: TDEE
     });
 
     const [zielKcalRaw, zielKhRaw, zielEiweissRaw, zielFettRaw] = zieleRes.data.values?.[0] || [];
@@ -26,10 +26,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const zielEiweiss = Number(zielEiweissRaw) || 130;
     const zielFett = Number(zielFettRaw) || 70;
 
-    // ✅ Aktivitätsdaten laden
+    // ✅ Aktivität von heute laden
     const aktivitaetRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Aktivität!A2:C",
+      range: "Aktivität!A2:C", // Datum | Uhrzeit | Kalorien
     });
 
     const aktivitaetRows = aktivitaetRes.data.values || [];
@@ -37,13 +37,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .filter((row) => row[0] === heute)
       .reduce((sum, row) => sum + (Number(row[2]) || 0), 0);
 
-    // ✅ Skalierungsfaktor basierend auf Aktivität
-    const skalierungsFaktor = (zielKcal + aktivitaetHeute) / zielKcal;
+    // ✅ Skalierungsfaktor für Makros (Verhältnis TAGESZIEL + VERBRAUCH)
+    const skalierungsFaktor =
+      zielKcal > 0 ? (zielKcal + aktivitaetHeute) / zielKcal : 1;
 
-    // ✅ Tagesdaten aus "Tabelle1" laden
+    // ✅ Tagesdaten laden
     const datenRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Tabelle1!A:G", // Datum | Uhrzeit | Eingabe | Kcal | Eiweiß | Fett | KH
+      range: "Tabelle1!A:G", // Datum | Uhrzeit | Eingabe | kcal | Eiweiß | Fett | KH
     });
 
     const rows = datenRes.data.values || [];
@@ -53,10 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let sumFett = 0;
     let sumKh = 0;
 
-    const eintraegeMitUhrzeit: {
-      zeit: string;
-      kcal: number;
-    }[] = [];
+    const eintraegeMitUhrzeit: { zeit: string; kcal: number }[] = [];
 
     for (const row of rows.slice(1)) {
       const [datum, uhrzeit, , kcal, eiw, fett, kh] = row;
@@ -79,6 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    // ✅ Antwort mit dynamisch skalierten Zielen und Einträgen
     res.status(200).json({
       kalorien: sumKcal,
       eiweiss: sumEiweiss,
