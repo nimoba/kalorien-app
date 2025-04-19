@@ -24,6 +24,7 @@ async function checkFavoritMatch(name: string) {
         Eiweiß: z[2],
         Fett: z[3],
         Kohlenhydrate: z[4],
+        menge: 100, // Favoriten gelten als "pro 100g"
         from: "favoriten",
       };
     }
@@ -63,22 +64,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       messages: [
         {
           role: "system",
-          content: `Du bist ein Ernährungsberater und sollst eine Kalorien-, Makro- und Mengenschätzung (in Gramm oder ml) zu einer freien Texteingabe liefern.
+          content: `Du bist ein Ernährungsberater. Bitte gib die Kalorien und Makros **pro 100 g oder ml** zurück – unabhängig davon, wie viel der Nutzer gegessen hat.
 
-          Der Nutzer schreibt, was er gegessen hat. Du extrahierst die geschätzten **Gesamtwerte** für die gegessene Portion:
-          
-          Antworte ausschließlich im folgenden JSON-Format:
-          
-          {
-            "Kalorien": ...,
-            "Eiweiß": ...,
-            "Fett": ...,
-            "Kohlenhydrate": ...,
-            "menge": ...
-          }
-          
-          Die Menge bezieht sich auf das verzehrte Gericht in Gramm (bei Getränken ml).`},
-          
+Antworte **nur** im folgenden JSON-Format:
+
+{
+  "Kalorien": ...,
+  "Eiweiß": ...,
+  "Fett": ...,
+  "Kohlenhydrate": ...,
+  "menge": ...
+}
+
+"menge" steht für die geschätzte **verzehrte Menge in g oder ml**. Die Nährwerte sind aber **pro 100 g/ml**.`,
+        },
         { role: "user", content: text },
       ],
     }),

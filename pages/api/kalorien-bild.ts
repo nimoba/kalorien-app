@@ -8,25 +8,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const prompt = `
-  Du siehst ein Bild von einem Gericht.
-  Bitte schätze realistisch:
-  
-  - was es ist (Name),
-  - die Kalorien und Makros (für die dargestellte Menge),
-  - und die Menge in Gramm oder ml.
-  
-  Antworte **nur** im folgenden JSON-Format:
-  
-  {
-    "name": "Beispielgericht",
-    "kcal": 540,
-    "eiweiss": 25,
-    "fett": 20,
-    "kh": 60,
-    "menge": 400
-  }
-  `;
-  
+Du siehst ein Bild von einem Gericht.
+
+Bitte schätze:
+- was es ist (Name),
+- die Kalorien und Makros **pro 100g/ml**,
+- und die geschätzte Gesamtmenge in g oder ml.
+
+Antworte **nur** im folgenden JSON-Format:
+
+{
+  "name": "Beispielgericht",
+  "kcal": 230,
+  "eiweiss": 8,
+  "fett": 12,
+  "kh": 20,
+  "menge": 350
+}
+`;
+
   try {
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -59,7 +59,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const json = await openaiRes.json();
-
     const content = json.choices?.[0]?.message?.content;
     if (!content) {
       console.error("❌ GPT-Antwort ohne content:", JSON.stringify(json, null, 2));
@@ -67,8 +66,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-        const cleaned = content.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(cleaned);        
+      const cleaned = content.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(cleaned);
       return res.status(200).json(parsed);
     } catch (e) {
       console.error("❌ Fehler beim Parsen der GPT-Antwort:", content);
