@@ -46,11 +46,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisEiweiss(String(data.Eiweiß));
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
-      if (data.menge) {
-        setMenge(String(data.menge));
-      } else {
-        setMenge("100");
-      }
+      setMenge(data.menge ? String(data.menge) : "100");
       setGptInput("");
     } else {
       alert("❌ Fehler bei GPT");
@@ -61,23 +57,18 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     setScanning(false);
     const res = await fetch(`/api/barcode?code=${code}&menge=1`);
     const data = await res.json();
-  
+
     if (res.ok) {
       setName(data.name);
       setBasisKcal(String(data.Kalorien));
       setBasisEiweiss(String(data.Eiweiß));
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
-      if (data.menge) {
-        setMenge(String(data.menge));
-      } else {
-        setMenge("100");
-      }
+      setMenge(data.menge ? String(data.menge) : "100");
     } else {
       alert("❌ Produkt nicht gefunden");
     }
   };
-  
 
   const handleFoto = async (base64: string) => {
     const res = await fetch("/api/kalorien-bild", {
@@ -93,11 +84,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisEiweiss(String(data.eiweiss));
       setBasisFett(String(data.fett));
       setBasisKh(String(data.kh));
-      if (data.menge) {
-        setMenge(String(data.menge));
-      } else {
-        setMenge("100");
-      }
+      setMenge(data.menge ? String(data.menge) : "100");
     } else {
       alert("❌ Foto konnte nicht analysiert werden");
     }
@@ -149,37 +136,52 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
 
         <label>Menge (g/ml):</label>
-        <input type="number" value={menge} onChange={(e) => setMenge(e.target.value)} style={inputStyle} />
+        <input
+          value={menge}
+          onChange={(e) => setMenge(e.target.value)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
+          style={inputStyle}
+        />
 
         <label>Kalorien:</label>
-        <input type="number" value={kcal.toFixed(1)} onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)} style={inputStyle} />
+        <input
+          value={kcal.toFixed(1)}
+          onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
+          style={inputStyle}
+        />
 
         {/* Kompakte Makros */}
         <div style={macroRow}>
           <div style={macroGroup}>
             <label style={macroLabel}>KH</label>
             <input
-              type="number"
               value={kh.toFixed(1)}
               onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
+              inputMode="decimal"
+              pattern="[0-9.]*"
               style={macroInput}
             />
           </div>
           <div style={macroGroup}>
             <label style={macroLabel}>F</label>
             <input
-              type="number"
               value={fett.toFixed(1)}
               onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
+              inputMode="decimal"
+              pattern="[0-9.]*"
               style={macroInput}
             />
           </div>
           <div style={macroGroup}>
             <label style={macroLabel}>P</label>
             <input
-              type="number"
               value={eiweiss.toFixed(1)}
               onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
+              inputMode="decimal"
+              pattern="[0-9.]*"
               style={macroInput}
             />
           </div>

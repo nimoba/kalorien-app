@@ -1,6 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
 
+function parseDecimal(input: any): string {
+  if (typeof input === "string") {
+    return input.replace(",", ".");
+  }
+  return input?.toString() || "";
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { gewicht, fett, muskel } = req.body;
 
@@ -34,9 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const neueZeile = [
       heute,
-      gewicht.toString(),
-      fett != null && fett !== "" ? fett.toString() : fallbackFett,
-      muskel != null && muskel !== "" ? muskel.toString() : fallbackMuskel,
+      parseDecimal(gewicht),
+      fett != null && fett !== "" ? parseDecimal(fett) : fallbackFett,
+      muskel != null && muskel !== "" ? parseDecimal(muskel) : fallbackMuskel,
     ];
 
     await sheets.spreadsheets.values.append({

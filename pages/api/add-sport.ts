@@ -1,9 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
 
+function parseDecimal(input: any): number {
+  if (typeof input === "string") {
+    return parseFloat(input.replace(",", "."));
+  }
+  return typeof input === "number" ? input : NaN;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { beschreibung, kcal } = req.body;
-  if (!beschreibung || !kcal) {
+
+  const kcalVal = parseDecimal(kcal);
+
+  if (!beschreibung || isNaN(kcalVal)) {
     return res.status(400).json({ error: "Ungültige Eingaben" });
   }
 
@@ -27,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       range: "Aktivitäten!A:D",
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[datum, beschreibung, kcal, uhrzeit]],
+        values: [[datum, beschreibung, kcalVal, uhrzeit]],
       },
     });
 

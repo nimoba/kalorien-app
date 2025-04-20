@@ -18,25 +18,25 @@ export interface Ziele {
 }
 
 export default function SettingsForm({ onClose, onSave }: Props) {
-  const [kcal, setKcal] = useState(2200);
-  const [eiweiss, setEiweiss] = useState(130);
-  const [fett, setFett] = useState(70);
-  const [kh, setKh] = useState(250);
-  const [startgewicht, setStartgewicht] = useState(0);
-  const [zielGewicht, setZielGewicht] = useState<number | null>(null);
-  const [tdee, setTdee] = useState<number | null>(2600);
+  const [kcal, setKcal] = useState("2200");
+  const [eiweiss, setEiweiss] = useState("130");
+  const [fett, setFett] = useState("70");
+  const [kh, setKh] = useState("250");
+  const [startgewicht, setStartgewicht] = useState("0");
+  const [zielGewicht, setZielGewicht] = useState<string | null>("0");
+  const [tdee, setTdee] = useState<string | null>("2600");
 
   useEffect(() => {
     const stored = localStorage.getItem("settings");
     if (stored) {
       const parsed = JSON.parse(stored);
-      setKcal(parsed.kcal);
-      setEiweiss(parsed.eiweiss);
-      setFett(parsed.fett);
-      setKh(parsed.kh);
-      setStartgewicht(parsed.startgewicht);
-      setZielGewicht(parsed.zielGewicht ?? null);
-      setTdee(parsed.tdee ?? null);
+      setKcal(String(parsed.kcal));
+      setEiweiss(String(parsed.eiweiss));
+      setFett(String(parsed.fett));
+      setKh(String(parsed.kh));
+      setStartgewicht(String(parsed.startgewicht));
+      setZielGewicht(parsed.zielGewicht != null ? String(parsed.zielGewicht) : null);
+      setTdee(parsed.tdee != null ? String(parsed.tdee) : null);
     }
   }, []);
 
@@ -44,18 +44,26 @@ export default function SettingsForm({ onClose, onSave }: Props) {
     const res = await fetch("/api/save-settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kcal, kh, eiweiss, fett, startgewicht, zielGewicht, tdee }),
+      body: JSON.stringify({
+        kcal: parseFloat(kcal),
+        kh: parseFloat(kh),
+        eiweiss: parseFloat(eiweiss),
+        fett: parseFloat(fett),
+        startgewicht: parseFloat(startgewicht),
+        zielGewicht: zielGewicht ? parseFloat(zielGewicht) : null,
+        tdee: tdee ? parseFloat(tdee) : null,
+      }),
     });
 
     if (res.ok) {
       if (onSave) {
         onSave({
-          zielKcal: kcal,
-          zielEiweiss: eiweiss,
-          zielFett: fett,
-          zielKh: kh,
-          zielGewicht,
-          tdee
+          zielKcal: parseFloat(kcal),
+          zielEiweiss: parseFloat(eiweiss),
+          zielFett: parseFloat(fett),
+          zielKh: parseFloat(kh),
+          zielGewicht: zielGewicht ? parseFloat(zielGewicht) : null,
+          tdee: tdee ? parseFloat(tdee) : null,
         });
       }
       onClose();
@@ -91,13 +99,13 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           borderRadius: 16,
           width: "90%",
           maxWidth: 400,
-          maxHeight: "90vh",         // ⬅️ Begrenze die Höhe
-          overflowY: "auto",         // ⬅️ Scrollbar bei Bedarf
+          maxHeight: "90vh",
+          overflowY: "auto",
           boxShadow: "0 5px 20px rgba(0,0,0,0.3)",
           position: "relative",
-          scrollbarWidth: "thin", // Firefox
-          scrollbarColor: "#555 #2a2a2a"
-        }as any}
+          scrollbarWidth: "thin",
+          scrollbarColor: "#555 #2a2a2a",
+        } as any}
       >
         <button
           onClick={onClose}
@@ -114,65 +122,72 @@ export default function SettingsForm({ onClose, onSave }: Props) {
         >
           ✕
         </button>
-  
+
         <h2>⚙️ Ziele anpassen</h2>
-  
+
         <label>Kalorien-Ziel (kcal):</label>
         <input
-          type="number"
           value={kcal}
-          onChange={(e) => setKcal(Number(e.target.value))}
+          onChange={(e) => setKcal(e.target.value)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
           style={inputStyle}
         />
-  
+
         <label>Eiweiß-Ziel (g):</label>
         <input
-          type="number"
           value={eiweiss}
-          onChange={(e) => setEiweiss(Number(e.target.value))}
+          onChange={(e) => setEiweiss(e.target.value)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
           style={inputStyle}
         />
-  
+
         <label>Fett-Ziel (g):</label>
         <input
-          type="number"
           value={fett}
-          onChange={(e) => setFett(Number(e.target.value))}
+          onChange={(e) => setFett(e.target.value)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
           style={inputStyle}
         />
-  
+
         <label>Kohlenhydrate-Ziel (g):</label>
         <input
-          type="number"
           value={kh}
-          onChange={(e) => setKh(Number(e.target.value))}
+          onChange={(e) => setKh(e.target.value)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
           style={inputStyle}
         />
-  
+
         <label>Startgewicht (kg):</label>
         <input
-          type="number"
           value={startgewicht}
-          onChange={(e) => setStartgewicht(Number(e.target.value))}
+          onChange={(e) => setStartgewicht(e.target.value)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
           style={inputStyle}
         />
-  
+
         <label>Zielgewicht (kg):</label>
         <input
-          type="number"
           value={zielGewicht ?? ""}
-          onChange={(e) => setZielGewicht(Number(e.target.value))}
+          onChange={(e) => setZielGewicht(e.target.value)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
           style={inputStyle}
         />
-  
+
         <label>Täglicher Energieverbrauch (TDEE, kcal):</label>
         <input
-          type="number"
           value={tdee ?? ""}
-          onChange={(e) => setTdee(Number(e.target.value))}
+          onChange={(e) => setTdee(e.target.value)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
           style={inputStyle}
         />
-  
+
         <button
           onClick={speichern}
           style={{
@@ -192,7 +207,6 @@ export default function SettingsForm({ onClose, onSave }: Props) {
       </motion.div>
     </div>
   );
-  
 }
 
 const inputStyle: React.CSSProperties = {
