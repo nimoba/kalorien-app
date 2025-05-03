@@ -154,9 +154,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 
         <label>Kalorien:</label>
         <input
-          value={kcal.toFixed(1)}
+          value={basisKcal}
           onFocus={(e) => e.target.select()}
-          onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)}
+          onChange={(e) => setBasisKcal(e.target.value)}
           inputMode="decimal"
           pattern="[0-9.]*"
           style={inputStyle}
@@ -166,9 +166,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>KH</label>
             <input
-              value={kh.toFixed(1)}
+              value={basisKh}
               onFocus={(e) => e.target.select()}
-              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
+              onChange={(e) => setBasisKh(e.target.value)}
               inputMode="decimal"
               pattern="[0-9.]*"
               style={macroInput}
@@ -177,9 +177,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>F</label>
             <input
-              value={fett.toFixed(1)}
+              value={basisFett}
               onFocus={(e) => e.target.select()}
-              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
+              onChange={(e) => setBasisFett(e.target.value)}
               inputMode="decimal"
               pattern="[0-9.]*"
               style={macroInput}
@@ -188,9 +188,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>P</label>
             <input
-              value={eiweiss.toFixed(1)}
+              value={basisEiweiss}
               onFocus={(e) => e.target.select()}
-              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
+              onChange={(e) => setBasisEiweiss(e.target.value)}
               inputMode="decimal"
               pattern="[0-9.]*"
               style={macroInput}
