@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import BarcodeScanner from "./BarcodeScanner";
 
@@ -19,6 +19,12 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [scanning, setScanning] = useState(false);
   const [gptInput, setGptInput] = useState("");
 
+  // Dirty states – merken, ob Nutzer manuell eingegriffen hat
+  const [dirtyKcal, setDirtyKcal] = useState(false);
+  const [dirtyKh, setDirtyKh] = useState(false);
+  const [dirtyFett, setDirtyFett] = useState(false);
+  const [dirtyEiweiss, setDirtyEiweiss] = useState(false);
+
   const parse = (val: string) => parseFloat(val || "0");
   const mengeVal = parse(menge);
 
@@ -27,10 +33,14 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const fett = (parse(basisFett) / 100) * mengeVal;
   const kh = (parse(basisKh) / 100) * mengeVal;
 
-  const updateBasis = (value: number, setter: (v: string) => void) => {
-    const basis = (value / mengeVal) * 100;
-    setter(basis.toFixed(2));
-  };
+  // 💡 Auto-update Felder bei Mengenänderung (wenn nicht dirty)
+  useEffect(() => {
+    if (!dirtyKcal) setBasisKcal(((kcal / mengeVal) * 100).toFixed(2));
+    if (!dirtyKh) setBasisKh(((kh / mengeVal) * 100).toFixed(2));
+    if (!dirtyFett) setBasisFett(((fett / mengeVal) * 100).toFixed(2));
+    if (!dirtyEiweiss) setBasisEiweiss(((eiweiss / mengeVal) * 100).toFixed(2));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menge]);
 
   const handleGPT = async () => {
     if (!gptInput) return;
@@ -47,6 +57,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
       setMenge(data.menge ? String(data.menge) : "100");
+      setDirtyKcal(false);
+      setDirtyEiweiss(false);
+      setDirtyFett(false);
+      setDirtyKh(false);
       setGptInput("");
     } else {
       alert("❌ Fehler bei GPT");
@@ -65,6 +79,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
       setMenge(data.menge ? String(data.menge) : "100");
+      setDirtyKcal(false);
+      setDirtyEiweiss(false);
+      setDirtyFett(false);
+      setDirtyKh(false);
     } else {
       alert("❌ Produkt nicht gefunden");
     }
@@ -85,6 +103,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.fett));
       setBasisKh(String(data.kh));
       setMenge(data.menge ? String(data.menge) : "100");
+      setDirtyKcal(false);
+      setDirtyEiweiss(false);
+      setDirtyFett(false);
+      setDirtyKh(false);
     } else {
       alert("❌ Foto konnte nicht analysiert werden");
     }
@@ -156,7 +178,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         <input
           value={basisKcal}
           onFocus={(e) => e.target.select()}
-          onChange={(e) => setBasisKcal(e.target.value)}
+          onChange={(e) => {
+            setBasisKcal(e.target.value);
+            setDirtyKcal(true);
+          }}
           inputMode="decimal"
           pattern="[0-9.]*"
           style={inputStyle}
@@ -168,7 +193,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <input
               value={basisKh}
               onFocus={(e) => e.target.select()}
-              onChange={(e) => setBasisKh(e.target.value)}
+              onChange={(e) => {
+                setBasisKh(e.target.value);
+                setDirtyKh(true);
+              }}
               inputMode="decimal"
               pattern="[0-9.]*"
               style={macroInput}
@@ -179,7 +207,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <input
               value={basisFett}
               onFocus={(e) => e.target.select()}
-              onChange={(e) => setBasisFett(e.target.value)}
+              onChange={(e) => {
+                setBasisFett(e.target.value);
+                setDirtyFett(true);
+              }}
               inputMode="decimal"
               pattern="[0-9.]*"
               style={macroInput}
@@ -190,49 +221,16 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <input
               value={basisEiweiss}
               onFocus={(e) => e.target.select()}
-              onChange={(e) => setBasisEiweiss(e.target.value)}
+              onChange={(e) => {
+                setBasisEiweiss(e.target.value);
+                setDirtyEiweiss(true);
+              }}
               inputMode="decimal"
               pattern="[0-9.]*"
               style={macroInput}
             />
           </div>
         </div>
-
-        <div style={{ display: "flex", gap: 8, marginTop: 8, marginBottom: 16 }}>
-          <button
-            onClick={() => setScanning(true)}
-            style={{ ...fotoButtonStyle, flex: 1 }}
-          >
-            📷 Barcode
-          </button>
-
-          <label style={{ ...fotoButtonStyle, flex: 1 }}>
-            📸 Foto
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  const base64 = reader.result?.toString().split(",")[1];
-                  if (base64) handleFoto(base64);
-                };
-                reader.readAsDataURL(file);
-              }}
-            />
-          </label>
-        </div>
-
-        {scanning && (
-          <div style={{ marginBottom: 12 }}>
-            <BarcodeScanner onDetected={handleBarcode} />
-            <button onClick={() => setScanning(false)} style={{ marginTop: 8 }}>❌ Abbrechen</button>
-          </div>
-        )}
 
         <button onClick={handleSpeichern} style={{ ...buttonStyle, backgroundColor: "#3cb043" }}>
           ✅ Eintragen
@@ -299,19 +297,6 @@ const buttonStyle: React.CSSProperties = {
   cursor: "pointer",
   width: "100%",
   marginBottom: 10,
-};
-
-const fotoButtonStyle: React.CSSProperties = {
-  backgroundColor: "#444",
-  border: "1px solid #666",
-  borderRadius: 8,
-  fontSize: 14,
-  height: 40,
-  padding: "0 10px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
 };
 
 const macroRow: React.CSSProperties = {
