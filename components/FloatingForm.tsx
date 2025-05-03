@@ -1,18 +1,12 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import BarcodeScanner from "./BarcodeScanner";
 
 interface Props {
   onClose: () => void;
   onRefresh?: () => void;
-}
-
-function formatDecimalInput(raw: string): string {
-  const digitsOnly = raw.replace(/\D/g, "");
-  const num = parseFloat(digitsOnly) / 100;
-  return isNaN(num) ? "" : num.toFixed(2);
 }
 
 export default function FloatingForm({ onClose, onRefresh }: Props) {
@@ -32,6 +26,13 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const eiweiss = (parse(basisEiweiss) / 100) * mengeVal;
   const fett = (parse(basisFett) / 100) * mengeVal;
   const kh = (parse(basisKh) / 100) * mengeVal;
+
+  // PayPal-Style Eingabelogik
+  const paypalInput = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, "");
+    const formatted = (parseFloat(digits) / 100).toFixed(2);
+    setter(formatted);
+  };
 
   const handleGPT = async () => {
     if (!gptInput) return;
@@ -155,8 +156,8 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 
         <label>Kalorien:</label>
         <input
-          value={basisKcal}
-          onChange={(e) => setBasisKcal(formatDecimalInput(e.target.value))}
+          value={kcal.toFixed(1)}
+          onChange={paypalInput(setBasisKcal)}
           inputMode="numeric"
           pattern="[0-9]*"
           style={inputStyle}
@@ -166,8 +167,8 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>KH</label>
             <input
-              value={basisKh}
-              onChange={(e) => setBasisKh(formatDecimalInput(e.target.value))}
+              value={kh.toFixed(1)}
+              onChange={paypalInput(setBasisKh)}
               inputMode="numeric"
               pattern="[0-9]*"
               style={macroInput}
@@ -176,8 +177,8 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>F</label>
             <input
-              value={basisFett}
-              onChange={(e) => setBasisFett(formatDecimalInput(e.target.value))}
+              value={fett.toFixed(1)}
+              onChange={paypalInput(setBasisFett)}
               inputMode="numeric"
               pattern="[0-9]*"
               style={macroInput}
@@ -186,14 +187,50 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>P</label>
             <input
-              value={basisEiweiss}
-              onChange={(e) => setBasisEiweiss(formatDecimalInput(e.target.value))}
+              value={eiweiss.toFixed(1)}
+              onChange={paypalInput(setBasisEiweiss)}
               inputMode="numeric"
               pattern="[0-9]*"
               style={macroInput}
             />
           </div>
         </div>
+
+        <div style={{ display: "flex", gap: 8, marginTop: 8, marginBottom: 16 }}>
+          <button
+            onClick={() => setScanning(true)}
+            style={{ ...fotoButtonStyle, flex: 1 }}
+          >
+            📷 Barcode
+          </button>
+
+          <label style={{ ...fotoButtonStyle, flex: 1 }}>
+            📸 Foto
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const base64 = reader.result?.toString().split(",")[1];
+                  if (base64) handleFoto(base64);
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </label>
+        </div>
+
+        {scanning && (
+          <div style={{ marginBottom: 12 }}>
+            <BarcodeScanner onDetected={handleBarcode} />
+            <button onClick={() => setScanning(false)} style={{ marginTop: 8 }}>❌ Abbrechen</button>
+          </div>
+        )}
 
         <button onClick={handleSpeichern} style={{ ...buttonStyle, backgroundColor: "#3cb043" }}>
           ✅ Eintragen
@@ -260,6 +297,19 @@ const buttonStyle: React.CSSProperties = {
   cursor: "pointer",
   width: "100%",
   marginBottom: 10,
+};
+
+const fotoButtonStyle: React.CSSProperties = {
+  backgroundColor: "#444",
+  border: "1px solid #666",
+  borderRadius: 8,
+  fontSize: 14,
+  height: 40,
+  padding: "0 10px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
 };
 
 const macroRow: React.CSSProperties = {
