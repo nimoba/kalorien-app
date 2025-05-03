@@ -22,55 +22,14 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [gptInput, setGptInput] = useState('');
   const [scanning, setScanning] = useState(false);
 
-  // === Roh-Inputs für berechnete Werte ===
-  const [rawKcal, setRawKcal] = useState('');
-  const [rawEiweiss, setRawEiweiss] = useState('');
-  const [rawFett, setRawFett] = useState('');
-  const [rawKh, setRawKh] = useState('');
-
-  // === Flags, ob gerade editiert wird ===
-  const [editKcal, setEditKcal] = useState(false);
-  const [editEiweiss, setEditEiweiss] = useState(false);
-  const [editFett, setEditFett] = useState(false);
-  const [editKh, setEditKh] = useState(false);
-
   const parseNum = (v: string) => parseFloat(v.replace(',', '.') || '0');
   const mengeVal = parseNum(menge) || 0;
 
   // Berechnete Werte
-  const calcKcal = () => ((parseNum(basisKcal) / 100) * mengeVal) || 0;
+  const calcKcal    = () => ((parseNum(basisKcal)    / 100) * mengeVal) || 0;
   const calcEiweiss = () => ((parseNum(basisEiweiss) / 100) * mengeVal) || 0;
-  const calcFett = () => ((parseNum(basisFett) / 100) * mengeVal) || 0;
-  const calcKh = () => ((parseNum(basisKh) / 100) * mengeVal) || 0;
-
-  // Hilfsfunktion: aus rohem Input neue Basis berechnen
-  const applyNewBasis = (
-    raw: string,
-    setterBasis: (v: string) => void
-  ) => {
-    const val = parseNum(raw);
-    if (mengeVal > 0) {
-      const newBasis = (val / mengeVal) * 100;
-      setterBasis(newBasis.toFixed(1));
-    }
-  };
-
-  // Immer neu schreiben, wenn menge oder basis sich ändern **und** nicht gerade editiert wird
-  useEffect(() => {
-    if (!editKcal)      setRawKcal(calcKcal().toFixed(1));
-  }, [basisKcal, menge]);
-
-  useEffect(() => {
-    if (!editEiweiss)   setRawEiweiss(calcEiweiss().toFixed(1));
-  }, [basisEiweiss, menge]);
-
-  useEffect(() => {
-    if (!editFett)      setRawFett(calcFett().toFixed(1));
-  }, [basisFett, menge]);
-
-  useEffect(() => {
-    if (!editKh)        setRawKh(calcKh().toFixed(1));
-  }, [basisKh, menge]);
+  const calcFett    = () => ((parseNum(basisFett)    / 100) * mengeVal) || 0;
+  const calcKh      = () => ((parseNum(basisKh)      / 100) * mengeVal) || 0;
 
   // === API-Handler (GPT, Barcode, Foto, Speichern) ===
 
@@ -140,10 +99,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name,
-        kcal: calcKcal(),
+        kcal:    calcKcal(),
         eiweiss: calcEiweiss(),
-        fett: calcFett(),
-        kh: calcKh(),
+        fett:    calcFett(),
+        kh:      calcKh(),
         uhrzeit,
       }),
     });
@@ -155,7 +114,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     }
   };
 
-  // === Render ===
   return (
     <div style={overlayStyle}>
       <motion.div
@@ -167,7 +125,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         <button onClick={onClose} style={closeStyle}>✕</button>
         <h2 style={{ marginBottom: 12 }}>➕ Neuer Eintrag</h2>
 
-        {/* GPT */}
+        {/* GPT Beschreibung */}
         <label>GPT Beschreibung:</label>
         <textarea
           value={gptInput}
@@ -197,16 +155,19 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 
         {/* Basiswerte pro 100g */}
         <label>Kalorien (pro 100 g):</label>
-        <input
-          value={basisKcal}
-          onChange={e => setBasisKcal(e.target.value)}
-          onBlur={() => setBasisKcal(parseNum(basisKcal).toFixed(1))}
-          inputMode="decimal"
-          pattern="[0-9.,]*"
-          style={inputStyle}
-        />
+        <div style={rowStyle}>
+          <input
+            value={basisKcal}
+            onChange={e => setBasisKcal(e.target.value)}
+            onBlur={() => setBasisKcal(parseNum(basisKcal).toFixed(1))}
+            inputMode="decimal"
+            pattern="[0-9.,]*"
+            style={inputStyle}
+          />
+          <span style={calcStyle}>{calcKcal().toFixed(1)} kcal</span>
+        </div>
 
-        <div style={macroRow}>
+        <div style={rowStyle}>
           <div style={macroGroup}>
             <label style={macroLabel}>KH/100g</label>
             <input
@@ -217,6 +178,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
               pattern="[0-9.,]*"
               style={macroInput}
             />
+            <span style={calcMacroStyle}>{calcKh().toFixed(1)}</span>
           </div>
           <div style={macroGroup}>
             <label style={macroLabel}>F/100g</label>
@@ -228,6 +190,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
               pattern="[0-9.,]*"
               style={macroInput}
             />
+            <span style={calcMacroStyle}>{calcFett().toFixed(1)}</span>
           </div>
           <div style={macroGroup}>
             <label style={macroLabel}>P/100g</label>
@@ -239,69 +202,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
               pattern="[0-9.,]*"
               style={macroInput}
             />
-          </div>
-        </div>
-
-        {/* Berechnete Ausgabewerte */}
-        <label>Kalorien (berechnet):</label>
-        <input
-          value={rawKcal}
-          onFocus={() => setEditKcal(true)}
-          onChange={e => setRawKcal(e.target.value)}
-          onBlur={() => {
-            setEditKcal(false);
-            applyNewBasis(rawKcal, setBasisKcal);
-          }}
-          inputMode="decimal"
-          pattern="[0-9.,]*"
-          style={inputStyle}
-        />
-
-        <div style={macroRow}>
-          <div style={macroGroup}>
-            <label style={macroLabel}>KH (berechnet)</label>
-            <input
-              value={rawKh}
-              onFocus={() => setEditKh(true)}
-              onChange={e => setRawKh(e.target.value)}
-              onBlur={() => {
-                setEditKh(false);
-                applyNewBasis(rawKh, setBasisKh);
-              }}
-              inputMode="decimal"
-              pattern="[0-9.,]*"
-              style={macroInput}
-            />
-          </div>
-          <div style={macroGroup}>
-            <label style={macroLabel}>F (berechnet)</label>
-            <input
-              value={rawFett}
-              onFocus={() => setEditFett(true)}
-              onChange={e => setRawFett(e.target.value)}
-              onBlur={() => {
-                setEditFett(false);
-                applyNewBasis(rawFett, setBasisFett);
-              }}
-              inputMode="decimal"
-              pattern="[0-9.,]*"
-              style={macroInput}
-            />
-          </div>
-          <div style={macroGroup}>
-            <label style={macroLabel}>P (berechnet)</label>
-            <input
-              value={rawEiweiss}
-              onFocus={() => setEditEiweiss(true)}
-              onChange={e => setRawEiweiss(e.target.value)}
-              onBlur={() => {
-                setEditEiweiss(false);
-                applyNewBasis(rawEiweiss, setBasisEiweiss);
-              }}
-              inputMode="decimal"
-              pattern="[0-9.,]*"
-              style={macroInput}
-            />
+            <span style={calcMacroStyle}>{calcEiweiss().toFixed(1)}</span>
           </div>
         </div>
 
@@ -347,56 +248,57 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 
 // === STYLES ===
 const overlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  top: 0, left: 0, right: 0, bottom: 0,
-  background: 'rgba(0,0,0,0.6)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 999,
+  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+  background: 'rgba(0,0,0,0.6)', display: 'flex',
+  alignItems: 'center', justifyContent: 'center', zIndex: 999,
 };
 const formStyle: React.CSSProperties = {
   backgroundColor: '#2a2a2a', color: '#fff', padding: 16,
   borderRadius: 16, width: '90%', maxWidth: 400,
   maxHeight: '90vh', overflowY: 'auto',
   boxShadow: '0 5px 20px rgba(0,0,0,0.3)',
-  position: 'relative'
+  position: 'relative',
 };
 const closeStyle: React.CSSProperties = {
   position: 'absolute', top: 12, right: 12,
   background: 'transparent', color: '#fff',
-  fontSize: 20, border: 'none', cursor: 'pointer'
+  fontSize: 20, border: 'none', cursor: 'pointer',
 };
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: 8, fontSize: 14,
   marginBottom: 6, borderRadius: 8,
   border: '1px solid #555', backgroundColor: '#1e1e1e',
-  color: '#fff'
+  color: '#fff',
 };
 const buttonStyle: React.CSSProperties = {
-  backgroundColor: '#36a2eb', color: '#fff',
-  border: 'none', borderRadius: 8,
-  padding: '8px 10px', fontSize: 14,
-  cursor: 'pointer', width: '100%', marginBottom: 10
+  backgroundColor: '#36a2eb', color: '#fff', border: 'none',
+  borderRadius: 8, padding: '8px 10px', fontSize: 14,
+  cursor: 'pointer', width: '100%', marginBottom: 10,
 };
 const fotoButtonStyle: React.CSSProperties = {
   backgroundColor: '#444', border: '1px solid #666',
   borderRadius: 8, fontSize: 14, height: 40,
   padding: '0 10px', display: 'flex',
   alignItems: 'center', justifyContent: 'center',
-  cursor: 'pointer'
+  cursor: 'pointer',
 };
-const macroRow: React.CSSProperties = {
-  display: 'flex', gap: 8, marginBottom: 6
+const rowStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', marginBottom: 6,
+};
+const calcStyle: React.CSSProperties = {
+  marginLeft: 12, fontSize: 14, color: '#ccc', minWidth: 60, textAlign: 'right',
 };
 const macroGroup: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 4
+  display: 'flex', alignItems: 'center', gap: 4,
 };
 const macroLabel: React.CSSProperties = {
-  fontSize: 12, color: '#aaa'
+  fontSize: 12, color: '#aaa',
 };
 const macroInput: React.CSSProperties = {
   width: 40, padding: 4, fontSize: 12,
   borderRadius: 6, border: '1px solid #555',
-  backgroundColor: '#1e1e1e', color: '#fff'
+  backgroundColor: '#1e1e1e', color: '#fff',
+};
+const calcMacroStyle: React.CSSProperties = {
+  marginLeft: 6, fontSize: 12, color: '#ccc', width: 32, textAlign: 'right',
 };
