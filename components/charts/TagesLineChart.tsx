@@ -10,10 +10,10 @@ import {
   Tooltip,
   Legend,
   LineController,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-import type { ChartData, ChartOptions } from "chart.js";
-import { getOvershootColor } from "../../utils/colors";
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import type { ChartData, ChartOptions } from 'chart.js';
+import { getOvershootColor } from '../../utils/colors';
 
 ChartJS.register(
   LineElement,
@@ -32,54 +32,76 @@ interface Props {
 }
 
 export function TagesLineChart({ eintraege, ziel }: Props) {
-  // ✅ 1. Sortiere nach Uhrzeit (string → HH:MM → numerisch)
-  const sortierteEintraege = [...eintraege].sort((a, b) => {
-    const [hA, mA] = a.zeit.split(":").map(Number);
-    const [hB, mB] = b.zeit.split(":").map(Number);
-    return hA !== hB ? hA - hB : mA - mB;
-  });
+  // 1. Create 24 hour labels from 00:00 to 23:00
+  const fullDayLabels = Array.from({ length: 24 }, (_, i) =>
+    `${i.toString().padStart(2, '0')}:00`
+  );
 
-  // ✅ 2. Kumulativ summieren
-  const labels = sortierteEintraege.map((e) => e.zeit);
-  const werte: number[] = [];
-  let sum = 0;
-  for (const e of sortierteEintraege) {
-    sum += e.kcal;
-    werte.push(sum);
+  // 2. Round entry times to hour and sum kcal per hour
+  const kcalPerHour: Record<number, number> = {};
+  for (const { zeit, kcal } of eintraege) {
+    const [hour] = zeit.split(':').map(Number);
+    kcalPerHour[hour] = (kcalPerHour[hour] || 0) + kcal;
   }
 
-  const zielArray = new Array(labels.length).fill(ziel);
-  const maxKcal = Math.max(...werte);
-  const farbe = getOvershootColor(maxKcal, ziel, "#36a2eb");
+  // 3. Compute cumulative kcal per hour
+  let sum = 0;
+  const werte: number[] = [];
+  let lastHourWithData = -1;
 
-  const data: ChartData<"line"> = {
-    labels,
+  for (let h = 0; h < 24; h++) {
+    if (kcalPerHour[h] !== undefined) {
+      sum += kcalPerHour[h];
+      lastHourWithData = h;
+    }
+
+    // Fill value only up to the last hour with data, else NaN (line stops)
+    if (lastHourWithData >= 0 && h <= lastHourWithData) {
+      werte.push(sum);
+    } else {
+      werte.push(NaN);
+    }
+  }
+
+  // 4. Prepare goal array (same rule as values)
+  const zielArray = werte.map((_, i) =>
+    i <= lastHourWithData ? ziel : NaN
+  );
+
+  // 5. Determine color
+  const maxKcal = Math.max(...werte.filter((v) => !isNaN(v)));
+  const farbe = getOvershootColor(maxKcal, ziel, '#36a2eb');
+
+  const data: ChartData<'line'> = {
+    labels: fullDayLabels,
     datasets: [
       {
-        label: "Kalorienverlauf",
+        label: 'Kalorienverlauf',
         data: werte,
         fill: true,
         borderColor: farbe,
-        backgroundColor: farbe + "33",
+        backgroundColor: farbe + '33',
         tension: 0.3,
+        spanGaps: false,
       },
       {
-        label: "Tagesziel",
+        label: 'Tagesziel',
         data: zielArray,
         borderDash: [6, 6],
-        borderColor: "#ff6384",
+        borderColor: '#ff6384',
         borderWidth: 1.5,
         pointRadius: 0,
         tension: 0.1,
+        spanGaps: false,
       },
     ],
   };
 
-  const options: ChartOptions<"line"> = {
+  const options: ChartOptions<'line'> = {
     responsive: true,
     plugins: {
       legend: {
-        position: "bottom",
+        position: 'bottom',
       },
     },
     scales: {
