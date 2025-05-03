@@ -155,6 +155,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         <label>Kalorien:</label>
         <input
           value={kcal.toFixed(1)}
+          onFocus={(e) => e.target.select()}
           onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)}
           inputMode="decimal"
           pattern="[0-9.]*"
@@ -166,6 +167,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <label style={macroLabel}>KH</label>
             <input
               value={kh.toFixed(1)}
+              onFocus={(e) => e.target.select()}
               onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
               inputMode="decimal"
               pattern="[0-9.]*"
@@ -176,6 +178,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <label style={macroLabel}>F</label>
             <input
               value={fett.toFixed(1)}
+              onFocus={(e) => e.target.select()}
               onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
               inputMode="decimal"
               pattern="[0-9.]*"
@@ -186,6 +189,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <label style={macroLabel}>P</label>
             <input
               value={eiweiss.toFixed(1)}
+              onFocus={(e) => e.target.select()}
               onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
               inputMode="decimal"
               pattern="[0-9.]*"
