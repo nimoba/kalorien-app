@@ -1,12 +1,18 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import BarcodeScanner from "./BarcodeScanner";
 
 interface Props {
   onClose: () => void;
   onRefresh?: () => void;
+}
+
+function formatDecimalInput(raw: string): string {
+  const digitsOnly = raw.replace(/\D/g, "");
+  const num = parseFloat(digitsOnly) / 100;
+  return isNaN(num) ? "" : num.toFixed(2);
 }
 
 export default function FloatingForm({ onClose, onRefresh }: Props) {
@@ -19,12 +25,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [scanning, setScanning] = useState(false);
   const [gptInput, setGptInput] = useState("");
 
-  // Dirty states – merken, ob Nutzer manuell eingegriffen hat
-  const [dirtyKcal, setDirtyKcal] = useState(false);
-  const [dirtyKh, setDirtyKh] = useState(false);
-  const [dirtyFett, setDirtyFett] = useState(false);
-  const [dirtyEiweiss, setDirtyEiweiss] = useState(false);
-
   const parse = (val: string) => parseFloat(val || "0");
   const mengeVal = parse(menge);
 
@@ -32,15 +32,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const eiweiss = (parse(basisEiweiss) / 100) * mengeVal;
   const fett = (parse(basisFett) / 100) * mengeVal;
   const kh = (parse(basisKh) / 100) * mengeVal;
-
-  // 💡 Auto-update Felder bei Mengenänderung (wenn nicht dirty)
-  useEffect(() => {
-    if (!dirtyKcal) setBasisKcal(((kcal / mengeVal) * 100).toFixed(2));
-    if (!dirtyKh) setBasisKh(((kh / mengeVal) * 100).toFixed(2));
-    if (!dirtyFett) setBasisFett(((fett / mengeVal) * 100).toFixed(2));
-    if (!dirtyEiweiss) setBasisEiweiss(((eiweiss / mengeVal) * 100).toFixed(2));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menge]);
 
   const handleGPT = async () => {
     if (!gptInput) return;
@@ -57,10 +48,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
       setMenge(data.menge ? String(data.menge) : "100");
-      setDirtyKcal(false);
-      setDirtyEiweiss(false);
-      setDirtyFett(false);
-      setDirtyKh(false);
       setGptInput("");
     } else {
       alert("❌ Fehler bei GPT");
@@ -79,10 +66,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
       setMenge(data.menge ? String(data.menge) : "100");
-      setDirtyKcal(false);
-      setDirtyEiweiss(false);
-      setDirtyFett(false);
-      setDirtyKh(false);
     } else {
       alert("❌ Produkt nicht gefunden");
     }
@@ -103,10 +86,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.fett));
       setBasisKh(String(data.kh));
       setMenge(data.menge ? String(data.menge) : "100");
-      setDirtyKcal(false);
-      setDirtyEiweiss(false);
-      setDirtyFett(false);
-      setDirtyKh(false);
     } else {
       alert("❌ Foto konnte nicht analysiert werden");
     }
@@ -177,13 +156,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         <label>Kalorien:</label>
         <input
           value={basisKcal}
-          onFocus={(e) => e.target.select()}
-          onChange={(e) => {
-            setBasisKcal(e.target.value);
-            setDirtyKcal(true);
-          }}
-          inputMode="decimal"
-          pattern="[0-9.]*"
+          onChange={(e) => setBasisKcal(formatDecimalInput(e.target.value))}
+          inputMode="numeric"
+          pattern="[0-9]*"
           style={inputStyle}
         />
 
@@ -192,13 +167,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <label style={macroLabel}>KH</label>
             <input
               value={basisKh}
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => {
-                setBasisKh(e.target.value);
-                setDirtyKh(true);
-              }}
-              inputMode="decimal"
-              pattern="[0-9.]*"
+              onChange={(e) => setBasisKh(formatDecimalInput(e.target.value))}
+              inputMode="numeric"
+              pattern="[0-9]*"
               style={macroInput}
             />
           </div>
@@ -206,13 +177,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <label style={macroLabel}>F</label>
             <input
               value={basisFett}
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => {
-                setBasisFett(e.target.value);
-                setDirtyFett(true);
-              }}
-              inputMode="decimal"
-              pattern="[0-9.]*"
+              onChange={(e) => setBasisFett(formatDecimalInput(e.target.value))}
+              inputMode="numeric"
+              pattern="[0-9]*"
               style={macroInput}
             />
           </div>
@@ -220,13 +187,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <label style={macroLabel}>P</label>
             <input
               value={basisEiweiss}
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => {
-                setBasisEiweiss(e.target.value);
-                setDirtyEiweiss(true);
-              }}
-              inputMode="decimal"
-              pattern="[0-9.]*"
+              onChange={(e) => setBasisEiweiss(formatDecimalInput(e.target.value))}
+              inputMode="numeric"
+              pattern="[0-9]*"
               style={macroInput}
             />
           </div>
