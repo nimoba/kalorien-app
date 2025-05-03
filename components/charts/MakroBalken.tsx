@@ -13,7 +13,9 @@ export function MakroBalken({ label, value, ziel, farbe }: Props) {
 
   return (
     <div style={{ marginBottom: 16 }}>
-      <p style={{ margin: "4px 0" }}>{label}: {value} / {ziel} g</p>
+      <p style={{ margin: "4px 0" }}>
+        {label}: {Math.round(value)} / {Math.round(ziel)} g
+      </p>
       <div style={{
         height: 12,
         backgroundColor: "#e0e0e0",
