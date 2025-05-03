@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import BarcodeScanner from "./BarcodeScanner";
 
@@ -19,12 +19,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [scanning, setScanning] = useState(false);
   const [gptInput, setGptInput] = useState("");
 
-  // Dirty flags – merken ob manuell getippt wurde
-  const [dirtyKcal, setDirtyKcal] = useState(false);
-  const [dirtyEiweiss, setDirtyEiweiss] = useState(false);
-  const [dirtyFett, setDirtyFett] = useState(false);
-  const [dirtyKh, setDirtyKh] = useState(false);
-
   const parse = (val: string) => parseFloat(val || "0");
   const mengeVal = parse(menge);
 
@@ -33,24 +27,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const fett = (parse(basisFett) / 100) * mengeVal;
   const kh = (parse(basisKh) / 100) * mengeVal;
 
-  // 📌 Mengenänderung → update basisX (wenn nicht dirty)
-  useEffect(() => {
-    if (!dirtyKcal) setBasisKcal(((kcal / mengeVal) * 100).toFixed(2));
-    if (!dirtyEiweiss) setBasisEiweiss(((eiweiss / mengeVal) * 100).toFixed(2));
-    if (!dirtyFett) setBasisFett(((fett / mengeVal) * 100).toFixed(2));
-    if (!dirtyKh) setBasisKh(((kh / mengeVal) * 100).toFixed(2));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menge]);
-
-  // 📥 PayPal Style Eingabe (z. B. 123 → 1.23)
-  const handlePayPalInput = (
-    setter: (val: string) => void,
-    setDirty: (val: boolean) => void
-  ) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, "");
-    const formatted = (parseFloat(digits) / 100).toFixed(2);
-    setter(formatted);
-    setDirty(true);
+  const updateBasis = (value: number, setter: (v: string) => void) => {
+    const basis = (value / mengeVal) * 100;
+    setter(basis.toFixed(2));
   };
 
   const handleGPT = async () => {
@@ -69,11 +48,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisKh(String(data.Kohlenhydrate));
       setMenge(data.menge ? String(data.menge) : "100");
       setGptInput("");
-      // dirty zurücksetzen
-      setDirtyKcal(false);
-      setDirtyEiweiss(false);
-      setDirtyFett(false);
-      setDirtyKh(false);
     } else {
       alert("❌ Fehler bei GPT");
     }
@@ -91,10 +65,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
       setMenge(data.menge ? String(data.menge) : "100");
-      setDirtyKcal(false);
-      setDirtyEiweiss(false);
-      setDirtyFett(false);
-      setDirtyKh(false);
     } else {
       alert("❌ Produkt nicht gefunden");
     }
@@ -115,10 +85,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.fett));
       setBasisKh(String(data.kh));
       setMenge(data.menge ? String(data.menge) : "100");
-      setDirtyKcal(false);
-      setDirtyEiweiss(false);
-      setDirtyFett(false);
-      setDirtyKh(false);
     } else {
       alert("❌ Foto konnte nicht analysiert werden");
     }
@@ -188,10 +154,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 
         <label>Kalorien:</label>
         <input
-          value={basisKcal}
-          onChange={handlePayPalInput(setBasisKcal, setDirtyKcal)}
-          inputMode="numeric"
-          pattern="[0-9]*"
+          value={kcal.toFixed(1)}
+          onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)}
+          inputMode="decimal"
+          pattern="[0-9.]*"
           style={inputStyle}
         />
 
@@ -199,30 +165,30 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>KH</label>
             <input
-              value={basisKh}
-              onChange={handlePayPalInput(setBasisKh, setDirtyKh)}
-              inputMode="numeric"
-              pattern="[0-9]*"
+              value={kh.toFixed(1)}
+              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
+              inputMode="decimal"
+              pattern="[0-9.]*"
               style={macroInput}
             />
           </div>
           <div style={macroGroup}>
             <label style={macroLabel}>F</label>
             <input
-              value={basisFett}
-              onChange={handlePayPalInput(setBasisFett, setDirtyFett)}
-              inputMode="numeric"
-              pattern="[0-9]*"
+              value={fett.toFixed(1)}
+              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
+              inputMode="decimal"
+              pattern="[0-9.]*"
               style={macroInput}
             />
           </div>
           <div style={macroGroup}>
             <label style={macroLabel}>P</label>
             <input
-              value={basisEiweiss}
-              onChange={handlePayPalInput(setBasisEiweiss, setDirtyEiweiss)}
-              inputMode="numeric"
-              pattern="[0-9]*"
+              value={eiweiss.toFixed(1)}
+              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
+              inputMode="decimal"
+              pattern="[0-9.]*"
               style={macroInput}
             />
           </div>
@@ -272,7 +238,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   );
 }
 
-// === STYLES === (gleich geblieben)
+// === STYLES ===
 
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
