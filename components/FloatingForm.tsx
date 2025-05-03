@@ -283,11 +283,11 @@ const fotoButtonStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 const rowStyle: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', marginBottom: 6,
+  display: 'flex', alignItems: 'center',
+  gap: 4,   // kleiner Abstand zwischen Input und Berechnung
+  marginBottom: 6,
 };
 const calcStyle: React.CSSProperties = {
-  marginLeft: 12,
-  marginRight: 8,
   fontSize: 14,
   fontWeight: 'bold',
   color: '#ccc',
@@ -295,7 +295,8 @@ const calcStyle: React.CSSProperties = {
   textAlign: 'right',
 };
 const macroGroup: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 4,
+  display: 'flex', alignItems: 'center',
+  gap: 4,   // kleiner Abstand zwischen Macro-Input und Berechnung
 };
 const macroLabel: React.CSSProperties = {
   fontSize: 12, color: '#aaa',
@@ -306,8 +307,6 @@ const macroInput: React.CSSProperties = {
   backgroundColor: '#1e1e1e', color: '#fff',
 };
 const calcMacroStyle: React.CSSProperties = {
-  marginLeft: 6,
-  marginRight: 8,
   fontSize: 12,
   fontWeight: 'bold',
   color: '#ccc',
