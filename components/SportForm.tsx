@@ -28,12 +28,23 @@ export default function SportForm({ onClose, onRefresh }: Props) {
   }, []);
 
   const speichern = async () => {
+    const now = new Date();
+    const uhrzeit = now.toLocaleTimeString("de-DE", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  
     const res = await fetch("/api/add-sport", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ beschreibung: desc, kcal: Number(kcal) }),
+      body: JSON.stringify({
+        beschreibung: desc,
+        kcal: Number(kcal),
+        uhrzeit, // ✅ lokal berechnet
+      }),
     });
-
+  
     if (res.ok) {
       onRefresh?.();
       onClose();
@@ -41,6 +52,7 @@ export default function SportForm({ onClose, onRefresh }: Props) {
       alert("❌ Fehler beim Speichern");
     }
   };
+  
 
   const schaetzeMitGPT = async () => {
     if (!desc) return alert("Bitte Beschreibung eingeben");

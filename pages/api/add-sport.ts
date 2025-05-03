@@ -9,7 +9,7 @@ function parseDecimal(input: any): number {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { beschreibung, kcal } = req.body;
+  const { beschreibung, kcal, uhrzeit } = req.body;
 
   const kcalVal = parseDecimal(kcal);
 
@@ -27,7 +27,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheetId = process.env.GOOGLE_SHEET_ID;
 
     const datum = new Date().toLocaleDateString("de-DE");
-    const uhrzeit = new Date().toLocaleTimeString("de-DE", {
+
+    // ✅ Verwende übergebene Uhrzeit oder fallback auf Serverzeit
+    const uhr = uhrzeit || new Date().toLocaleTimeString("de-DE", {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -37,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       range: "Aktivitäten!A:D",
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[datum, beschreibung, kcalVal, uhrzeit]],
+        values: [[datum, beschreibung, kcalVal, uhr]],
       },
     });
 

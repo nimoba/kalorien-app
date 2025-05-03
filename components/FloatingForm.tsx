@@ -91,6 +91,13 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   };
 
   const handleSpeichern = async () => {
+    const now = new Date();
+    const uhrzeit = now.toLocaleTimeString("de-DE", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
     const res = await fetch("/api/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -100,6 +107,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         eiweiss,
         fett,
         kh,
+        uhrzeit,
       }),
     });
 
@@ -153,7 +161,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
 
-        {/* Kompakte Makros */}
         <div style={macroRow}>
           <div style={macroGroup}>
             <label style={macroLabel}>KH</label>
@@ -187,7 +194,6 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           </div>
         </div>
 
-        {/* Barcode + Foto */}
         <div style={{ display: "flex", gap: 8, marginTop: 8, marginBottom: 16 }}>
           <button
             onClick={() => setScanning(true)}

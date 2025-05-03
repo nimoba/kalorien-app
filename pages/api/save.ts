@@ -9,7 +9,7 @@ function parseDecimal(input: any): number {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { name, kcal, eiweiss, fett, kh } = req.body;
+  const { name, kcal, eiweiss, fett, kh, uhrzeit } = req.body;
 
   const kcalVal = parseDecimal(kcal);
   const eiweissVal = parseDecimal(eiweiss);
@@ -34,7 +34,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: "v4", auth });
     const today = new Date().toLocaleDateString("de-DE");
-    const time = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    const time = uhrzeit || new Date().toLocaleTimeString("de-DE", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
@@ -52,8 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const values = favRes.data.values?.flat() || [];
     const exists = values.map(v => v.toLowerCase()).includes(name.toLowerCase());
-
-    console.log("🔍 Daten zum Speichern:", { name, kcalVal, eiweissVal, fettVal, khVal });
 
     if (!exists) {
       await sheets.spreadsheets.values.append({
