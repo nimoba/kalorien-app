@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import BarcodeScanner from './BarcodeScanner';
 
@@ -153,7 +153,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
 
-        {/* Basiswerte pro 100g */}
+        {/* Basiswerte pro 100g + Berechnung */}
         <label>Kalorien (pro 100 g):</label>
         <div style={rowStyle}>
           <input
@@ -169,7 +169,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 
         <div style={rowStyle}>
           <div style={macroGroup}>
-            <label style={macroLabel}>KH/100g</label>
+            <label style={macroLabel}>KH/100g:</label>
             <input
               value={basisKh}
               onChange={e => setBasisKh(e.target.value)}
@@ -181,7 +181,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <span style={calcMacroStyle}>{calcKh().toFixed(1)}</span>
           </div>
           <div style={macroGroup}>
-            <label style={macroLabel}>F/100g</label>
+            <label style={macroLabel}>F/100g:</label>
             <input
               value={basisFett}
               onChange={e => setBasisFett(e.target.value)}
@@ -193,7 +193,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <span style={calcMacroStyle}>{calcFett().toFixed(1)}</span>
           </div>
           <div style={macroGroup}>
-            <label style={macroLabel}>P/100g</label>
+            <label style={macroLabel}>P/100g:</label>
             <input
               value={basisEiweiss}
               onChange={e => setBasisEiweiss(e.target.value)}
@@ -286,7 +286,13 @@ const rowStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'center', marginBottom: 6,
 };
 const calcStyle: React.CSSProperties = {
-  marginLeft: 12, fontSize: 14, color: '#ccc', minWidth: 60, textAlign: 'right',
+  marginLeft: 12,
+  marginRight: 8,
+  fontSize: 14,
+  fontWeight: 'bold',
+  color: '#ccc',
+  minWidth: 60,
+  textAlign: 'right',
 };
 const macroGroup: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 4,
@@ -300,5 +306,11 @@ const macroInput: React.CSSProperties = {
   backgroundColor: '#1e1e1e', color: '#fff',
 };
 const calcMacroStyle: React.CSSProperties = {
-  marginLeft: 6, fontSize: 12, color: '#ccc', width: 32, textAlign: 'right',
+  marginLeft: 6,
+  marginRight: 8,
+  fontSize: 12,
+  fontWeight: 'bold',
+  color: '#ccc',
+  width: 32,
+  textAlign: 'right',
 };
