@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import BarcodeScanner from "./BarcodeScanner";
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import BarcodeScanner from './BarcodeScanner';
 
 interface Props {
   onClose: () => void;
@@ -10,16 +10,16 @@ interface Props {
 }
 
 export default function FloatingForm({ onClose, onRefresh }: Props) {
-  const [name, setName] = useState("");
-  const [basisKcal, setBasisKcal] = useState("");
-  const [basisEiweiss, setBasisEiweiss] = useState("");
-  const [basisFett, setBasisFett] = useState("");
-  const [basisKh, setBasisKh] = useState("");
-  const [menge, setMenge] = useState("100");
+  const [name, setName] = useState('');
+  const [basisKcal, setBasisKcal] = useState('');
+  const [basisEiweiss, setBasisEiweiss] = useState('');
+  const [basisFett, setBasisFett] = useState('');
+  const [basisKh, setBasisKh] = useState('');
+  const [menge, setMenge] = useState('100');
   const [scanning, setScanning] = useState(false);
-  const [gptInput, setGptInput] = useState("");
+  const [gptInput, setGptInput] = useState('');
 
-  const parse = (val: string) => parseFloat(val || "0");
+  const parse = (val: string) => parseFloat(val || '0');
   const mengeVal = parse(menge);
 
   const kcal = (parse(basisKcal) / 100) * mengeVal;
@@ -27,16 +27,19 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const fett = (parse(basisFett) / 100) * mengeVal;
   const kh = (parse(basisKh) / 100) * mengeVal;
 
-  const updateBasis = (value: number, setter: (v: string) => void) => {
-    const basis = (value / mengeVal) * 100;
-    setter(basis.toFixed(2));
+  const updateBasis = (newVal: string, setter: (v: string) => void, basis: string) => {
+    const value = parseFloat(newVal || '0');
+    if (!isNaN(value) && mengeVal > 0) {
+      const updated = (value / mengeVal) * 100;
+      setter(updated.toFixed(2));
+    }
   };
 
   const handleGPT = async () => {
     if (!gptInput) return;
-    const res = await fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: gptInput }),
     });
     const data = await res.json();
@@ -46,10 +49,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisEiweiss(String(data.Eiweiß));
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
-      setMenge(data.menge ? String(data.menge) : "100");
-      setGptInput("");
+      setMenge(data.menge ? String(data.menge) : '100');
+      setGptInput('');
     } else {
-      alert("❌ Fehler bei GPT");
+      alert('❌ Fehler bei GPT');
     }
   };
 
@@ -57,50 +60,49 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     setScanning(false);
     const res = await fetch(`/api/barcode?code=${code}&menge=1`);
     const data = await res.json();
-
     if (res.ok) {
       setName(data.name);
       setBasisKcal(String(data.Kalorien));
       setBasisEiweiss(String(data.Eiweiß));
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
-      setMenge(data.menge ? String(data.menge) : "100");
+      setMenge(data.menge ? String(data.menge) : '100');
     } else {
-      alert("❌ Produkt nicht gefunden");
+      alert('❌ Produkt nicht gefunden');
     }
   };
 
   const handleFoto = async (base64: string) => {
-    const res = await fetch("/api/kalorien-bild", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch('/api/kalorien-bild', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: base64 }),
     });
 
     const data = await res.json();
     if (res.ok) {
-      setName(data.name || "Foto-Schätzung");
+      setName(data.name || 'Foto-Schätzung');
       setBasisKcal(String(data.kcal));
       setBasisEiweiss(String(data.eiweiss));
       setBasisFett(String(data.fett));
       setBasisKh(String(data.kh));
-      setMenge(data.menge ? String(data.menge) : "100");
+      setMenge(data.menge ? String(data.menge) : '100');
     } else {
-      alert("❌ Foto konnte nicht analysiert werden");
+      alert('❌ Foto konnte nicht analysiert werden');
     }
   };
 
   const handleSpeichern = async () => {
     const now = new Date();
-    const uhrzeit = now.toLocaleTimeString("de-DE", {
-      hour: "2-digit",
-      minute: "2-digit",
+    const uhrzeit = now.toLocaleTimeString('de-DE', {
+      hour: '2-digit',
+      minute: '2-digit',
       hour12: false,
     });
 
-    const res = await fetch("/api/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name,
         kcal,
@@ -115,7 +117,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       onRefresh?.();
       onClose();
     } else {
-      alert("❌ Fehler beim Speichern");
+      alert('❌ Fehler beim Speichern');
     }
   };
 
@@ -154,8 +156,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 
         <label>Kalorien:</label>
         <input
-          value={kcal.toFixed(1)}
-          onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKcal)}
+          value={basisKcal}
+          onChange={(e) => setBasisKcal(e.target.value)}
+          onBlur={() => setBasisKcal(parseFloat(basisKcal || '0').toFixed(1))}
           inputMode="decimal"
           pattern="[0-9.]*"
           style={inputStyle}
@@ -165,8 +168,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>KH</label>
             <input
-              value={kh.toFixed(1)}
-              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisKh)}
+              value={basisKh}
+              onChange={(e) => setBasisKh(e.target.value)}
+              onBlur={() => setBasisKh(parseFloat(basisKh || '0').toFixed(1))}
               inputMode="decimal"
               pattern="[0-9.]*"
               style={macroInput}
@@ -175,8 +179,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>F</label>
             <input
-              value={fett.toFixed(1)}
-              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisFett)}
+              value={basisFett}
+              onChange={(e) => setBasisFett(e.target.value)}
+              onBlur={() => setBasisFett(parseFloat(basisFett || '0').toFixed(1))}
               inputMode="decimal"
               pattern="[0-9.]*"
               style={macroInput}
@@ -185,8 +190,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={macroGroup}>
             <label style={macroLabel}>P</label>
             <input
-              value={eiweiss.toFixed(1)}
-              onChange={(e) => updateBasis(parseFloat(e.target.value || "0"), setBasisEiweiss)}
+              value={basisEiweiss}
+              onChange={(e) => setBasisEiweiss(e.target.value)}
+              onBlur={() => setBasisEiweiss(parseFloat(basisEiweiss || '0').toFixed(1))}
               inputMode="decimal"
               pattern="[0-9.]*"
               style={macroInput}
@@ -194,7 +200,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, marginTop: 8, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 8, marginBottom: 16 }}>
           <button
             onClick={() => setScanning(true)}
             style={{ ...fotoButtonStyle, flex: 1 }}
@@ -208,13 +214,13 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
               type="file"
               accept="image/*"
               capture="environment"
-              style={{ display: "none" }}
+              style={{ display: 'none' }}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                  const base64 = reader.result?.toString().split(",")[1];
+                  const base64 = reader.result?.toString().split(',')[1];
                   if (base64) handleFoto(base64);
                 };
                 reader.readAsDataURL(file);
@@ -230,7 +236,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           </div>
         )}
 
-        <button onClick={handleSpeichern} style={{ ...buttonStyle, backgroundColor: "#3cb043" }}>
+        <button onClick={handleSpeichern} style={{ ...buttonStyle, backgroundColor: '#3cb043' }}>
           ✅ Eintragen
         </button>
       </motion.div>
@@ -241,90 +247,90 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
 // === STYLES ===
 
 const overlayStyle: React.CSSProperties = {
-  position: "fixed",
+  position: 'fixed',
   top: 0, left: 0, right: 0, bottom: 0,
-  background: "rgba(0,0,0,0.6)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
+  background: 'rgba(0,0,0,0.6)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   zIndex: 999,
 };
 
 const formStyle: React.CSSProperties = {
-  backgroundColor: "#2a2a2a",
-  color: "#fff",
+  backgroundColor: '#2a2a2a',
+  color: '#fff',
   padding: 16,
   borderRadius: 16,
-  width: "90%",
+  width: '90%',
   maxWidth: 400,
-  maxHeight: "90vh",
-  overflowY: "auto",
-  boxShadow: "0 5px 20px rgba(0,0,0,0.3)",
-  position: "relative",
+  maxHeight: '90vh',
+  overflowY: 'auto',
+  boxShadow: '0 5px 20px rgba(0,0,0,0.3)',
+  position: 'relative',
 };
 
 const closeStyle: React.CSSProperties = {
-  position: "absolute",
+  position: 'absolute',
   top: 12,
   right: 12,
-  background: "transparent",
-  color: "#fff",
+  background: 'transparent',
+  color: '#fff',
   fontSize: 20,
-  border: "none",
-  cursor: "pointer",
+  border: 'none',
+  cursor: 'pointer',
 };
 
 const inputStyle: React.CSSProperties = {
-  width: "100%",
+  width: '100%',
   padding: 8,
   fontSize: 14,
   marginBottom: 6,
   borderRadius: 8,
-  border: "1px solid #555",
-  backgroundColor: "#1e1e1e",
-  color: "#fff",
+  border: '1px solid #555',
+  backgroundColor: '#1e1e1e',
+  color: '#fff',
 };
 
 const buttonStyle: React.CSSProperties = {
-  backgroundColor: "#36a2eb",
-  color: "#fff",
-  border: "none",
+  backgroundColor: '#36a2eb',
+  color: '#fff',
+  border: 'none',
   borderRadius: 8,
-  padding: "8px 10px",
+  padding: '8px 10px',
   fontSize: 14,
-  cursor: "pointer",
-  width: "100%",
+  cursor: 'pointer',
+  width: '100%',
   marginBottom: 10,
 };
 
 const fotoButtonStyle: React.CSSProperties = {
-  backgroundColor: "#444",
-  border: "1px solid #666",
+  backgroundColor: '#444',
+  border: '1px solid #666',
   borderRadius: 8,
   fontSize: 14,
   height: 40,
-  padding: "0 10px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
+  padding: '0 10px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
 };
 
 const macroRow: React.CSSProperties = {
-  display: "flex",
+  display: 'flex',
   gap: 8,
   marginBottom: 6,
 };
 
 const macroGroup: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
+  display: 'flex',
+  alignItems: 'center',
   gap: 4,
 };
 
 const macroLabel: React.CSSProperties = {
   fontSize: 12,
-  color: "#aaa",
+  color: '#aaa',
 };
 
 const macroInput: React.CSSProperties = {
@@ -332,7 +338,7 @@ const macroInput: React.CSSProperties = {
   padding: 4,
   fontSize: 12,
   borderRadius: 6,
-  border: "1px solid #555",
-  backgroundColor: "#1e1e1e",
-  color: "#fff",
+  border: '1px solid #555',
+  backgroundColor: '#1e1e1e',
+  color: '#fff',
 };
