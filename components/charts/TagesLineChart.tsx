@@ -45,33 +45,35 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
   }
 
   // 3. Compute cumulative kcal per hour
-  let sum = 0;
-  const werte: number[] = [];
-  let lastHourWithData = -1;
+  const werte: (number | null)[] = [];
+  const pointRadius: number[] = [];
 
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  let sum = 0;
   for (let h = 0; h < 24; h++) {
     if (kcalPerHour[h] !== undefined) {
       sum += kcalPerHour[h];
-      lastHourWithData = h;
     }
 
-    // Fill value only up to the last hour with data, else NaN (line stops)
-    if (lastHourWithData >= 0 && h <= lastHourWithData) {
+    if (h <= currentHour) {
       werte.push(sum);
+      pointRadius.push(3); // show point
     } else {
-      werte.push(NaN);
+      werte.push(null); // break line
+      pointRadius.push(0); // hide point
     }
   }
 
-  // 4. Prepare goal array (same rule as values)
-  const zielArray = werte.map((_, i) =>
-    i <= lastHourWithData ? ziel : NaN
-  );
+  // 4. Goal line across full 24 hours
+  const zielArray = new Array(24).fill(ziel);
 
-  // 5. Determine color
-  const maxKcal = Math.max(...werte.filter((v) => !isNaN(v)));
+  // 5. Color logic
+  const maxKcal = Math.max(...werte.filter((v): v is number => v !== null));
   const farbe = getOvershootColor(maxKcal, ziel, '#36a2eb');
 
+  // 6. Data config
   const data: ChartData<'line'> = {
     labels: fullDayLabels,
     datasets: [
@@ -83,6 +85,7 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
         backgroundColor: farbe + '33',
         tension: 0.3,
         spanGaps: false,
+        pointRadius,
       },
       {
         label: 'Tagesziel',
@@ -92,11 +95,32 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
         borderWidth: 1.5,
         pointRadius: 0,
         tension: 0.1,
-        spanGaps: false,
+        spanGaps: true,
       },
     ],
   };
 
+  // 7. Vertical line plugin for current hour
+  const verticalLinePlugin = {
+    id: 'currentHourLine',
+    afterDraw: (chart: any) => {
+      const { ctx, chartArea, scales } = chart;
+      const xScale = scales.x;
+      const x = xScale.getPixelForValue(currentHour);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, chartArea.top);
+      ctx.lineTo(x, chartArea.bottom);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#888';
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+
+  // 8. Chart options
   const options: ChartOptions<'line'> = {
     responsive: true,
     plugins: {
@@ -114,7 +138,7 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
   return (
     <div>
       <h3 style={{ marginBottom: 12 }}>⏰ Kalorien nach Uhrzeit</h3>
-      <Line data={data} options={options} />
+      <Line data={data} options={options} plugins={[verticalLinePlugin]} />
     </div>
   );
 }
