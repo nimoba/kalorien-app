@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import FloatingTabBar from "../components/FloatingTabBar";
 import { motion } from "framer-motion";
 import { Line } from "react-chartjs-2";
+import GewichtKomponentenChart from "../components/charts/GewichtKomponentenChart";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -251,6 +252,9 @@ export default function GewichtSeite() {
           }}
         />
       </div>
+
+      {/* ✨ Neuer Gewichtskomponenten-Chart */}
+      <GewichtKomponentenChart />
 
       <FloatingTabBar />
     </div>

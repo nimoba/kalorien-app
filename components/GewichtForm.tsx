@@ -12,6 +12,7 @@ export default function GewichtForm({ onClose, onRefresh }: Props) {
   const [gewicht, setGewicht] = useState("");
   const [fett, setFett] = useState("");
   const [muskel, setMuskel] = useState("");
+  const [wasser, setWasser] = useState(""); // ✨ Neu: Wasser-Feld
   const [loading, setLoading] = useState(false);
 
   const speichern = async () => {
@@ -29,6 +30,7 @@ export default function GewichtForm({ onClose, onRefresh }: Props) {
         gewicht: parseFloat(gewicht),
         fett: fett ? parseFloat(fett) : null,
         muskel: muskel ? parseFloat(muskel) : null,
+        wasser: wasser ? parseFloat(wasser) : null, // ✨ Wasser hinzugefügt
       }),
     });
 
@@ -108,6 +110,14 @@ export default function GewichtForm({ onClose, onRefresh }: Props) {
           type="number"
           value={muskel}
           onChange={(e) => setMuskel(e.target.value)}
+          style={inputStyle}
+        />
+
+        <label>Wasseranteil (%)</label> {/* ✨ Neues Feld */}
+        <input
+          type="number"
+          value={wasser}
+          onChange={(e) => setWasser(e.target.value)}
           style={inputStyle}
         />
 

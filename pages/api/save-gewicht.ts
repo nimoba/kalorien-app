@@ -9,7 +9,7 @@ function parseDecimal(input: any): string {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { gewicht, fett, muskel } = req.body;
+  const { gewicht, fett, muskel, wasser } = req.body; // ✨ wasser hinzugefügt
 
   if (!gewicht) {
     return res.status(400).json({ error: "Gewicht ist erforderlich" });
@@ -23,9 +23,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
-    const range = "Gewicht!A2:D";
+    const range = "Gewicht!A2:E"; // ✨ Erweitert um Spalte E für Wasser
 
-    // 🧠 Fallback: Letzten bekannten Fett/Muskel-Wert holen
+    // 🧠 Fallback: Letzten bekannten Fett/Muskel/Wasser-Wert holen
     const prevData = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range,
@@ -36,6 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const fallbackFett = letzte?.[2] || "";
     const fallbackMuskel = letzte?.[3] || "";
+    const fallbackWasser = letzte?.[4] || ""; // ✨ Fallback für Wasser
 
     const heute = new Date().toLocaleDateString("de-DE");
 
@@ -44,11 +45,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       parseDecimal(gewicht),
       fett != null && fett !== "" ? parseDecimal(fett) : fallbackFett,
       muskel != null && muskel !== "" ? parseDecimal(muskel) : fallbackMuskel,
+      wasser != null && wasser !== "" ? parseDecimal(wasser) : fallbackWasser, // ✨ Wasser
     ];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: "Gewicht!A:D",
+      range: "Gewicht!A:E", // ✨ Erweitert um Spalte E
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: [neueZeile],
