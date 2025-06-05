@@ -10,7 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
-    const heute = new Date().toLocaleDateString("de-DE");
+    
+    // ✅ Deutsche Zeitzone verwenden
+    const heute = new Date().toLocaleDateString("de-DE", {
+      timeZone: "Europe/Berlin"
+    });
 
     // 📋 Zielwerte aus "Ziele"
     const zieleRes = await sheets.spreadsheets.values.get({
