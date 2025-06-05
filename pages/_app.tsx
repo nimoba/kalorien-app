@@ -3,7 +3,8 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { useState, useEffect } from "react";
 
-const CORRECT_PASSWORD = "kalorien2025"; // Dein Passwort hier
+// ✅ Passwort aus Environment Variable laden
+const CORRECT_PASSWORD = process.env.NEXT_PUBLIC_APP_PASSWORD || "fallback123";
 const COOKIE_NAME = "app_access_token";
 
 export default function App({ Component, pageProps }: AppProps) {
