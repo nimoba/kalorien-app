@@ -14,10 +14,11 @@ export function MakroBalken({ label, value, ziel, farbe }: Props) {
 
   // Bewertung
   const bewertung = () => {
-    if (progress >= 0.9 && progress <= 1.1) return { farbe: '#27ae60', text: 'Perfect! 🎯' };
-    if (progress >= 0.8 && progress <= 1.2) return { farbe: '#2ecc71', text: 'Gut! 👍' };
-    if (progress >= 0.6 && progress <= 1.4) return { farbe: '#f39c12', text: 'Ok' };
-    return { farbe: '#e74c3c', text: 'Aufpassen!' };
+    if (progress >= 0.9 && progress <= 1.1) return { farbe: '#27ae60', text: 'Perfect! 🎯' };     // 90-110%
+    if (progress >= 0.7 && progress < 0.9) return { farbe: '#2ecc71', text: 'Gut! 👍' };         // 70-90%
+    if (progress >= 0.5 && progress < 0.7) return { farbe: '#f39c12', text: 'Ok' };              // 50-70%
+    if (progress < 0.5) return { farbe: '#e74c3c', text: 'Zu wenig!' };                         // <50%
+    return { farbe: '#e74c3c', text: 'Aufpassen!' };                                            // >110%
   };
 
   const bewertungInfo = bewertung();

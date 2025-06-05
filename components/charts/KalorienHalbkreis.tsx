@@ -54,10 +54,11 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
   // Bewertung basierend auf Fortschritt
   const bewertung = () => {
     const prozent = gegessen / ziel;
-    if (prozent >= 0.95 && prozent <= 1.05) return { farbe: '#27ae60', text: 'Perfect! 🎯' };
-    if (prozent >= 0.85 && prozent <= 1.15) return { farbe: '#2ecc71', text: 'Sehr gut! 💪' };
-    if (prozent >= 0.7 && prozent <= 1.3) return { farbe: '#f39c12', text: 'Ok 👍' };
-    return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️' };
+    if (prozent >= 0.9 && prozent <= 1.1) return { farbe: '#27ae60', text: 'Perfect! 🎯' };      // 90-110%
+    if (prozent >= 0.7 && prozent < 0.9) return { farbe: '#2ecc71', text: 'Sehr gut! 💪' };     // 70-90%
+    if (prozent >= 0.5 && prozent < 0.7) return { farbe: '#f39c12', text: 'Ok 👍' };            // 50-70%
+    if (prozent < 0.5) return { farbe: '#e74c3c', text: 'Zu wenig! ⚠️' };                      // <50%
+    return { farbe: '#e74c3c', text: 'Zu viel! ⚠️' };                                          // >110%
   };
 
   const bewertungInfo = bewertung();
