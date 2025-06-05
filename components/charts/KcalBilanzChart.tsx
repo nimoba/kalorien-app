@@ -128,9 +128,6 @@ export default function KcalBilanzChart({ refresh }: { refresh: number }) {
     },
   };
 
-  // Bilanz-Prozent für Hintergrund (basierend auf -5000 bis +5000 kcal Range)
-  const bilanzProzent = Math.min(100, Math.abs(bilanz / 5000) * 100);
-
   return (
     <div style={{
       backgroundColor: '#1e1e1e',
@@ -148,14 +145,37 @@ export default function KcalBilanzChart({ refresh }: { refresh: number }) {
           alignItems: 'center',
           marginBottom: 16
         }}>
-          <h3 style={{ 
-            marginBottom: 0, 
-            color: '#fff',
-            fontSize: 18,
-            fontWeight: 'bold'
-          }}>
-            📉 Kcal-Bilanz (Verbrauch vs. Realität)
-          </h3>
+          <div>
+            <h3 style={{ 
+              marginBottom: 4, 
+              color: '#fff',
+              fontSize: 18,
+              fontWeight: 'bold'
+            }}>
+              📉 Kcal-Bilanz (Verbrauch vs. Realität)
+            </h3>
+            {/* Bilanz-Anzeige unter dem Titel */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 4
+            }}>
+              <span style={{
+                fontSize: 20,
+                fontWeight: 'bold',
+                color: bewertungInfo.farbe,
+              }}>
+                {bilanz >= 0 ? '+' : ''}{bilanz.toLocaleString()} kcal
+              </span>
+              <span style={{
+                fontSize: 12,
+                color: '#aaa',
+              }}>
+                {bilanz < 0 ? 'Defizit' : 'Überschuss'}
+              </span>
+            </div>
+          </div>
           <span style={{
             fontSize: 12,
             color: bewertungInfo.farbe,
