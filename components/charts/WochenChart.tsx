@@ -166,20 +166,9 @@ export function WochenChart({ refresh }: Props) {
       padding: 20,
       marginTop: 24,
       border: `2px solid ${bewertungInfo.farbe}33`,
-      position: 'relative',
-      overflow: 'hidden',
     }}>
-      {/* Hintergrund-Effekt */}
-      <div style={{
-        position: 'absolute',
-        top: 0, left: 0, bottom: 0,
-        width: `${Math.min(durchschnittsProzent * 100, 100)}%`,
-        backgroundColor: `${bewertungInfo.farbe}11`,
-        borderRadius: '12px 0 0 12px',
-      }} />
-
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
+      <div>
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -211,11 +200,6 @@ export function WochenChart({ refresh }: Props) {
           color: '#ccc'
         }}>
           Ø Zielerreichung: {(durchschnittsProzent * 100).toFixed(1)}%
-        </div>
-
-        {/* Chart */}
-        <div style={{ height: '300px' }}>
-          <Chart type="bar" data={data} options={options} />
         </div>
       </div>
     </div>

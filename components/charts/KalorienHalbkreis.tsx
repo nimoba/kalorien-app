@@ -69,20 +69,9 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
       padding: 24,
       border: `2px solid ${bewertungInfo.farbe}33`,
       marginBottom: 24,
-      position: 'relative',
-      overflow: 'hidden',
     }}>
-      {/* Hintergrund-Effekt */}
-      <div style={{
-        position: 'absolute',
-        top: 0, left: 0, bottom: 0,
-        width: `${Math.min(progress * 100, 100)}%`,
-        backgroundColor: `${bewertungInfo.farbe}11`,
-        borderRadius: '12px 0 0 12px',
-      }} />
-
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
+      <div>
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -174,16 +163,6 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
               />
             </div>
           </div>
-        </div>
-
-        {/* Status Info */}
-        <div style={{
-          marginTop: 16,
-          textAlign: 'center',
-          color: '#ccc',
-          fontSize: 14
-        }}>
-          Noch {Math.max(0, ziel - gegessen)} kcal übrig
         </div>
       </div>
     </div>

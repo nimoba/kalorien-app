@@ -78,6 +78,18 @@ export default function GewichtSeite() {
       ? `🎯 Zielgewicht in ca. ${verbleibendeTage} Tagen`
       : "🎯 Zielgewicht erreicht oder Trend zu flach";
 
+  // Bewertung für Gewichtsverlauf
+  const gewichtBewertung = () => {
+    const diffNum = parseFloat(diff);
+    if (diffNum <= -5) return { farbe: '#27ae60', text: 'Excellent! 🎉' };
+    if (diffNum <= -1) return { farbe: '#2ecc71', text: 'Sehr gut! 💪' };
+    if (diffNum >= -0.5 && diffNum <= 0.5) return { farbe: '#f39c12', text: 'Stabil 👍' };
+    if (diffNum >= 1) return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️' };
+    return { farbe: '#95a5a6', text: 'Ok' };
+  };
+
+  const gewichtBewertungInfo = gewichtBewertung();
+
   const chartData = {
     labels,
     datasets: [
@@ -87,6 +99,9 @@ export default function GewichtSeite() {
         borderColor: "#36a2eb",
         backgroundColor: "#36a2eb33",
         tension: 0.3,
+        borderWidth: 3,
+        pointRadius: 3,
+        pointHoverRadius: 6,
       },
       {
         label: "Theoretisch (Kcal-basiert)",
@@ -96,12 +111,13 @@ export default function GewichtSeite() {
         pointRadius: 0,
         pointHoverRadius: 5,
         tension: 0.2,
+        borderWidth: 2,
       },
       {
         label: "7-Tage Ø",
         data: smoothed,
         borderColor: "#f4d35e",
-        borderWidth: 1,
+        borderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 5,
         tension: 0.25,
@@ -129,25 +145,104 @@ export default function GewichtSeite() {
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      legend: { position: "bottom" as const },
+      legend: { 
+        position: "bottom" as const,
+        labels: {
+          color: '#fff',
+          font: { size: 12 },
+          usePointStyle: true,
+        },
+      },
       tooltip: {
         enabled: true,
         mode: "index" as const,
         intersect: false,
+        backgroundColor: '#1e1e1e',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: '#444',
+        borderWidth: 1,
         callbacks: {
-            label: (context: import("chart.js").TooltipItem<"line">) =>
-                `${context.dataset.label}: ${context.formattedValue} kg`,
-                      },
+          label: (context: import("chart.js").TooltipItem<"line">) =>
+            `${context.dataset.label}: ${context.formattedValue} kg`,
+        },
       },
     },
     interaction: {
-        mode: "index" as const,
-        intersect: false,
-      },      
+      mode: "index" as const,
+      intersect: false,
+    },      
     scales: {
+      x: {
+        ticks: { color: '#ccc', font: { size: 11 } },
+        grid: { color: '#333' },
+      },
       y: {
         beginAtZero: false,
+        ticks: { color: '#ccc', font: { size: 11 } },
+        grid: { color: '#333' },
+      },
+    },
+  };
+
+  // Körperzusammensetzung Chart Data
+  const koerperChartData = {
+    labels: verlauf.map((e: any) => e.datum),
+    datasets: [
+      {
+        label: "Körperfett (%)",
+        data: fett.map((e: any) => e.wert),
+        borderColor: "#ffa600",
+        backgroundColor: "#ffa60033",
+        tension: 0.25,
+        borderWidth: 3,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+      },
+      {
+        label: "Muskelmasse (%)",
+        data: muskel.map((e: any) => e.wert),
+        borderColor: "#00cc99",
+        backgroundColor: "#00cc9933",
+        tension: 0.25,
+        borderWidth: 3,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+      },
+    ],
+  };
+
+  const koerperOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { 
+      legend: { 
+        position: "bottom" as const,
+        labels: {
+          color: '#fff',
+          font: { size: 12 },
+          usePointStyle: true,
+        },
+      },
+      tooltip: {
+        backgroundColor: '#1e1e1e',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: '#444',
+        borderWidth: 1,
+      },
+    },
+    scales: {
+      x: {
+        ticks: { color: '#ccc', font: { size: 11 } },
+        grid: { color: '#333' },
+      },
+      y: { 
+        beginAtZero: false,
+        ticks: { color: '#ccc', font: { size: 11 } },
+        grid: { color: '#333' },
       },
     },
   };
@@ -216,44 +311,112 @@ export default function GewichtSeite() {
         </motion.div>
       )}
 
-      <div style={{ marginTop: 32 }}>
-        <Line data={chartData} options={options} />
+      {/* ✨ GEWICHTSVERLAUF CHART */}
+      <div style={{
+        backgroundColor: '#1e1e1e',
+        borderRadius: 12,
+        padding: 20,
+        marginTop: 24,
+        border: `2px solid ${gewichtBewertungInfo.farbe}33`,
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16
+        }}>
+          <h3 style={{ 
+            marginBottom: 0, 
+            color: '#fff',
+            fontSize: 18,
+            fontWeight: 'bold'
+          }}>
+            📈 Gewichtsverlauf
+          </h3>
+          <span style={{
+            fontSize: 12,
+            color: gewichtBewertungInfo.farbe,
+            fontWeight: 'bold'
+          }}>
+            {gewichtBewertungInfo.text}
+          </span>
+        </div>
+
+        <div style={{
+          marginBottom: 16,
+          fontSize: 14,
+          color: '#ccc'
+        }}>
+          Aktuell: <strong style={{ color: '#fff' }}>{letzte.toFixed(1)} kg</strong> 
+          {zielGewicht && (
+            <span style={{ marginLeft: 16 }}>
+              Ziel: <strong style={{ color: '#fff' }}>{zielGewicht} kg</strong>
+            </span>
+          )}
+        </div>
+
+        <div style={{ height: '350px' }}>
+          <Line data={chartData} options={options} />
+        </div>
       </div>
 
-      <div style={{ marginTop: 50 }}>
-        <h2>🧬 Körperzusammensetzung</h2>
+      {/* ✨ KÖRPERZUSAMMENSETZUNG CHART */}
+      <div style={{
+        backgroundColor: '#1e1e1e',
+        borderRadius: 12,
+        padding: 20,
+        marginTop: 24,
+        border: `2px solid #2ecc7133`,
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16
+        }}>
+          <h3 style={{ 
+            marginBottom: 0, 
+            color: '#fff',
+            fontSize: 18,
+            fontWeight: 'bold'
+          }}>
+            🧬 Körperzusammensetzung
+          </h3>
+          <span style={{
+            fontSize: 12,
+            color: '#2ecc71',
+            fontWeight: 'bold'
+          }}>
+            Trend-Analyse 📊
+          </span>
+        </div>
 
-        <Line
-          data={{
-            labels: verlauf.map((e: any) => e.datum),
-            datasets: [
-              {
-                label: "Körperfett (%)",
-                data: fett.map((e: any) => e.wert),
-                borderColor: "#ffa600",
-                backgroundColor: "#ffa60033",
-                tension: 0.25,
-              },
-              {
-                label: "Muskelmasse (%)",
-                data: muskel.map((e: any) => e.wert),
-                borderColor: "#00cc99",
-                backgroundColor: "#00cc9933",
-                tension: 0.25,
-              },
-            ],
-          }}
-          options={{
-            responsive: true,
-            plugins: { legend: { position: "bottom" } },
-            scales: {
-              y: { beginAtZero: false },
-            },
-          }}
-        />
+        <div style={{
+          marginBottom: 16,
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 16,
+          fontSize: 14,
+          color: '#ccc'
+        }}>
+          <div>
+            Körperfett: <strong style={{ color: '#ffa600' }}>
+              {fett[fett.length - 1]?.wert?.toFixed(1) || 'N/A'}%
+            </strong>
+          </div>
+          <div>
+            Muskelmasse: <strong style={{ color: '#00cc99' }}>
+              {muskel[muskel.length - 1]?.wert?.toFixed(1) || 'N/A'}%
+            </strong>
+          </div>
+        </div>
+
+        <div style={{ height: '300px' }}>
+          <Line data={koerperChartData} options={koerperOptions} />
+        </div>
       </div>
 
-      {/* ✨ Neuer Gewichtskomponenten-Chart */}
+      {/* ✨ BODY COMPOSITION DASHBOARD (ohne Hintergrund-Shading) */}
       <GewichtKomponentenChart />
 
       <FloatingTabBar />

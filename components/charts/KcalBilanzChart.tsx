@@ -138,20 +138,9 @@ export default function KcalBilanzChart({ refresh }: { refresh: number }) {
       padding: 20,
       marginTop: 24,
       border: `2px solid ${bewertungInfo.farbe}33`,
-      position: 'relative',
-      overflow: 'hidden',
     }}>
-      {/* Hintergrund-Effekt */}
-      <div style={{
-        position: 'absolute',
-        top: 0, left: 0, bottom: 0,
-        width: `${bilanzProzent}%`,
-        backgroundColor: `${bewertungInfo.farbe}11`,
-        borderRadius: '12px 0 0 12px',
-      }} />
-
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
+      <div>
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -173,22 +162,6 @@ export default function KcalBilanzChart({ refresh }: { refresh: number }) {
             fontWeight: 'bold'
           }}>
             {bewertungInfo.text}
-          </span>
-        </div>
-
-        {/* Bilanz Info */}
-        <div style={{
-          marginBottom: 16,
-          fontSize: 14,
-          color: '#ccc'
-        }}>
-          Aktuelle Bilanz: 
-          <span style={{
-            color: bewertungInfo.farbe,
-            fontWeight: 'bold',
-            marginLeft: 8
-          }}>
-            {bilanz >= 0 ? '+' : ''}{bilanz.toLocaleString()} kcal
           </span>
         </div>
 

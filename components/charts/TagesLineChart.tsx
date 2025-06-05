@@ -72,7 +72,6 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
   // 5. Color logic & Bewertung
   const maxKcal = Math.max(...werte.filter((v): v is number => v !== null));
   const farbe = getOvershootColor(maxKcal, ziel, '#36a2eb');
-  const progress = Math.min(maxKcal / ziel, 2); // Max 200% für Visualisierung
 
   const bewertung = () => {
     const prozent = maxKcal / ziel;
@@ -184,7 +183,7 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
 
   // Essenszeiten für Stats
   const essenszeiten = Object.keys(kcalPerHour).length;
-  const letztesMahl = Math.max(...Object.keys(kcalPerHour).map(Number));
+  const letztesMahl = essenszeiten > 0 ? Math.max(...Object.keys(kcalPerHour).map(Number)) : 0;
 
   return (
     <div style={{
@@ -193,20 +192,9 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
       padding: 20,
       marginTop: 24,
       border: `2px solid ${bewertungInfo.farbe}33`,
-      position: 'relative',
-      overflow: 'hidden',
     }}>
-      {/* Hintergrund-Effekt */}
-      <div style={{
-        position: 'absolute',
-        top: 0, left: 0, bottom: 0,
-        width: `${Math.min(progress * 50, 100)}%`, // 50% da progress bis 2 gehen kann
-        backgroundColor: `${bewertungInfo.farbe}11`,
-        borderRadius: '12px 0 0 12px',
-      }} />
-
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
+      <div>
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -247,7 +235,9 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
             <strong style={{ color: '#fff' }}>{essenszeiten}</strong> Mahlzeiten
           </div>
           <div>
-            Letztes Essen: <strong style={{ color: '#fff' }}>{letztesMahl}:00</strong>
+            Letztes Essen: <strong style={{ color: '#fff' }}>
+              {essenszeiten > 0 ? `${letztesMahl}:00` : 'Keine'}
+            </strong>
           </div>
         </div>
 
