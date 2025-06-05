@@ -201,6 +201,11 @@ export function WochenChart({ refresh }: Props) {
         }}>
           Ø Zielerreichung: {(durchschnittsProzent * 100).toFixed(1)}%
         </div>
+
+        {/* ✅ CHART HINZUGEFÜGT - DAS HAT GEFEHLT! */}
+        <div style={{ height: '300px' }}>
+          <Chart type="bar" data={data} options={options} />
+        </div>
       </div>
     </div>
   );
