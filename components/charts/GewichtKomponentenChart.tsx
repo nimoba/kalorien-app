@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement,
+  LineElement,
   Tooltip,
   Legend,
 } from 'chart.js';
@@ -14,7 +15,8 @@ import {
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement,
+  LineElement,
   Tooltip,
   Legend
 );
@@ -27,7 +29,7 @@ interface GewichtEntry {
   wasser: number | null;
 }
 
-const GewichtKomponentenChart: React.FC = () => {
+const BodyCompositionDashboard: React.FC = () => {
   const [data, setData] = useState<GewichtEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,115 +44,101 @@ const GewichtKomponentenChart: React.FC = () => {
   }, []);
 
   if (loading) {
-    return React.createElement('p', { style: { color: "#fff" } }, '⏳ Lade Gewichtskomponenten...');
+    return React.createElement('p', { style: { color: "#fff" } }, '⏳ Lade Körperzusammensetzung...');
   }
 
   if (!data || data.length === 0) {
-    return React.createElement('p', { style: { color: "#fff" } }, 'Keine Gewichtsdaten verfügbar');
+    return React.createElement('p', { style: { color: "#fff" } }, 'Keine Daten verfügbar');
   }
 
-  // Letzten 30 Tage
+  // Letzte 30 Tage für Trends
   const last30Days = data.slice(-30);
+  const firstEntry = last30Days[0];
+  const lastEntry = last30Days[last30Days.length - 1];
 
-  // ✨ Zeige nur jeden 3. Tag für bessere Übersicht
-  const filteredData = last30Days.filter((_, index) => index % 3 === 0);
-  
-  const labels = filteredData.map(entry => {
-    const [tag, monat] = entry.datum.split('.');
-    return `${tag}.${monat}`;
-  });
+  // 🎯 DELTA-BERECHNUNGEN (Fortschritt!)
+  const gewichtDelta = lastEntry.gewicht - firstEntry.gewicht;
+  const fettDelta = (lastEntry.fett || 0) - (firstEntry.fett || 0);
+  const muskelDelta = (lastEntry.muskel || 0) - (firstEntry.muskel || 0);
+  const wasserDelta = (lastEntry.wasser || 0) - (firstEntry.wasser || 0);
 
-  // ✨ KORRIGIERTE BERECHNUNG mit realistischen Werten
-  const fettKg = filteredData.map(entry => {
-    if (!entry.fett || !entry.gewicht) return 0;
-    return (entry.fett / 100) * entry.gewicht;
-  });
+  // 📊 Bewertungsfunktion
+  const bewerteFortschritt = (wert: number, typ: 'gewicht' | 'fett' | 'muskel' | 'wasser') => {
+    switch (typ) {
+      case 'gewicht':
+        if (wert <= -2) return { farbe: '#27ae60', text: 'Excellent! 🎉', prozent: 95 };
+        if (wert <= -0.5) return { farbe: '#2ecc71', text: 'Sehr gut! 💪', prozent: 80 };
+        if (wert <= 0.5) return { farbe: '#f39c12', text: 'Stabil 👍', prozent: 60 };
+        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent: 30 };
+      
+      case 'fett':
+        if (wert <= -2) return { farbe: '#27ae60', text: 'Excellent! 🔥', prozent: 95 };
+        if (wert <= -0.5) return { farbe: '#2ecc71', text: 'Super! 💪', prozent: 80 };
+        if (wert <= 0.5) return { farbe: '#f39c12', text: 'Ok 👍', prozent: 60 };
+        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent: 30 };
+      
+      case 'muskel':
+        if (wert >= 2) return { farbe: '#27ae60', text: 'Excellent! 💪', prozent: 95 };
+        if (wert >= 0.5) return { farbe: '#2ecc71', text: 'Sehr gut! 🚀', prozent: 80 };
+        if (wert >= -0.5) return { farbe: '#f39c12', text: 'Stabil 👍', prozent: 60 };
+        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent: 30 };
+      
+      default:
+        return { farbe: '#95a5a6', text: 'Normal', prozent: 50 };
+    }
+  };
 
-  // ✨ Muskel-Wasser (ca. 20% der Muskelmasse ist Wasser)
-  const muskelTrockenKg = filteredData.map(entry => {
-    if (!entry.muskel || !entry.gewicht) return 0;
-    const gesamtMuskel = (entry.muskel / 100) * entry.gewicht;
-    return gesamtMuskel * 0.75; // 75% "trockene" Muskelmasse
-  });
-
-  const muskelWasserKg = filteredData.map(entry => {
-    if (!entry.muskel || !entry.gewicht) return 0;
-    const gesamtMuskel = (entry.muskel / 100) * entry.gewicht;
-    return gesamtMuskel * 0.25; // 25% Wasser in Muskeln
-  });
-
-  // ✨ Freies Wasser (Gesamtwasser minus Muskelwasser)
-  const freiesWasserKg = filteredData.map((entry, i) => {
-    if (!entry.wasser || !entry.gewicht) return 0;
-    const gesamtWasser = (entry.wasser / 100) * entry.gewicht;
-    const muskelWasser = muskelWasserKg[i] || 0;
-    return Math.max(0, gesamtWasser - muskelWasser);
-  });
-
-  // ✨ Rest = Knochen, Organe, etc.
-  const restKg = filteredData.map((entry, i) => {
-    const fett = fettKg[i] || 0;
-    const muskelTrocken = muskelTrockenKg[i] || 0;
-    const muskelWasser = muskelWasserKg[i] || 0;
-    const freiesWasser = freiesWasserKg[i] || 0;
-    return Math.max(0, entry.gewicht - fett - muskelTrocken - muskelWasser - freiesWasser);
-  });
-
-  // ✨ VERBESSERTE Y-ACHSE: Fokus auf relevanten Bereich
-  const allWeights = filteredData.map(entry => entry.gewicht);
-  const minWeight = Math.min(...allWeights);
-  const maxWeight = Math.max(...allWeights);
-  const weightRange = maxWeight - minWeight;
-  
-  // Wenn Änderungen < 5kg, dann mehr zoomen
-  const zoomFactor = weightRange < 5 ? 0.05 : 0.1;
-  const padding = Math.max(weightRange * zoomFactor, 1);
-  
-  const yAxisMin = Math.max(0, minWeight - padding);
-  const yAxisMax = maxWeight + padding;
+  // 📈 CHART DATA (Trend-Linien)
+  const chartLabels = last30Days
+    .filter((_, i) => i % 3 === 0) // Jeden 3. Tag
+    .map(entry => {
+      const [tag, monat] = entry.datum.split('.');
+      return `${tag}.${monat}`;
+    });
 
   const chartData = {
-    labels,
+    labels: chartLabels,
     datasets: [
-      // ✨ Reihenfolge: von unten nach oben
       {
-        label: 'Fett',
-        data: fettKg,
-        backgroundColor: '#ff6b6b',
-        borderRadius: 2,
+        label: 'Körperfett (%)',
+        data: last30Days
+          .filter((_, i) => i % 3 === 0)
+          .map(entry => entry.fett),
+        borderColor: '#e74c3c',
+        backgroundColor: '#e74c3c33',
+        tension: 0.4,
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 6,
       },
       {
-        label: 'Muskeln (trocken)',
-        data: muskelTrockenKg,
-        backgroundColor: '#4ecdc4',
-        borderRadius: 2,
+        label: 'Muskelmasse (%)',
+        data: last30Days
+          .filter((_, i) => i % 3 === 0)
+          .map(entry => entry.muskel),
+        borderColor: '#27ae60',
+        backgroundColor: '#27ae6033',
+        tension: 0.4,
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 6,
       },
       {
-        label: 'Wasser in Muskeln',
-        data: muskelWasserKg,
-        backgroundColor: '#45b7d1',
-        // ✨ Schraffiert-Effekt durch Pattern (Fallback: transparenter)
-        borderColor: '#4ecdc4',
+        label: 'Wasseranteil (%)',
+        data: last30Days
+          .filter((_, i) => i % 3 === 0)
+          .map(entry => entry.wasser),
+        borderColor: '#3498db',
+        backgroundColor: '#3498db33',
+        tension: 0.4,
         borderWidth: 2,
-        borderSkipped: false,
-        borderRadius: 2,
-      },
-      {
-        label: 'Freies Wasser',
-        data: freiesWasserKg,
-        backgroundColor: '#96ceb4',
-        borderRadius: 2,
-      },
-      {
-        label: 'Rest (Knochen, Organe)',
-        data: restKg,
-        backgroundColor: '#95a5a6',
-        borderRadius: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
       },
     ],
   };
 
-  const options = {
+  const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -158,138 +146,164 @@ const GewichtKomponentenChart: React.FC = () => {
         position: 'bottom' as const,
         labels: {
           color: '#fff',
-          font: {
-            size: 11,
-          },
+          font: { size: 12 },
           usePointStyle: true,
         },
       },
       tooltip: {
-        callbacks: {
-          label: (context: any) => {
-            const label = context.dataset.label || '';
-            const value = context.parsed.y.toFixed(1);
-            return `${label}: ${value} kg`;
-          },
-          afterLabel: (context: any) => {
-            const total = context.parsed.y;
-            const entry = filteredData[context.dataIndex];
-            if (entry.gewicht) {
-              const percentage = ((total / entry.gewicht) * 100).toFixed(1);
-              return `(${percentage}%)`;
-            }
-            return '';
-          },
-          footer: (tooltipItems: any) => {
-            const dataIndex = tooltipItems[0].dataIndex;
-            const entry = filteredData[dataIndex];
-            return `Gesamt: ${entry.gewicht.toFixed(1)} kg`;
-          },
-        },
+        backgroundColor: '#1e1e1e',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: '#444',
+        borderWidth: 1,
       },
     },
     scales: {
       x: {
-        stacked: true,
-        ticks: {
-          color: '#fff',
-          maxRotation: 0, // Bessere Lesbarkeit
-          font: {
-            size: 10,
-          },
-        },
-        grid: {
-          color: '#333',
-        },
+        ticks: { color: '#ccc', font: { size: 11 } },
+        grid: { color: '#333' },
       },
       y: {
-        stacked: true,
-        // ✨ Dynamische Y-Achse für bessere Sichtbarkeit
-        min: yAxisMin,
-        max: yAxisMax,
-        ticks: {
-          color: '#fff',
-          font: {
-            size: 11,
-          },
-          callback: function(value: any) {
-            return value.toFixed(1) + ' kg';
-          },
-        },
-        grid: {
-          color: '#333',
-        },
+        ticks: { color: '#ccc', font: { size: 11 } },
+        grid: { color: '#333' },
       },
     },
   };
 
-  // ✨ Trend-Berechnung für Summary
-  const firstEntry = filteredData[0];
-  const lastEntry = filteredData[filteredData.length - 1];
-  const gewichtTrend = lastEntry.gewicht - firstEntry.gewicht;
-  const fettTrend = ((lastEntry.fett || 0) - (firstEntry.fett || 0));
-  const muskelTrend = ((lastEntry.muskel || 0) - (firstEntry.muskel || 0));
+  // 🎨 Delta-Card Komponente
+  const createDeltaCard = (
+    icon: string,
+    titel: string,
+    wert: number,
+    einheit: string,
+    typ: 'gewicht' | 'fett' | 'muskel' | 'wasser'
+  ) => {
+    const bewertung = bewerteFortschritt(wert, typ);
+    
+    return React.createElement('div', {
+      style: {
+        backgroundColor: '#1e1e1e',
+        borderRadius: 12,
+        padding: 20,
+        border: `2px solid ${bewertung.farbe}33`,
+        position: 'relative',
+        overflow: 'hidden',
+      }
+    }, [
+      // Hintergrund-Balken (Progress-Bar-Effekt)
+      React.createElement('div', {
+        key: 'bg-bar',
+        style: {
+          position: 'absolute',
+          top: 0, left: 0, bottom: 0,
+          width: `${bewertung.prozent}%`,
+          backgroundColor: `${bewertung.farbe}11`,
+          borderRadius: '12px 0 0 12px',
+        }
+      }),
+      
+      // Content
+      React.createElement('div', { 
+        key: 'content',
+        style: { position: 'relative', zIndex: 2 }
+      }, [
+        React.createElement('div', { 
+          key: 'header',
+          style: { 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: 8
+          }
+        }, [
+          React.createElement('span', { 
+            key: 'icon',
+            style: { fontSize: 24 }
+          }, icon),
+          React.createElement('span', { 
+            key: 'bewertung',
+            style: { 
+              fontSize: 12, 
+              color: bewertung.farbe,
+              fontWeight: 'bold'
+            }
+          }, bewertung.text)
+        ]),
+        
+        React.createElement('div', { 
+          key: 'titel',
+          style: { 
+            color: '#ccc', 
+            fontSize: 14,
+            marginBottom: 4
+          }
+        }, titel),
+        
+        React.createElement('div', { 
+          key: 'wert',
+          style: { 
+            fontSize: 28,
+            fontWeight: 'bold',
+            color: bewertung.farbe,
+            lineHeight: 1
+          }
+        }, `${wert >= 0 ? '+' : ''}${wert.toFixed(1)}${einheit}`)
+      ])
+    ]);
+  };
 
   return React.createElement('div', { style: { marginTop: 50 } }, [
     React.createElement('h2', { 
       key: 'title',
-      style: { color: '#fff', marginBottom: 20 } 
-    }, '⚖️ Körperzusammensetzung (Monatstrend)'),
+      style: { 
+        color: '#fff', 
+        marginBottom: 24,
+        fontSize: 24,
+        fontWeight: 'bold'
+      } 
+    }, '🏆 Körperzusammensetzung - Fortschritt (30 Tage)'),
     
-    // ✨ Trend-Summary
+    // 📊 DELTA CARDS
     React.createElement('div', {
-      key: 'summary',
+      key: 'delta-grid',
       style: {
-        backgroundColor: '#1e1e1e',
-        padding: 16,
-        borderRadius: 8,
-        marginBottom: 16,
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
         gap: 16,
-        fontSize: 14,
+        marginBottom: 32,
       }
     }, [
-      React.createElement('div', { key: 'weight-trend', style: { textAlign: 'center' } }, [
-        React.createElement('div', { key: 'weight-label', style: { color: '#ccc' } }, 'Gewicht'),
-        React.createElement('div', { 
-          key: 'weight-value', 
-          style: { 
-            color: gewichtTrend >= 0 ? '#ff6b6b' : '#4ecdc4',
-            fontSize: 16,
-            fontWeight: 'bold'
-          } 
-        }, `${gewichtTrend >= 0 ? '+' : ''}${gewichtTrend.toFixed(1)} kg`)
-      ]),
-      React.createElement('div', { key: 'fat-trend', style: { textAlign: 'center' } }, [
-        React.createElement('div', { key: 'fat-label', style: { color: '#ccc' } }, 'Fett'),
-        React.createElement('div', { 
-          key: 'fat-value', 
-          style: { 
-            color: fettTrend <= 0 ? '#4ecdc4' : '#ff6b6b',
-            fontSize: 16,
-            fontWeight: 'bold'
-          } 
-        }, `${fettTrend >= 0 ? '+' : ''}${fettTrend.toFixed(1)}%`)
-      ]),
-      React.createElement('div', { key: 'muscle-trend', style: { textAlign: 'center' } }, [
-        React.createElement('div', { key: 'muscle-label', style: { color: '#ccc' } }, 'Muskel'),
-        React.createElement('div', { 
-          key: 'muscle-value', 
-          style: { 
-            color: muskelTrend >= 0 ? '#4ecdc4' : '#ff6b6b',
-            fontSize: 16,
-            fontWeight: 'bold'
-          } 
-        }, `${muskelTrend >= 0 ? '+' : ''}${muskelTrend.toFixed(1)}%`)
-      ])
+      createDeltaCard('⚖️', 'Gewichtsveränderung', gewichtDelta, 'kg', 'gewicht'),
+      createDeltaCard('🔥', 'Körperfett', fettDelta, '%', 'fett'),
+      createDeltaCard('💪', 'Muskelmasse', muskelDelta, '%', 'muskel'),
+      createDeltaCard('💧', 'Wasseranteil', wasserDelta, '%', 'wasser'),
     ]),
     
-    React.createElement('div', { 
-      key: 'chart',
-      style: { height: '450px' } 
-    }, React.createElement(Bar, { data: chartData, options: options }))
+    // 📈 TREND CHART
+    React.createElement('div', {
+      key: 'chart-container',
+      style: {
+        backgroundColor: '#1e1e1e',
+        borderRadius: 12,
+        padding: 20,
+        marginTop: 24,
+      }
+    }, [
+      React.createElement('h3', {
+        key: 'chart-title',
+        style: {
+          color: '#fff',
+          marginBottom: 20,
+          fontSize: 18,
+        }
+      }, '📈 Trend-Verlauf'),
+      
+      React.createElement('div', { 
+        key: 'chart',
+        style: { height: '350px' } 
+      }, React.createElement(Line, { data: chartData, options: chartOptions }))
+    ])
   ]);
 };
 
-export default GewichtKomponentenChart;
+export default BodyCompositionDashboard;
