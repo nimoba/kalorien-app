@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const sheets = google.sheets({ version: "v4", auth });
-    const today = new Date().toLocaleDateString("de-DE");
+    const today = new Date().toLocaleDateString("de-DE", {timeZone: "Europe/Berlin"});
     const time = uhrzeit || new Date().toLocaleTimeString("de-DE", {
       hour: "2-digit",
       minute: "2-digit",

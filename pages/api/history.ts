@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       range: "Aktivitäten!A2:C",
     });
 
-    const today = new Date();
+    const today = new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Berlin"}));
     const kcalRows = kcalRes.data.values || [];
     const aktivRows = aktivRes.data.values || [];
 

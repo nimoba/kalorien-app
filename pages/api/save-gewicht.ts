@@ -38,8 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fallbackMuskel = letzte?.[3] || "";
     const fallbackWasser = letzte?.[4] || ""; // ✨ Fallback für Wasser
 
-    const heute = new Date().toLocaleDateString("de-DE");
-
+    const heute = new Date().toLocaleDateString("de-DE", {timeZone: "Europe/Berlin"});
     const neueZeile = [
       heute,
       parseDecimal(gewicht),

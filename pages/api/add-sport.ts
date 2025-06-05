@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
 
-    const datum = new Date().toLocaleDateString("de-DE");
+    const datum = new Date().toLocaleDateString("de-DE", {timeZone: "Europe/Berlin"});
 
     // ✅ Verwende übergebene Uhrzeit oder fallback auf Serverzeit
     const uhr = uhrzeit || new Date().toLocaleTimeString("de-DE", {
