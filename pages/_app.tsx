@@ -3,14 +3,13 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { useState, useEffect } from "react";
 
-// ✅ Passwort aus Environment Variable laden
-const CORRECT_PASSWORD = process.env.PASSWORD;
 const COOKIE_NAME = "app_access_token";
 
 export default function App({ Component, pageProps }: AppProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Check if user is already authenticated via cookie
@@ -21,16 +20,35 @@ export default function App({ Component, pageProps }: AppProps) {
     setLoading(false);
   }, []);
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === CORRECT_PASSWORD) {
-      // Set cookie that expires in 30 days
-      setCookie(COOKIE_NAME, "authenticated", 30);
-      setIsAuthenticated(true);
-    } else {
-      alert("❌ Falsches Passwort!");
-      setPassword("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Set cookie that expires in 30 days
+        setCookie(COOKIE_NAME, "authenticated", 30);
+        setIsAuthenticated(true);
+      } else {
+        alert("❌ Falsches Passwort!");
+        setPassword("");
+      }
+    } catch (error) {
+      alert("❌ Verbindungsfehler!");
+      console.error('Auth error:', error);
     }
+
+    setIsSubmitting(false);
   };
 
   // Cookie helper functions
@@ -99,6 +117,7 @@ export default function App({ Component, pageProps }: AppProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Passwort eingeben..."
+              disabled={isSubmitting}
               style={{
                 width: '100%',
                 padding: 12,
@@ -108,26 +127,28 @@ export default function App({ Component, pageProps }: AppProps) {
                 backgroundColor: '#333',
                 color: '#fff',
                 marginBottom: 16,
-                outline: 'none'
+                outline: 'none',
+                opacity: isSubmitting ? 0.7 : 1
               }}
               autoFocus
             />
             
             <button
               type="submit"
+              disabled={isSubmitting}
               style={{
                 width: '100%',
                 padding: 12,
                 fontSize: 16,
                 borderRadius: 8,
                 border: 'none',
-                backgroundColor: '#36a2eb',
+                backgroundColor: isSubmitting ? '#666' : '#36a2eb',
                 color: '#fff',
-                cursor: 'pointer',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
                 fontWeight: 'bold'
               }}
             >
-              🚀 Einloggen
+              {isSubmitting ? '⏳ Prüfe...' : '🚀 Einloggen'}
             </button>
           </form>
           
