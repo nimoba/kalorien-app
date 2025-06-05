@@ -4,7 +4,7 @@ import type { AppProps } from "next/app";
 import { useState, useEffect } from "react";
 
 // ✅ Passwort aus Environment Variable laden
-const CORRECT_PASSWORD = process.env.NEXT_PUBLIC_APP_PASSWORD || "fallback123";
+const CORRECT_PASSWORD = process.env.PASSWORD || "fallback123";
 const COOKIE_NAME = "app_access_token";
 
 export default function App({ Component, pageProps }: AppProps) {
