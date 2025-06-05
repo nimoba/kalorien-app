@@ -11,6 +11,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: "v4", auth });
     const sheetId = process.env.GOOGLE_SHEET_ID;
 
+    // ✅ FLEXIBLES DATUM-PARSING für "5.6.2025" Format
+    const parseGermanDate = (dateStr: string): Date | null => {
+      try {
+        const parts = dateStr.trim().split('.');
+        if (parts.length !== 3) return null;
+        
+        const tag = parseInt(parts[0], 10);
+        const monat = parseInt(parts[1], 10);
+        let jahr = parseInt(parts[2], 10);
+        
+        // Handle 2-digit years (25 -> 2025)
+        if (jahr < 100) {
+          jahr += 2000;
+        }
+        
+        // Validierung
+        if (tag < 1 || tag > 31 || monat < 1 || monat > 12 || jahr < 2020) {
+          return null;
+        }
+        
+        return new Date(jahr, monat - 1, tag);
+      } catch (error) {
+        return null;
+      }
+    };
+
     // 📘 Gewichtsdaten
     const gewichtData = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
@@ -19,10 +45,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const gewichtRows = gewichtData.data.values || [];
     const gewichtMap: Record<string, { gewicht: number; fett: number | null; muskel: number | null }> = {};
+    
     for (const row of gewichtRows) {
       const datum = row[0];
       if (!datum) continue;
-      gewichtMap[datum.trim()] = {
+      
+      // ✅ DATUM NORMALISIEREN für einheitliche Keys
+      const datumKey = datum.trim();
+      gewichtMap[datumKey] = {
         gewicht: Number(row[1]) || 0,
         fett: row[2] ? Number(row[2]) : null,
         muskel: row[3] ? Number(row[3]) : null,
@@ -40,11 +70,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const kcalRows = kcalData.data.values || [];
     const kalorienProTag: Record<string, number> = {};
+    
     for (const row of kcalRows) {
       const [datum, , , kcal] = row;
       if (!datum || !kcal) continue;
-      const d = datum.trim();
-      kalorienProTag[d] = (kalorienProTag[d] || 0) + Number(kcal);
+      
+      // ✅ DATUM NORMALISIEREN
+      const datumKey = datum.trim();
+      kalorienProTag[datumKey] = (kalorienProTag[datumKey] || 0) + Number(kcal);
     }
 
     // 🏃 Aktivitätsdaten
@@ -55,11 +88,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const aktivitaetRows = aktivitaetRes.data.values || [];
     const aktivitaetMap: Record<string, number> = {};
+    
     for (const row of aktivitaetRows) {
       const [datum, , kcal] = row;
       if (!datum || !kcal) continue;
-      const d = datum.trim();
-      aktivitaetMap[d] = (aktivitaetMap[d] || 0) + Number(kcal);
+      
+      // ✅ DATUM NORMALISIEREN
+      const datumKey = datum.trim();
+      aktivitaetMap[datumKey] = (aktivitaetMap[datumKey] || 0) + Number(kcal);
     }
 
     // 📊 Ziel-Kcal und TDEE aus Ziele-Tabelle
@@ -78,12 +114,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fett: { datum: string; wert: number | null }[] = [];
     const muskel: { datum: string; wert: number | null }[] = [];
 
-    const alleTage = Object.keys({ ...kalorienProTag, ...aktivitaetMap });
-    const sortierteTage = alleTage.sort((a, b) => {
-      const [t1, m1, j1] = a.split(".");
-      const [t2, m2, j2] = b.split(".");
-      return new Date(`${j1}-${m1}-${t1}`).getTime() - new Date(`${j2}-${m2}-${t2}`).getTime();
-    });
+    // ✅ ALLE VERFÜGBAREN TAGE SAMMELN UND SORTIEREN
+    const alleTage = Array.from(new Set([
+      ...Object.keys(kalorienProTag),
+      ...Object.keys(aktivitaetMap),
+      ...Object.keys(gewichtMap)
+    ]));
+
+    const sortierteTage = alleTage
+      .filter(datum => parseGermanDate(datum) !== null) // Nur gültige Daten
+      .sort((a, b) => {
+        const dateA = parseGermanDate(a);
+        const dateB = parseGermanDate(b);
+        if (!dateA || !dateB) return 0;
+        return dateA.getTime() - dateB.getTime();
+      });
 
     let kumuliertesDefizit = 0;
     let letztesGewicht = startgewicht;
@@ -114,12 +159,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       muskel.push({ datum: tag, wert: lastMuskel });
     }
 
+    // ✅ 7-TAGE GLÄTTUNG
     const smoothed = verlauf.map((_, i, arr) => {
       const slice = arr.slice(Math.max(i - 3, 0), i + 4);
       const avg = slice.reduce((sum, e) => sum + e.gewicht, 0) / slice.length;
       return { datum: verlauf[i].datum, gewicht: Number(avg.toFixed(2)) };
     });
 
+    // ✅ TRENDLINIE
     function lineRegression(yVals: number[]) {
       const x = yVals.map((_, i) => i);
       const y = yVals;
@@ -152,7 +199,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tdee,
     });
   } catch (err) {
-    console.error("Fehler in /api/weight-history:", err);
+    console.error("❌ Fehler in /api/weight-history:", err);
     res.status(500).json({ error: "Fehler beim Abrufen der Daten" });
   }
 }

@@ -53,10 +53,11 @@ const BodyCompositionDashboard: React.FC = () => {
 
   // Letzte 30 Tage für Trends
   const last30Days = data.slice(-30);
-  const firstEntry = last30Days[0];
-  const lastEntry = last30Days[last30Days.length - 1];
-
-  // 🎯 DELTA-BERECHNUNGEN (Fortschritt!)
+  
+  // 🎯 DELTA-BERECHNUNGEN (täglich - alle Tage)
+  const firstEntry = data[0]; // Allererster Eintrag
+  const lastEntry = data[data.length - 1]; // Allerletzter Eintrag
+  
   const gewichtDelta = lastEntry.gewicht - firstEntry.gewicht;
   const fettDelta = (lastEntry.fett || 0) - (firstEntry.fett || 0);
   const muskelDelta = (lastEntry.muskel || 0) - (firstEntry.muskel || 0);
@@ -64,27 +65,42 @@ const BodyCompositionDashboard: React.FC = () => {
 
   // 📊 Bewertungsfunktion
   const bewerteFortschritt = (wert: number, typ: 'gewicht' | 'fett' | 'muskel' | 'wasser') => {
+    let maxAenderung: number;
+    
+    // Realistische Maximalwerte für Balken-Berechnung
+    switch (typ) {
+      case 'gewicht': maxAenderung = 10; break; // ±10kg als Maximum
+      case 'fett': maxAenderung = 10; break;    // ±10% als Maximum  
+      case 'muskel': maxAenderung = 8; break;   // ±8% als Maximum
+      case 'wasser': maxAenderung = 8; break;   // ±8% als Maximum
+      default: maxAenderung = 5;
+    }
+    
+    // Prozent basierend auf tatsächlicher Veränderung (nicht Bewertung!)
+    const prozent = Math.min(100, Math.abs(wert / maxAenderung) * 100);
+    
+    // Bewertungstext separat
     switch (typ) {
       case 'gewicht':
-        if (wert <= -2) return { farbe: '#27ae60', text: 'Excellent! 🎉', prozent: 95 };
-        if (wert <= -0.5) return { farbe: '#2ecc71', text: 'Sehr gut! 💪', prozent: 80 };
-        if (wert <= 0.5) return { farbe: '#f39c12', text: 'Stabil 👍', prozent: 60 };
-        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent: 30 };
+        if (wert <= -2) return { farbe: '#27ae60', text: 'Excellent! 🎉', prozent };
+        if (wert <= -0.5) return { farbe: '#2ecc71', text: 'Sehr gut! 💪', prozent };
+        if (wert <= 0.5) return { farbe: '#f39c12', text: 'Stabil 👍', prozent };
+        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent };
       
       case 'fett':
-        if (wert <= -2) return { farbe: '#27ae60', text: 'Excellent! 🔥', prozent: 95 };
-        if (wert <= -0.5) return { farbe: '#2ecc71', text: 'Super! 💪', prozent: 80 };
-        if (wert <= 0.5) return { farbe: '#f39c12', text: 'Ok 👍', prozent: 60 };
-        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent: 30 };
+        if (wert <= -2) return { farbe: '#27ae60', text: 'Excellent! 🔥', prozent };
+        if (wert <= -0.5) return { farbe: '#2ecc71', text: 'Super! 💪', prozent };
+        if (wert <= 0.5) return { farbe: '#f39c12', text: 'Ok 👍', prozent };
+        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent };
       
       case 'muskel':
-        if (wert >= 2) return { farbe: '#27ae60', text: 'Excellent! 💪', prozent: 95 };
-        if (wert >= 0.5) return { farbe: '#2ecc71', text: 'Sehr gut! 🚀', prozent: 80 };
-        if (wert >= -0.5) return { farbe: '#f39c12', text: 'Stabil 👍', prozent: 60 };
-        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent: 30 };
+        if (wert >= 2) return { farbe: '#27ae60', text: 'Excellent! 💪', prozent };
+        if (wert >= 0.5) return { farbe: '#2ecc71', text: 'Sehr gut! 🚀', prozent };
+        if (wert >= -0.5) return { farbe: '#f39c12', text: 'Stabil 👍', prozent };
+        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent };
       
       default:
-        return { farbe: '#95a5a6', text: 'Normal', prozent: 50 };
+        return { farbe: '#95a5a6', text: 'Normal', prozent };
     }
   };
 

@@ -69,9 +69,21 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
   // 4. Goal line across full 24 hours
   const zielArray = new Array(24).fill(ziel);
 
-  // 5. Color logic
+  // 5. Color logic & Bewertung
   const maxKcal = Math.max(...werte.filter((v): v is number => v !== null));
   const farbe = getOvershootColor(maxKcal, ziel, '#36a2eb');
+  const progress = Math.min(maxKcal / ziel, 2); // Max 200% für Visualisierung
+
+  const bewertung = () => {
+    const prozent = maxKcal / ziel;
+    if (prozent >= 0.95 && prozent <= 1.05) return { farbe: '#27ae60', text: 'Perfect Timing! 🎯' };
+    if (prozent >= 0.85 && prozent <= 1.15) return { farbe: '#2ecc71', text: 'Sehr gut! 💪' };
+    if (prozent >= 0.7 && prozent <= 1.3) return { farbe: '#f39c12', text: 'Ok 👍' };
+    if (prozent > 1.3) return { farbe: '#e74c3c', text: 'Zu viel! ⚠️' };
+    return { farbe: '#e74c3c', text: 'Zu wenig! ⚠️' };
+  };
+
+  const bewertungInfo = bewertung();
 
   // 6. Data config
   const data: ChartData<'line'> = {
@@ -86,13 +98,15 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
         tension: 0.3,
         spanGaps: false,
         pointRadius,
+        borderWidth: 3,
+        pointHoverRadius: 8,
       },
       {
         label: 'Tagesziel',
         data: zielArray,
         borderDash: [6, 6],
         borderColor: '#ff6384',
-        borderWidth: 1.5,
+        borderWidth: 2,
         pointRadius: 0,
         tension: 0.1,
         spanGaps: true,
@@ -112,33 +126,136 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
       ctx.beginPath();
       ctx.moveTo(x, chartArea.top);
       ctx.lineTo(x, chartArea.bottom);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffd700';
       ctx.setLineDash([4, 4]);
       ctx.stroke();
       ctx.restore();
+
+      // "Jetzt" Label
+      ctx.fillStyle = '#ffd700';
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Jetzt', x, chartArea.top - 5);
     },
   };
 
   // 8. Chart options
   const options: ChartOptions<'line'> = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'bottom',
+        labels: {
+          color: '#fff',
+          font: { size: 12 },
+          usePointStyle: true,
+        },
+      },
+      tooltip: {
+        backgroundColor: '#1e1e1e',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: '#444',
+        borderWidth: 1,
+        callbacks: {
+          label: (context) => {
+            if (context.datasetIndex === 0) {
+              return `Gegessen: ${context.formattedValue} kcal`;
+            }
+            return `Ziel: ${context.formattedValue} kcal`;
+          },
+        },
       },
     },
     scales: {
+      x: {
+        ticks: { color: '#ccc', font: { size: 10 } },
+        grid: { color: '#333' },
+      },
       y: {
         beginAtZero: true,
+        ticks: { color: '#ccc', font: { size: 11 } },
+        grid: { color: '#333' },
       },
     },
   };
 
+  // Essenszeiten für Stats
+  const essenszeiten = Object.keys(kcalPerHour).length;
+  const letztesMahl = Math.max(...Object.keys(kcalPerHour).map(Number));
+
   return (
-    <div>
-      <h3 style={{ marginBottom: 12 }}>⏰ Kalorien nach Uhrzeit</h3>
-      <Line data={data} options={options} plugins={[verticalLinePlugin]} />
+    <div style={{
+      backgroundColor: '#1e1e1e',
+      borderRadius: 12,
+      padding: 20,
+      marginTop: 24,
+      border: `2px solid ${bewertungInfo.farbe}33`,
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Hintergrund-Effekt */}
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, bottom: 0,
+        width: `${Math.min(progress * 50, 100)}%`, // 50% da progress bis 2 gehen kann
+        backgroundColor: `${bewertungInfo.farbe}11`,
+        borderRadius: '12px 0 0 12px',
+      }} />
+
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16
+        }}>
+          <h3 style={{ 
+            marginBottom: 0, 
+            color: '#fff',
+            fontSize: 18,
+            fontWeight: 'bold'
+          }}>
+            ⏰ Kalorien nach Uhrzeit
+          </h3>
+          <span style={{
+            fontSize: 12,
+            color: bewertungInfo.farbe,
+            fontWeight: 'bold'
+          }}>
+            {bewertungInfo.text}
+          </span>
+        </div>
+
+        {/* Stats */}
+        <div style={{
+          marginBottom: 16,
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr',
+          gap: 16,
+          fontSize: 13,
+          color: '#ccc'
+        }}>
+          <div>
+            <strong style={{ color: '#fff' }}>{maxKcal}</strong> / {ziel} kcal
+          </div>
+          <div>
+            <strong style={{ color: '#fff' }}>{essenszeiten}</strong> Mahlzeiten
+          </div>
+          <div>
+            Letztes Essen: <strong style={{ color: '#fff' }}>{letztesMahl}:00</strong>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div style={{ height: '300px' }}>
+          <Line data={data} options={options} plugins={[verticalLinePlugin]} />
+        </div>
+      </div>
     </div>
   );
 }

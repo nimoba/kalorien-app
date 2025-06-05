@@ -19,6 +19,8 @@ interface Props {
 
 export function KalorienHalbkreis({ gegessen, ziel }: Props) {
   const rest = Math.max(ziel - gegessen, 0);
+  const progress = Math.min(gegessen / ziel, 1);
+  const winkel = (progress * 180);
 
   const data = {
     labels: ["Gegessen", "Übrig"],
@@ -39,86 +41,151 @@ export function KalorienHalbkreis({ gegessen, ziel }: Props) {
     cutout: "70%",
     plugins: {
       legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1e1e1e',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: '#444',
+        borderWidth: 1,
+      },
     },
   };
 
-  const progress = Math.min(gegessen / ziel, 1); // Max 100%
-  const winkel = (progress * 180); // 0-180°
+  // Bewertung basierend auf Fortschritt
+  const bewertung = () => {
+    const prozent = gegessen / ziel;
+    if (prozent >= 0.95 && prozent <= 1.05) return { farbe: '#27ae60', text: 'Perfect! 🎯' };
+    if (prozent >= 0.85 && prozent <= 1.15) return { farbe: '#2ecc71', text: 'Sehr gut! 💪' };
+    if (prozent >= 0.7 && prozent <= 1.3) return { farbe: '#f39c12', text: 'Ok 👍' };
+    return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️' };
+  };
+
+  const bewertungInfo = bewertung();
 
   return (
     <div style={{
-      width: "100%",
-      maxWidth: 300,
-      aspectRatio: "2 / 1",
-      margin: "auto",
-      textAlign: "center",
-      position: "relative"
+      backgroundColor: '#1e1e1e',
+      borderRadius: 12,
+      padding: 24,
+      border: `2px solid ${bewertungInfo.farbe}33`,
+      marginBottom: 24,
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      <Doughnut data={data} options={options} />
-  
-      {/* Text zentriert */}
+      {/* Hintergrund-Effekt */}
       <div style={{
-        position: "absolute",
-        top: "70%",
-        left: "50%",
-        transform: "translate(-50%, -60%)",
-        fontSize: 22,
-        fontWeight: "bold",
-        zIndex: 2,
-      }}>
-        {gegessen} / {ziel} kcal
-      </div>
-  
-      {/* Rotierender Trenner-Container */}
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: `translate(-50%, -100%) rotate(${winkel + 270}deg)`,
-          transformOrigin: "center 114px", // ggf. feintunen
-          zIndex: 10,
-        }}
-      >
-        {/* Wrapper für Strich + Dreieck */}
-        <div
-          style={{
-            transform: "translateY(-32px)", // Strich & Dreieck gemeinsam nach außen
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
+        position: 'absolute',
+        top: 0, left: 0, bottom: 0,
+        width: `${Math.min(progress * 100, 100)}%`,
+        backgroundColor: `${bewertungInfo.farbe}11`,
+        borderRadius: '12px 0 0 12px',
+      }} />
 
-          {/* Dreieck */}
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16
+        }}>
+          <h3 style={{
+            color: '#fff',
+            margin: 0,
+            fontSize: 18,
+            fontWeight: 'bold'
+          }}>
+            🍽️ Kalorien heute
+          </h3>
+          <span style={{
+            fontSize: 12,
+            color: bewertungInfo.farbe,
+            fontWeight: 'bold'
+          }}>
+            {bewertungInfo.text}
+          </span>
+        </div>
+
+        {/* Chart Container */}
+        <div style={{
+          width: "100%",
+          maxWidth: 300,
+          aspectRatio: "2 / 1",
+          margin: "auto",
+          textAlign: "center",
+          position: "relative"
+        }}>
+          <Doughnut data={data} options={options} />
+    
+          {/* Text zentriert */}
+          <div style={{
+            position: "absolute",
+            top: "70%",
+            left: "50%",
+            transform: "translate(-50%, -60%)",
+            fontSize: 22,
+            fontWeight: "bold",
+            color: "#fff",
+            zIndex: 2,
+          }}>
+            {gegessen} / {ziel} kcal
+          </div>
+    
+          {/* Rotierender Trenner-Container */}
           <div
             style={{
               position: "absolute",
-              bottom: 36, // gleiche Höhe wie der Strich
+              top: "50%",
               left: "50%",
-              transform: "translateX(-50%)",
-              width: 0,
-              height: 0,
-              borderLeft: "6px solid transparent",
-              borderRight: "6px solid transparent",
-              borderTop: "10px solid #4da3ee", // gleiche Farbe wie Strich
-              zIndex: 5,
+              transform: `translate(-50%, -100%) rotate(${winkel + 270}deg)`,
+              transformOrigin: "center 114px",
+              zIndex: 10,
             }}
-          />
-          {/* Strich */}
-          <div
-            style={{
-              width: 4,
-              height: 39,
-              backgroundColor: "#4da3ee",
-            }}
-          />
+          >
+            <div
+              style={{
+                transform: "translateY(-32px)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 36,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: 0,
+                  height: 0,
+                  borderLeft: "6px solid transparent",
+                  borderRight: "6px solid transparent",
+                  borderTop: "10px solid #4da3ee",
+                  zIndex: 5,
+                }}
+              />
+              <div
+                style={{
+                  width: 4,
+                  height: 39,
+                  backgroundColor: "#4da3ee",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Status Info */}
+        <div style={{
+          marginTop: 16,
+          textAlign: 'center',
+          color: '#ccc',
+          fontSize: 14
+        }}>
+          Noch {Math.max(0, ziel - gegessen)} kcal übrig
         </div>
       </div>
-
-
     </div>
   );
-  
-
 }
