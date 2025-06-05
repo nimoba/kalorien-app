@@ -166,7 +166,7 @@ export default function KcalBilanzChart({ refresh }: { refresh: number }) {
                 fontWeight: 'bold',
                 color: bewertungInfo.farbe,
               }}>
-                {bilanz >= 0 ? '+' : ''}{bilanz.toLocaleString()} kcal
+                {bilanz >= 0 ? '+' : ''}{bilanz} kcal
               </span>
               <span style={{
                 fontSize: 12,
