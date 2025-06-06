@@ -25,6 +25,9 @@ export default function KuehlschrankSeite() {
   const [maxZeit, setMaxZeit] = useState(30);
   const [stil, setStil] = useState('ausgewogen');
 
+  // View Mode Toggle
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
+
   useEffect(() => {
     loadZutaten();
   }, []);
@@ -162,7 +165,8 @@ export default function KuehlschrankSeite() {
   const filteredZutaten = zutaten.filter(z => {
     const matchesKategorie = activeKategorie === 'Alle' || z.kategorie === activeKategorie;
     const matchesSearch = z.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesKategorie && matchesSearch;
+    const matchesAvailability = !showOnlyAvailable || z.verfügbar;
+    return matchesKategorie && matchesSearch && matchesAvailability;
   });
 
   const verfügbareCount = zutaten.filter(z => z.verfügbar).length;
@@ -251,7 +255,7 @@ export default function KuehlschrankSeite() {
         {generating ? '⏳ Generiere Rezept...' : '🍳 Rezept generieren'}
       </button>
 
-      {/* Search */}
+      {/* Search & Filter Controls */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <input
           type="text"
@@ -267,6 +271,58 @@ export default function KuehlschrankSeite() {
           ➕
         </button>
       </div>
+
+      {/* View Toggle */}
+      <div style={viewToggleStyle}>
+        <span style={{ color: '#ccc', fontSize: 14 }}>Ansicht:</span>
+        <div style={toggleContainerStyle}>
+          <button
+            onClick={() => setShowOnlyAvailable(false)}
+            style={{
+              ...viewToggleButtonStyle,
+              backgroundColor: !showOnlyAvailable ? '#36a2eb' : '#444',
+              color: !showOnlyAvailable ? '#fff' : '#ccc'
+            }}
+          >
+            Alle ({zutaten.length})
+          </button>
+          <button
+            onClick={() => setShowOnlyAvailable(true)}
+            style={{
+              ...viewToggleButtonStyle,
+              backgroundColor: showOnlyAvailable ? '#22c55e' : '#444',
+              color: showOnlyAvailable ? '#fff' : '#ccc'
+            }}
+          >
+            Verfügbar ({verfügbareCount})
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Overview für verfügbare Zutaten */}
+      {showOnlyAvailable && verfügbareCount > 0 && (
+        <div style={quickOverviewStyle}>
+          <h4 style={{ color: '#4ade80', margin: '0 0 12px 0', fontSize: 16 }}>
+            🥘 Deine verfügbaren Zutaten:
+          </h4>
+          <div style={quickTagsStyle}>
+            {zutaten
+              .filter(z => z.verfügbar)
+              .slice(0, 12) // Erste 12 anzeigen
+              .map(z => (
+                <span key={z.name} style={quickTagStyle}>
+                  {z.name}
+                  {z.menge && ` (${z.menge}${z.einheit})`}
+                </span>
+              ))}
+            {verfügbareCount > 12 && (
+              <span style={{ ...quickTagStyle, backgroundColor: '#444', color: '#aaa' }}>
+                +{verfügbareCount - 12} weitere
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Kategorie Filter */}
       <div style={filterStyle}>
@@ -287,6 +343,11 @@ export default function KuehlschrankSeite() {
 
       {/* Zutaten Liste */}
       <div style={zutatenListStyle}>
+        <div style={{ marginBottom: 16, color: '#ccc', fontSize: 14 }}>
+          {filteredZutaten.length} {showOnlyAvailable ? 'verfügbare' : ''} Zutaten
+          {activeKategorie !== 'Alle' && ` in "${activeKategorie}"`}
+          {searchTerm && ` mit "${searchTerm}"`}
+        </div>
         {filteredZutaten.map((zutat, index) => {
           const originalIndex = zutaten.findIndex(z => z.name === zutat.name);
           return (
@@ -660,6 +721,55 @@ const modalCancelButtonStyle: React.CSSProperties = {
   backgroundColor: '#444',
   color: '#fff',
   cursor: 'pointer',
+};
+
+const viewToggleStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+  marginBottom: 16,
+};
+
+const toggleContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  backgroundColor: '#1e1e1e',
+  borderRadius: 8,
+  padding: 4,
+  border: '1px solid #444',
+};
+
+const viewToggleButtonStyle: React.CSSProperties = {
+  padding: '8px 16px',
+  border: 'none',
+  borderRadius: 6,
+  fontSize: 14,
+  cursor: 'pointer',
+  transition: 'all 0.2s',
+  fontWeight: '500',
+};
+
+const quickOverviewStyle: React.CSSProperties = {
+  backgroundColor: '#1a2e1a',
+  borderRadius: 12,
+  padding: 16,
+  marginBottom: 20,
+  border: '1px solid #22c55e33',
+};
+
+const quickTagsStyle: React.CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 8,
+};
+
+const quickTagStyle: React.CSSProperties = {
+  backgroundColor: '#22c55e',
+  color: '#fff',
+  padding: '4px 8px',
+  borderRadius: 6,
+  fontSize: 12,
+  fontWeight: '500',
+  whiteSpace: 'nowrap',
 };
 
 const modalSaveButtonStyle: React.CSSProperties = {
