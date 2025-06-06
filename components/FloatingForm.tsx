@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import BarcodeScanner from './BarcodeScanner';
+import FavoritenModal from './FavoritenModal';
+import type { FavoritItem } from './FavoritenModal';
 
 interface Props {
   onClose: () => void;
@@ -21,6 +23,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [name, setName] = useState('');
   const [gptInput, setGptInput] = useState('');
   const [scanning, setScanning] = useState(false);
+  const [showFavoriten, setShowFavoriten] = useState(false);
 
   const parseNum = (v: string) => parseFloat(v.replace(',', '.') || '0');
   const mengeVal = parseNum(menge) || 0;
@@ -31,7 +34,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const calcFett    = () => ((parseNum(basisFett)    / 100) * mengeVal) || 0;
   const calcKh      = () => ((parseNum(basisKh)      / 100) * mengeVal) || 0;
 
-  // === API-Handler (GPT, Barcode, Foto, Speichern) ===
+  // === API-Handler (GPT, Barcode, Foto, Favoriten, Speichern) ===
 
   const handleGPT = async () => {
     if (!gptInput) return;
@@ -89,6 +92,15 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     }
   };
 
+  const handleFavorit = (item: FavoritItem, menge: number) => {
+    setName(item.name);
+    setBasisKcal(String(item.kcal));
+    setBasisEiweiss(String(item.eiweiss));
+    setBasisFett(String(item.fett));
+    setBasisKh(String(item.kh));
+    setMenge(String(menge));
+  };
+
   const handleSpeichern = async () => {
     const now = new Date();
     const uhrzeit = now.toLocaleTimeString('de-DE', {
@@ -135,6 +147,14 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
         <button onClick={handleGPT} style={buttonStyle}>💡 GPT Schätzen</button>
+
+        {/* Favoriten Button */}
+        <button 
+          onClick={() => setShowFavoriten(true)} 
+          style={{ ...buttonStyle, backgroundColor: '#f39c12', marginBottom: 16 }}
+        >
+          ⭐ Favoriten durchsuchen
+        </button>
 
         {/* Produkt & Menge */}
         <label>Produktname:</label>
@@ -231,6 +251,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             />
           </label>
         </div>
+        
         {scanning && (
           <div style={{ marginBottom: 12 }}>
             <BarcodeScanner onDetected={handleBarcode} />
@@ -241,6 +262,13 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         <button onClick={handleSpeichern} style={{ ...buttonStyle, backgroundColor: '#3cb043' }}>
           ✅ Eintragen
         </button>
+
+        {/* Favoriten Modal */}
+        <FavoritenModal
+          isOpen={showFavoriten}
+          onClose={() => setShowFavoriten(false)}
+          onSelect={handleFavorit}
+        />
       </motion.div>
     </div>
   );
