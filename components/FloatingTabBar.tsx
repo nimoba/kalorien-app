@@ -36,6 +36,12 @@ export default function FloatingTabBar() {
         onClick={() => router.push("/gewicht")}
       />
       <TabButton
+        label="Kühlschrank"
+        emoji="🍳"
+        active={pathname === "/kuehlschrank"}
+        onClick={() => router.push("/kuehlschrank")}
+      />
+      <TabButton
         label="Empfehlung"
         emoji="🍽️"
         active={pathname === "/empfehlung"}
