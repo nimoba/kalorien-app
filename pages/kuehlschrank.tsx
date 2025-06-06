@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import FloatingTabBar from "../components/FloatingTabBar";
-import type { Zutat } from "./api/zutaten";
-import type { GeneratedRecipe } from "./api/rezept-generator";
+import type { Zutat } from "../pages/api/zutaten";
+import type { GeneratedRecipe } from "../pages/api/rezept-generator";
 
 export default function KuehlschrankSeite() {
   const [zutaten, setZutaten] = useState<Zutat[]>([]);
@@ -13,6 +13,12 @@ export default function KuehlschrankSeite() {
   const [activeKategorie, setActiveKategorie] = useState<string>('Alle');
   const [generatedRecipe, setGeneratedRecipe] = useState<GeneratedRecipe | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Neue Zutat hinzufügen
+  const [showAddZutat, setShowAddZutat] = useState(false);
+  const [newZutatName, setNewZutatName] = useState('');
+  const [newZutatKategorie, setNewZutatKategorie] = useState('Sonstiges');
+  const [newZutatEinheit, setNewZutatEinheit] = useState('g');
 
   // Präferenzen für Rezept-Generierung
   const [zielKalorien, setZielKalorien] = useState('');
@@ -63,6 +69,54 @@ export default function KuehlschrankSeite() {
     const updated = [...zutaten];
     updated[index].menge = menge;
     setZutaten(updated);
+  };
+
+  const addNewZutat = async () => {
+    if (!newZutatName.trim()) {
+      alert('⚠️ Bitte Namen eingeben');
+      return;
+    }
+
+    // Prüfen ob Zutat bereits existiert
+    const exists = zutaten.some(z => 
+      z.name.toLowerCase() === newZutatName.toLowerCase().trim()
+    );
+
+    if (exists) {
+      alert('⚠️ Diese Zutat existiert bereits');
+      return;
+    }
+
+    const neueZutat: Zutat = {
+      name: newZutatName.trim(),
+      kategorie: newZutatKategorie,
+      verfügbar: true,
+      menge: '',
+      einheit: newZutatEinheit
+    };
+
+    const updatedZutaten = [...zutaten, neueZutat];
+    setZutaten(updatedZutaten);
+
+    // Speichern
+    try {
+      const res = await fetch('/api/zutaten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zutaten: updatedZutaten }),
+      });
+      if (res.ok) {
+        console.log('✅ Neue Zutat hinzugefügt');
+        // Form zurücksetzen
+        setNewZutatName('');
+        setNewZutatKategorie('Sonstiges');
+        setNewZutatEinheit('g');
+        setShowAddZutat(false);
+      }
+    } catch (error) {
+      console.error('Fehler beim Speichern:', error);
+      alert('❌ Fehler beim Speichern der neuen Zutat');
+    }
   };
 
   const generateRecipe = async () => {
@@ -198,13 +252,21 @@ export default function KuehlschrankSeite() {
       </button>
 
       {/* Search */}
-      <input
-        type="text"
-        placeholder="🔍 Zutaten suchen..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        style={searchStyle}
-      />
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <input
+          type="text"
+          placeholder="🔍 Zutaten suchen..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ ...searchStyle, marginBottom: 0 }}
+        />
+        <button
+          onClick={() => setShowAddZutat(true)}
+          style={addZutatButtonStyle}
+        >
+          ➕
+        </button>
+      </div>
 
       {/* Kategorie Filter */}
       <div style={filterStyle}>
@@ -330,6 +392,76 @@ export default function KuehlschrankSeite() {
         </motion.div>
       )}
 
+      {/* Add Zutat Modal */}
+      {showAddZutat && (
+        <div style={modalOverlayStyle}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={addZutatModalStyle}
+          >
+            <h3 style={{ color: '#fff', marginBottom: 20 }}>➕ Neue Zutat hinzufügen</h3>
+            
+            <label style={modalLabelStyle}>Name:</label>
+            <input
+              type="text"
+              value={newZutatName}
+              onChange={(e) => setNewZutatName(e.target.value)}
+              placeholder="z.B. Basilikum, Quinoa, ..."
+              style={modalInputStyle}
+              autoFocus
+            />
+
+            <label style={modalLabelStyle}>Kategorie:</label>
+            <select
+              value={newZutatKategorie}
+              onChange={(e) => setNewZutatKategorie(e.target.value)}
+              style={modalSelectStyle}
+            >
+              <option value="Proteine">Proteine</option>
+              <option value="Gemüse">Gemüse</option>
+              <option value="Kohlenhydrate">Kohlenhydrate</option>
+              <option value="Milchprodukte">Milchprodukte</option>
+              <option value="Fette & Öle">Fette & Öle</option>
+              <option value="Gewürze">Gewürze</option>
+              <option value="Obst">Obst</option>
+              <option value="Sonstiges">Sonstiges</option>
+            </select>
+
+            <label style={modalLabelStyle}>Standard-Einheit:</label>
+            <select
+              value={newZutatEinheit}
+              onChange={(e) => setNewZutatEinheit(e.target.value)}
+              style={modalSelectStyle}
+            >
+              <option value="g">Gramm (g)</option>
+              <option value="ml">Milliliter (ml)</option>
+              <option value="Stück">Stück</option>
+              <option value="EL">Esslöffel (EL)</option>
+              <option value="TL">Teelöffel (TL)</option>
+              <option value="Prise">Prise</option>
+              <option value="Dose">Dose</option>
+              <option value="Packung">Packung</option>
+            </select>
+
+            <div style={modalButtonsStyle}>
+              <button
+                onClick={() => setShowAddZutat(false)}
+                style={modalCancelButtonStyle}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={addNewZutat}
+                style={modalSaveButtonStyle}
+              >
+                ✅ Hinzufügen
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       <FloatingTabBar />
     </div>
   );
@@ -443,7 +575,103 @@ const searchStyle: React.CSSProperties = {
   border: '2px solid #444',
   backgroundColor: '#1e1e1e',
   color: '#fff',
-  marginBottom: 16,
+  flex: 1,
+};
+
+const addZutatButtonStyle: React.CSSProperties = {
+  backgroundColor: '#22c55e',
+  color: '#fff',
+  border: 'none',
+  borderRadius: 12,
+  padding: 12,
+  fontSize: 18,
+  cursor: 'pointer',
+  width: 48,
+  height: 48,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.2s',
+};
+
+const modalOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0, left: 0, right: 0, bottom: 0,
+  background: 'rgba(0,0,0,0.8)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1001,
+  backdropFilter: 'blur(4px)',
+};
+
+const addZutatModalStyle: React.CSSProperties = {
+  backgroundColor: '#2a2a2a',
+  borderRadius: 16,
+  padding: 24,
+  width: '90%',
+  maxWidth: 400,
+  boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+};
+
+const modalLabelStyle: React.CSSProperties = {
+  display: 'block',
+  color: '#ccc',
+  fontSize: 14,
+  marginBottom: 8,
+  marginTop: 16,
+};
+
+const modalInputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: 12,
+  fontSize: 16,
+  borderRadius: 8,
+  border: '2px solid #444',
+  backgroundColor: '#1e1e1e',
+  color: '#fff',
+  marginBottom: 8,
+  outline: 'none',
+};
+
+const modalSelectStyle: React.CSSProperties = {
+  width: '100%',
+  padding: 12,
+  fontSize: 16,
+  borderRadius: 8,
+  border: '2px solid #444',
+  backgroundColor: '#1e1e1e',
+  color: '#fff',
+  marginBottom: 8,
+};
+
+const modalButtonsStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 12,
+  marginTop: 24,
+};
+
+const modalCancelButtonStyle: React.CSSProperties = {
+  flex: 1,
+  padding: 12,
+  fontSize: 16,
+  borderRadius: 8,
+  border: '1px solid #666',
+  backgroundColor: '#444',
+  color: '#fff',
+  cursor: 'pointer',
+};
+
+const modalSaveButtonStyle: React.CSSProperties = {
+  flex: 1,
+  padding: 12,
+  fontSize: 16,
+  borderRadius: 8,
+  border: 'none',
+  backgroundColor: '#22c55e',
+  color: '#fff',
+  cursor: 'pointer',
+  fontWeight: 'bold',
 };
 
 const filterStyle: React.CSSProperties = {
