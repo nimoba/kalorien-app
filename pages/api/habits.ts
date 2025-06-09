@@ -27,13 +27,39 @@ interface WeekHabit {
 }
 
 const ACHIEVEMENTS = [
+  // Beginner achievements
   { id: 'first_day', title: 'Erster Schritt', description: 'Ersten Tag erfolgreich geloggt', icon: '🌱' },
+  { id: 'food_explorer', title: 'Essen-Entdecker', description: '10 Tage Essen geloggt', icon: '🔍' },
+  { id: 'scale_starter', title: 'Waagen-Starter', description: '7 Tage Gewicht geloggt', icon: '📊' },
+  
+  // Streak achievements
   { id: 'week_streak', title: 'Woche geschafft', description: '7 Tage in Folge geloggt', icon: '🔥' },
+  { id: 'two_week_warrior', title: 'Zwei-Wochen-Held', description: '14 Tage Streak erreicht', icon: '⚡' },
   { id: 'month_streak', title: 'Monats-Champion', description: '30 Tage in Folge geloggt', icon: '👑' },
+  { id: 'century_club', title: 'Jahrhundert-Club', description: '100 Tage Streak erreicht', icon: '💯' },
+  { id: 'year_champion', title: 'Jahres-Champion', description: '365 Tage Streak erreicht', icon: '🏆' },
+  
+  // Food achievements
   { id: 'food_master', title: 'Ernährungsprofi', description: '50 Tage Essen geloggt', icon: '🍽️' },
+  { id: 'nutrition_legend', title: 'Ernährungs-Legende', description: '200 Tage Essen geloggt', icon: '🥇' },
+  
+  // Weight achievements
   { id: 'scale_warrior', title: 'Waagen-Krieger', description: '30 Tage Gewicht geloggt', icon: '⚖️' },
+  { id: 'weight_champion', title: 'Gewichts-Champion', description: '100 Tage Gewicht geloggt', icon: '🏋️' },
+  
+  // Perfect day achievements
+  { id: 'perfect_day', title: 'Perfekter Tag', description: 'Essen und Gewicht am selben Tag', icon: '✨' },
   { id: 'perfect_week', title: 'Perfekte Woche', description: '7 Tage alles geloggt', icon: '⭐' },
+  
+  // Milestone achievements
+  { id: 'fifty_club', title: 'Fünfzig-Club', description: '50 aktive Tage erreicht', icon: '🎯' },
+  { id: 'hundred_hero', title: 'Hundert-Held', description: '100 aktive Tage erreicht', icon: '🦸' },
+  { id: 'year_master', title: 'Jahres-Meister', description: '365 aktive Tage erreicht', icon: '🌟' },
+  
+  // Special achievements
   { id: 'comeback_kid', title: 'Comeback Kid', description: 'Nach Pause wieder angefangen', icon: '💪' },
+  { id: 'consistency_king', title: 'Konstanz-König', description: 'Keine Pause länger als 2 Tage', icon: '👸' },
+  { id: 'dedication_master', title: 'Hingabe-Meister', description: '90% der Tage im Monat geloggt', icon: '🎖️' },
 ];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -238,15 +264,60 @@ function calculateStreak(habitsData: string[][], today: string, todayCompleted: 
 function checkAchievements(habitsData: string[][], streak: number, foodLogged: boolean, weightLogged: boolean): string[] {
   const achievements: string[] = [];
   
-  const foodDays = habitsData.filter(row => row[1] === 'true').length;
-  const weightDays = habitsData.filter(row => row[2] === 'true').length;
+  const dataRows = habitsData.slice(1).filter(row => row[0]); // Remove header and empty rows
+  const foodDays = dataRows.filter(row => row[1] === 'true').length;
+  const weightDays = dataRows.filter(row => row[2] === 'true').length;
+  const totalActiveDays = dataRows.filter(row => row[5] === 'true').length;
   
-  if (streak >= 1) achievements.push('first_day');
+  // Beginner achievements
+  if (totalActiveDays >= 1) achievements.push('first_day');
+  if (foodDays >= 10) achievements.push('food_explorer');
+  if (weightDays >= 7) achievements.push('scale_starter');
+  
+  // Streak achievements
   if (streak >= 7) achievements.push('week_streak');
+  if (streak >= 14) achievements.push('two_week_warrior');
   if (streak >= 30) achievements.push('month_streak');
+  if (streak >= 100) achievements.push('century_club');
+  if (streak >= 365) achievements.push('year_champion');
+  
+  // Food achievements
   if (foodDays >= 50) achievements.push('food_master');
+  if (foodDays >= 200) achievements.push('nutrition_legend');
+  
+  // Weight achievements
   if (weightDays >= 30) achievements.push('scale_warrior');
-  if (foodLogged && weightLogged) achievements.push('perfect_week');
+  if (weightDays >= 100) achievements.push('weight_champion');
+  
+  // Perfect day achievements
+  if (foodLogged && weightLogged) {
+    achievements.push('perfect_day');
+    
+    // Check for perfect week (last 7 days all had both)
+    const last7Days = dataRows.slice(-7);
+    if (last7Days.length >= 7 && last7Days.every(row => row[1] === 'true' && row[2] === 'true')) {
+      achievements.push('perfect_week');
+    }
+  }
+  
+  // Milestone achievements
+  if (totalActiveDays >= 50) achievements.push('fifty_club');
+  if (totalActiveDays >= 100) achievements.push('hundred_hero');
+  if (totalActiveDays >= 365) achievements.push('year_master');
+  
+  // Special achievements
+  const last30Days = dataRows.slice(-30);
+  if (last30Days.length >= 30) {
+    const activeDaysInMonth = last30Days.filter(row => row[5] === 'true').length;
+    if (activeDaysInMonth >= 27) { // 90% of 30 days
+      achievements.push('dedication_master');
+    }
+  }
+  
+  // Consistency achievement - no gaps longer than 2 days in last 30 days
+  if (checkConsistency(dataRows.slice(-30))) {
+    achievements.push('consistency_king');
+  }
   
   return achievements;
 }
@@ -303,4 +374,29 @@ function calculateHabitStats(habitsData: string[][], today: string, todaysFood: 
     achievements,
     weekData
   };
+}
+
+function checkConsistency(recentData: string[][]): boolean {
+  if (recentData.length < 7) return false;
+  
+  let maxGap = 0;
+  let currentGap = 0;
+  
+  for (const row of recentData) {
+    if (row[5] === 'true') { // completed day
+      if (currentGap > maxGap) {
+        maxGap = currentGap;
+      }
+      currentGap = 0;
+    } else {
+      currentGap++;
+    }
+  }
+  
+  // Check final gap
+  if (currentGap > maxGap) {
+    maxGap = currentGap;
+  }
+  
+  return maxGap <= 2; // No gap longer than 2 days
 }
