@@ -38,13 +38,20 @@ export default function HabitTracker({ refresh }: Props) {
 
   const loadStats = async () => {
     try {
+      console.log('📊 Loading habit stats...');
       const res = await fetch('/api/habits');
+      console.log('📊 Habit API response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('📊 Habit stats loaded:', data);
         setStats(data);
+      } else {
+        const errorData = await res.json();
+        console.error('📊 Habit API error:', errorData);
       }
     } catch (error) {
-      console.error('Fehler beim Laden der Habit-Statistiken:', error);
+      console.error('📊 Fehler beim Laden der Habit-Statistiken:', error);
     } finally {
       setLoading(false);
     }
@@ -135,39 +142,58 @@ export default function HabitTracker({ refresh }: Props) {
 
       {/* Week View */}
       <div style={weekContainerStyle}>
-        <div style={{ fontSize: 14, color: '#ccc', marginBottom: 8 }}>
-          Letzte 7 Tage
+        <div style={weekHeaderStyle}>
+          <span style={{ fontSize: 14, color: '#ccc' }}>Letzte 7 Tage</span>
+          <div style={legendStyle}>
+            <span style={legendItemStyle}>🍽️ = Essen</span>
+            <span style={legendItemStyle}>⚖️ = Gewicht</span>
+            <span style={legendItemStyle}>○ = Nichts</span>
+          </div>
         </div>
         <div style={weekGridStyle}>
           {stats.weekData.map((day, index) => {
             const date = new Date(day.datum);
             const dayName = date.toLocaleDateString('de-DE', { weekday: 'short' });
+            const dayNumber = date.getDate();
             const isToday = day.datum === new Date().toLocaleDateString("de-DE", {timeZone: "Europe/Berlin"});
+            
+            let statusIcon = '○'; // Empty circle
+            let backgroundColor = '#333';
+            
+            if (day.foodLogged && day.weightLogged) {
+              statusIcon = '✨'; // Both logged - sparkles
+              backgroundColor = '#4caf50';
+            } else if (day.foodLogged) {
+              statusIcon = '🍽️'; // Food only
+              backgroundColor = '#ff9800';
+            } else if (day.weightLogged) {
+              statusIcon = '⚖️'; // Weight only
+              backgroundColor = '#2196f3';
+            }
             
             return (
               <motion.div
                 key={day.datum}
                 style={{
                   ...dayItemStyle,
-                  backgroundColor: day.completed ? '#4caf50' : '#333',
-                  border: isToday ? '2px solid #2196f3' : '1px solid #555',
+                  backgroundColor,
+                  border: isToday ? '3px solid #fff' : '1px solid #555',
+                  boxShadow: isToday ? '0 0 10px rgba(255,255,255,0.3)' : 'none',
                 }}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.1, backgroundColor: day.completed ? backgroundColor : '#444' }}
+                title={`${dayName}, ${dayNumber}. - ${day.foodLogged ? 'Essen ✓' : 'Essen ✗'} ${day.weightLogged ? 'Gewicht ✓' : 'Gewicht ✗'}`}
               >
-                <div style={{ fontSize: 10, color: '#ccc' }}>{dayName}</div>
-                <div style={{ fontSize: 16 }}>
-                  {day.completed ? (
-                    <span>
-                      {day.foodLogged && '🍽️'}
-                      {day.weightLogged && '⚖️'}
-                      {!day.foodLogged && !day.weightLogged && '✅'}
-                    </span>
-                  ) : (
-                    '○'
-                  )}
+                <div style={{ fontSize: 10, color: isToday ? '#000' : '#ccc', fontWeight: isToday ? 'bold' : 'normal' }}>
+                  {isToday ? 'HEUTE' : dayName}
+                </div>
+                <div style={{ fontSize: 18, marginTop: 2 }}>
+                  {statusIcon}
+                </div>
+                <div style={{ fontSize: 8, color: isToday ? '#000' : '#aaa', marginTop: 2 }}>
+                  {dayNumber}
                 </div>
               </motion.div>
             );
@@ -317,6 +343,24 @@ const statItemStyle: React.CSSProperties = {
 
 const weekContainerStyle: React.CSSProperties = {
   marginBottom: 16,
+};
+
+const weekHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 12,
+};
+
+const legendStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 8,
+  fontSize: 11,
+};
+
+const legendItemStyle: React.CSSProperties = {
+  color: '#aaa',
+  whiteSpace: 'nowrap',
 };
 
 const weekGridStyle: React.CSSProperties = {

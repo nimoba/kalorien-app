@@ -206,9 +206,8 @@ async function updateTodaysHabit(sheets: ReturnType<typeof google.sheets>, sheet
     
     const completed = foodLogged || weightLogged;
     const streak = calculateStreak(habitsData, today, completed);
-    const achievements = checkAchievements(habitsData, streak, foodLogged, weightLogged);
     
-    const rowData = [today, foodLogged, weightLogged, streak, achievements.join(','), completed];
+    const rowData = [today, foodLogged, weightLogged, streak, '', completed];
     
     if (todayRowIndex > 0) {
       // Update existing row
@@ -261,65 +260,75 @@ function calculateStreak(habitsData: string[][], today: string, todayCompleted: 
   return streak;
 }
 
-function checkAchievements(habitsData: string[][], streak: number, foodLogged: boolean, weightLogged: boolean): string[] {
-  const achievements: string[] = [];
+function calculateAchievementsFromStats(stats: { currentStreak: number; longestStreak: number; totalDays: number; foodDays: number; weightDays: number; perfectDays: number }): Achievement[] {
+  const unlockedAchievements: Achievement[] = [];
   
-  const dataRows = habitsData.slice(1).filter(row => row[0]); // Remove header and empty rows
-  const foodDays = dataRows.filter(row => row[1] === 'true').length;
-  const weightDays = dataRows.filter(row => row[2] === 'true').length;
-  const totalActiveDays = dataRows.filter(row => row[5] === 'true').length;
-  
-  // Beginner achievements
-  if (totalActiveDays >= 1) achievements.push('first_day');
-  if (foodDays >= 10) achievements.push('food_explorer');
-  if (weightDays >= 7) achievements.push('scale_starter');
-  
-  // Streak achievements
-  if (streak >= 7) achievements.push('week_streak');
-  if (streak >= 14) achievements.push('two_week_warrior');
-  if (streak >= 30) achievements.push('month_streak');
-  if (streak >= 100) achievements.push('century_club');
-  if (streak >= 365) achievements.push('year_champion');
-  
-  // Food achievements
-  if (foodDays >= 50) achievements.push('food_master');
-  if (foodDays >= 200) achievements.push('nutrition_legend');
-  
-  // Weight achievements
-  if (weightDays >= 30) achievements.push('scale_warrior');
-  if (weightDays >= 100) achievements.push('weight_champion');
-  
-  // Perfect day achievements
-  if (foodLogged && weightLogged) {
-    achievements.push('perfect_day');
+  ACHIEVEMENTS.forEach(achievement => {
+    let unlocked = false;
     
-    // Check for perfect week (last 7 days all had both)
-    const last7Days = dataRows.slice(-7);
-    if (last7Days.length >= 7 && last7Days.every(row => row[1] === 'true' && row[2] === 'true')) {
-      achievements.push('perfect_week');
+    switch (achievement.id) {
+      case 'first_day':
+        unlocked = stats.totalDays >= 1;
+        break;
+      case 'food_explorer':
+        unlocked = stats.foodDays >= 10;
+        break;
+      case 'scale_starter':
+        unlocked = stats.weightDays >= 7;
+        break;
+      case 'week_streak':
+        unlocked = stats.longestStreak >= 7;
+        break;
+      case 'two_week_warrior':
+        unlocked = stats.longestStreak >= 14;
+        break;
+      case 'month_streak':
+        unlocked = stats.longestStreak >= 30;
+        break;
+      case 'century_club':
+        unlocked = stats.longestStreak >= 100;
+        break;
+      case 'year_champion':
+        unlocked = stats.longestStreak >= 365;
+        break;
+      case 'food_master':
+        unlocked = stats.foodDays >= 50;
+        break;
+      case 'nutrition_legend':
+        unlocked = stats.foodDays >= 200;
+        break;
+      case 'scale_warrior':
+        unlocked = stats.weightDays >= 30;
+        break;
+      case 'weight_champion':
+        unlocked = stats.weightDays >= 100;
+        break;
+      case 'perfect_day':
+        unlocked = stats.perfectDays >= 1;
+        break;
+      case 'perfect_week':
+        unlocked = stats.perfectDays >= 7;
+        break;
+      case 'fifty_club':
+        unlocked = stats.totalDays >= 50;
+        break;
+      case 'hundred_hero':
+        unlocked = stats.totalDays >= 100;
+        break;
+      case 'year_master':
+        unlocked = stats.totalDays >= 365;
+        break;
+      default:
+        unlocked = false;
     }
-  }
+    
+    unlockedAchievements.push({
+      ...achievement,
+      achieved: unlocked
+    });
+  });
   
-  // Milestone achievements
-  if (totalActiveDays >= 50) achievements.push('fifty_club');
-  if (totalActiveDays >= 100) achievements.push('hundred_hero');
-  if (totalActiveDays >= 365) achievements.push('year_master');
-  
-  // Special achievements
-  const last30Days = dataRows.slice(-30);
-  if (last30Days.length >= 30) {
-    const activeDaysInMonth = last30Days.filter(row => row[5] === 'true').length;
-    if (activeDaysInMonth >= 27) { // 90% of 30 days
-      achievements.push('dedication_master');
-    }
-  }
-  
-  // Consistency achievement - no gaps longer than 2 days in last 30 days
-  if (checkConsistency(dataRows.slice(-30))) {
-    achievements.push('consistency_king');
-  }
-  
-  return achievements;
+  return unlockedAchievements;
 }
 
 function calculateHabitStats(habitsData: string[][], today: string, todaysFood: boolean, todaysWeight: boolean): HabitStats {
@@ -327,7 +336,6 @@ function calculateHabitStats(habitsData: string[][], today: string, todaysFood: 
   
   let currentStreak = 0;
   let longestStreak = 0;
-  const totalDays = dataRows.length;
   
   // Calculate current streak
   const completed = todaysFood || todaysWeight;
@@ -335,7 +343,7 @@ function calculateHabitStats(habitsData: string[][], today: string, todaysFood: 
     currentStreak = calculateStreak(habitsData, today, completed);
   }
   
-  // Calculate longest streak
+  // Calculate longest streak from all historical data
   dataRows.forEach(row => {
     const streak = parseInt(row[3]) || 0;
     if (streak > longestStreak) {
@@ -343,13 +351,21 @@ function calculateHabitStats(habitsData: string[][], today: string, todaysFood: 
     }
   });
   
-  // Get achievements
-  const allAchievements = checkAchievements(habitsData, currentStreak, todaysFood, todaysWeight);
-  const achievements: Achievement[] = ACHIEVEMENTS.map(ach => ({
-    ...ach,
-    achieved: allAchievements.includes(ach.id),
-    achievedDate: allAchievements.includes(ach.id) ? today : undefined
-  }));
+  // Calculate statistics
+  const totalDays = dataRows.filter(row => row[5] === 'true').length;
+  const foodDays = dataRows.filter(row => row[1] === 'true').length;
+  const weightDays = dataRows.filter(row => row[2] === 'true').length;
+  const perfectDays = dataRows.filter(row => row[1] === 'true' && row[2] === 'true').length;
+  
+  // Calculate achievements based on statistics
+  const achievements = calculateAchievementsFromStats({
+    currentStreak,
+    longestStreak,
+    totalDays,
+    foodDays,
+    weightDays,
+    perfectDays
+  });
   
   // Get week data (last 7 days)
   const weekData: WeekHabit[] = [];
@@ -359,10 +375,13 @@ function calculateHabitStats(habitsData: string[][], today: string, todaysFood: 
     const dateStr = date.toLocaleDateString("de-DE", {timeZone: "Europe/Berlin"});
     
     const dayData = dataRows.find(row => row[0] === dateStr);
+    const dayFoodLogged = dayData ? dayData[1] === 'true' : false;
+    const dayWeightLogged = dayData ? dayData[2] === 'true' : false;
+    
     weekData.push({
       datum: dateStr,
-      foodLogged: dayData ? dayData[1] === 'true' : false,
-      weightLogged: dayData ? dayData[2] === 'true' : false,
+      foodLogged: dayFoodLogged,
+      weightLogged: dayWeightLogged,
       completed: dayData ? dayData[5] === 'true' : false
     });
   }
@@ -376,27 +395,3 @@ function calculateHabitStats(habitsData: string[][], today: string, todaysFood: 
   };
 }
 
-function checkConsistency(recentData: string[][]): boolean {
-  if (recentData.length < 7) return false;
-  
-  let maxGap = 0;
-  let currentGap = 0;
-  
-  for (const row of recentData) {
-    if (row[5] === 'true') { // completed day
-      if (currentGap > maxGap) {
-        maxGap = currentGap;
-      }
-      currentGap = 0;
-    } else {
-      currentGap++;
-    }
-  }
-  
-  // Check final gap
-  if (currentGap > maxGap) {
-    maxGap = currentGap;
-  }
-  
-  return maxGap <= 2; // No gap longer than 2 days
-}

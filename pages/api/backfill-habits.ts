@@ -96,8 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return {
         ...entry,
-        streak,
-        achievements: calculateAchievementsForDay(habitEntries.slice(0, index + 1), entry, streak)
+        streak
       };
     });
 
@@ -107,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       entry.foodLogged,
       entry.weightLogged,
       entry.streak,
-      entry.achievements.join(','),
+      '', // No achievements stored per day
       entry.completed
     ]);
 
@@ -139,7 +138,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Calculate final stats
     const maxStreak = Math.max(...habitEntriesWithStreaks.map(e => e.streak));
     const totalDays = habitEntriesWithStreaks.filter(e => e.completed).length;
-    const achievementCounts = countAchievements(habitEntriesWithStreaks);
+    const foodDaysCount = habitEntriesWithStreaks.filter(e => e.foodLogged).length;
+    const weightDaysCount = habitEntriesWithStreaks.filter(e => e.weightLogged).length;
 
     res.status(200).json({
       success: true,
@@ -148,9 +148,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalEntries: habitEntriesWithStreaks.length,
         activeDays: totalDays,
         maxStreak,
-        foodDays: habitEntriesWithStreaks.filter(e => e.foodLogged).length,
-        weightDays: habitEntriesWithStreaks.filter(e => e.weightLogged).length,
-        achievements: achievementCounts
+        foodDays: foodDaysCount,
+        weightDays: weightDaysCount
       }
     });
 
@@ -189,61 +188,3 @@ async function ensureHabitsSheet(sheets: ReturnType<typeof google.sheets>, sheet
   }
 }
 
-function calculateAchievementsForDay(allEntries: DayData[], currentEntry: DayData, streak: number): string[] {
-  const achievements: string[] = [];
-  
-  const foodDays = allEntries.filter(e => e.foodLogged).length;
-  const weightDays = allEntries.filter(e => e.weightLogged).length;
-  const completedDays = allEntries.filter(e => e.completed).length;
-
-  // Basic achievements
-  if (completedDays >= 1) achievements.push('first_day');
-  if (streak >= 7) achievements.push('week_streak');
-  if (streak >= 30) achievements.push('month_streak');
-  if (streak >= 100) achievements.push('century_club');
-  
-  // Activity-specific achievements
-  if (foodDays >= 10) achievements.push('food_explorer');
-  if (foodDays >= 50) achievements.push('food_master');
-  if (foodDays >= 200) achievements.push('nutrition_legend');
-  
-  if (weightDays >= 7) achievements.push('scale_starter');
-  if (weightDays >= 30) achievements.push('scale_warrior');
-  if (weightDays >= 100) achievements.push('weight_champion');
-  
-  // Perfect day achievements
-  if (currentEntry.foodLogged && currentEntry.weightLogged) {
-    achievements.push('perfect_day');
-    
-    // Perfect week - check if last 7 days all had both
-    if (allEntries.length >= 7) {
-      const lastWeek = allEntries.slice(-7);
-      if (lastWeek.every(e => e.foodLogged && e.weightLogged)) {
-        achievements.push('perfect_week');
-      }
-    }
-  }
-  
-  // Streak achievements
-  if (streak >= 14) achievements.push('two_week_warrior');
-  if (streak >= 365) achievements.push('year_champion');
-  
-  // Milestone achievements
-  if (completedDays === 50) achievements.push('fifty_club');
-  if (completedDays === 100) achievements.push('hundred_hero');
-  if (completedDays === 365) achievements.push('year_master');
-
-  return achievements;
-}
-
-function countAchievements(entries: Array<DayData & { achievements: string[] }>): Record<string, number> {
-  const counts: Record<string, number> = {};
-  
-  entries.forEach(entry => {
-    entry.achievements.forEach(achievement => {
-      counts[achievement] = (counts[achievement] || 0) + 1;
-    });
-  });
-  
-  return counts;
-}
