@@ -86,9 +86,6 @@ export default function Dashboard() {
         <MakroBalken label="Fett" value={daten.fett} ziel={daten.zielFett} />
       </div>
 
-      {/* Habit Tracker */}
-      <HabitTracker refresh={refreshBilanz} />
-
       {/* Tagesverlauf */}
       <div style={{ marginTop: 40 }}>
         <TagesLineChart eintraege={daten.eintraege} ziel={daten.ziel} />
