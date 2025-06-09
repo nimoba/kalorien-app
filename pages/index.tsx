@@ -12,6 +12,7 @@ import GewichtForm from "../components/GewichtForm";
 import FloatingTabBar from "../components/FloatingTabBar";
 import KcalBilanzChart from "../components/charts/KcalBilanzChart";
 import SportForm from "../components/SportForm";
+import HabitTracker from "../components/HabitTracker";
 
 interface DashboardData {
   kalorien: number;
@@ -84,6 +85,9 @@ export default function Dashboard() {
         <MakroBalken label="Eiweiß" value={daten.eiweiss} ziel={daten.zielEiweiss} />
         <MakroBalken label="Fett" value={daten.fett} ziel={daten.zielFett} />
       </div>
+
+      {/* Habit Tracker */}
+      <HabitTracker refresh={refreshBilanz} />
 
       {/* Tagesverlauf */}
       <div style={{ marginTop: 40 }}>
