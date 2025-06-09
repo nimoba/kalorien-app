@@ -5,10 +5,9 @@ interface Props {
   label: string;
   value: number;
   ziel: number;
-  farbe: string;
 }
 
-export function MakroBalken({ label, value, ziel, farbe }: Props) {
+export function MakroBalken({ label, value, ziel }: Props) {
   const prozent = Math.min((value / ziel) * 100, 100);
   const progress = value / ziel;
 

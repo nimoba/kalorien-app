@@ -1,8 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import FloatingTabBar from "../components/FloatingTabBar";
+
+interface Vorschlag {
+  gericht: string;
+  zutaten: string[];
+  rezept: string;
+  makros: {
+    kcal: number;
+    eiweiss: number;
+    fett: number;
+    kh: number;
+  };
+  preis?: string;
+}
 
 export default function EmpfehlungTab() {
   const [stil, setStil] = useState<"vegetarisch" | "alles">("alles");
@@ -11,7 +23,7 @@ export default function EmpfehlungTab() {
   const [budget, setBudget] = useState(false);
   const [zeit, setZeit] = useState(50);
   const [loading, setLoading] = useState(false);
-  const [vorschlaege, setVorschlaege] = useState<any[] | null>(null);
+  const [vorschlaege, setVorschlaege] = useState<Vorschlag[] | null>(null);
   const [wochenplan, setWochenplan] = useState(false);
 
   const toggleEssensart = (art: string) => {

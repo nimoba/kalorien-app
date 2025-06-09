@@ -49,7 +49,7 @@ async function getZutaten(res: NextApiResponse) {
 
       console.log(`📋 ${zutaten.length} Zutaten geladen`);
       res.status(200).json(zutaten);
-    } catch (error) {
+    } catch {
       // Zutaten-Tab existiert noch nicht, Standard-Zutaten zurückgeben
       console.log("📝 Zutaten-Tab existiert noch nicht, verwende Standard-Zutaten");
       res.status(200).json(getDefaultZutaten());
@@ -92,7 +92,7 @@ async function updateZutaten(req: NextApiRequest, res: NextApiResponse) {
         valueInputOption: "USER_ENTERED",
         requestBody: { values },
       });
-    } catch (error) {
+    } catch {
       // Tab existiert nicht, erstelle ihn
       console.log("📝 Erstelle Zutaten-Tab");
       

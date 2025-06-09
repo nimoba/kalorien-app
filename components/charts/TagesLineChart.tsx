@@ -116,7 +116,7 @@ export function TagesLineChart({ eintraege, ziel }: Props) {
   // 7. Vertical line plugin for current hour
   const verticalLinePlugin = {
     id: 'currentHourLine',
-    afterDraw: (chart: any) => {
+    afterDraw: (chart: import("chart.js").Chart<"line">) => {
       const { ctx, chartArea, scales } = chart;
       const xScale = scales.x;
       const x = xScale.getPixelForValue(currentHour);

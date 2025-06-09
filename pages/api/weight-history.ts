@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         
         return new Date(jahr, monat - 1, tag);
-      } catch (error) {
+      } catch {
         return null;
       }
     };
@@ -104,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       range: "Ziele!A2:G2",
     });
 
-    const [zielKcalRaw, , , , , zielGewichtRaw, tdeeRaw] = zielRes.data.values?.[0] || [];
+    const [, , , , , zielGewichtRaw, tdeeRaw] = zielRes.data.values?.[0] || [];
     const zielGewicht = zielGewichtRaw ? Number(zielGewichtRaw) : null;
     const tdee = Number(tdeeRaw) || 2600;
 

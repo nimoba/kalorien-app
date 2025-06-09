@@ -105,7 +105,7 @@ export default function SettingsForm({ onClose, onSave }: Props) {
           position: "relative",
           scrollbarWidth: "thin",
           scrollbarColor: "#555 #2a2a2a",
-        } as any}
+        } as React.CSSProperties}
       >
         <button
           onClick={onClose}

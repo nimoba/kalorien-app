@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 Du bist ein Einkaufsexperte und hilfst beim Erstellen von optimierten Einkaufslisten.
 
 FEHLENDE ZUTATEN FÜR REZEPTE:
-${fehlende_zutaten.map((z: any) => `- ${z.name} (benötigt: ${z.benötigte_menge} ${z.einheit})`).join('\n')}
+${fehlende_zutaten.map((z: { name: string; benötigte_menge: number; einheit: string }) => `- ${z.name} (benötigt: ${z.benötigte_menge} ${z.einheit})`).join('\n')}
 
 BUDGET: ${budget ? `${budget}€` : 'flexibel'}
 PRÄFERENZEN:
@@ -101,7 +101,7 @@ Gib nur den JSON zurück, keine anderen Texte.
     });
 
     const gptJson = await gptRes.json();
-    let antwort = gptJson.choices?.[0]?.message?.content || "";
+    const antwort = gptJson.choices?.[0]?.message?.content || "";
 
     if (!antwort) {
       console.error("❌ GPT-Antwort leer:", gptJson);

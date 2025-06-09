@@ -24,8 +24,29 @@ ChartJS.register(
   Legend
 );
 
+interface GewichtVerlaufEntry {
+  datum: string;
+  gewicht: number;
+}
+
+interface GewichtKomponentEntry {
+  datum: string;
+  wert: number;
+}
+
+interface GewichtData {
+  startgewicht: number;
+  verlauf: GewichtVerlaufEntry[];
+  theoretisch: GewichtVerlaufEntry[];
+  geglättet: GewichtVerlaufEntry[];
+  trend: GewichtVerlaufEntry[];
+  fett: GewichtKomponentEntry[];
+  muskel: GewichtKomponentEntry[];
+  zielGewicht: number;
+}
+
 export default function GewichtSeite() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<GewichtData | null>(null);
   const [analyse, setAnalyse] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,11 +76,11 @@ export default function GewichtSeite() {
     zielGewicht
   } = data;
 
-  const labels = verlauf.map((e: any) => e.datum);
-  const echteWerte = verlauf.map((e: any) => e.gewicht);
-  const theoriewerte = theoretisch.map((e: any) => e.gewicht);
-  const smoothed = geglättet.map((e: any) => e.gewicht);
-  const trendlinie = trend.map((e: any) => e.gewicht);
+  const labels = verlauf.map((e) => e.datum);
+  const echteWerte = verlauf.map((e) => e.gewicht);
+  const theoriewerte = theoretisch.map((e) => e.gewicht);
+  const smoothed = geglättet.map((e) => e.gewicht);
+  const trendlinie = trend.map((e) => e.gewicht);
 
   const letzte = echteWerte[echteWerte.length - 1] || startgewicht;
   const diff = (letzte - startgewicht).toFixed(1);
@@ -131,7 +152,7 @@ export default function GewichtSeite() {
         borderWidth: 2,
         tension: 0,
       },
-      zielGewicht && {
+      ...(zielGewicht ? [{
         label: "Zielgewicht",
         data: new Array(labels.length).fill(zielGewicht),
         borderColor: "#ffffffaa",
@@ -139,8 +160,8 @@ export default function GewichtSeite() {
         pointRadius: 0,
         borderDash: [2, 2],
         tension: 0,
-      }
-    ].filter(Boolean),
+      }] : [])
+    ],
   };
 
   const options = {
@@ -189,11 +210,11 @@ export default function GewichtSeite() {
 
   // Körperzusammensetzung Chart Data
   const koerperChartData = {
-    labels: verlauf.map((e: any) => e.datum),
+    labels: verlauf.map((e) => e.datum),
     datasets: [
       {
         label: "Körperfett (%)",
-        data: fett.map((e: any) => e.wert),
+        data: fett.map((e) => e.wert),
         borderColor: "#ffa600",
         backgroundColor: "#ffa60033",
         tension: 0.25,
@@ -203,7 +224,7 @@ export default function GewichtSeite() {
       },
       {
         label: "Muskelmasse (%)",
-        data: muskel.map((e: any) => e.wert),
+        data: muskel.map((e) => e.wert),
         borderColor: "#00cc99",
         backgroundColor: "#00cc9933",
         tension: 0.25,
