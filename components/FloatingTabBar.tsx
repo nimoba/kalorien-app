@@ -47,6 +47,12 @@ export default function FloatingTabBar() {
         active={pathname === "/empfehlung"}
         onClick={() => router.push("/empfehlung")}
       />
+      <TabButton
+        label="Counter"
+        emoji="🔢"
+        active={pathname === "/counter"}
+        onClick={() => router.push("/counter")}
+      />
     </div>
   );
 }
