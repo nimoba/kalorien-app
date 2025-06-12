@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, LineElement, PointElement, TimeScale } from 'chart.js';
-import { Doughnut, Bar, Line } from 'react-chartjs-2';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import FinanceFloatingTabBar from "../../components/finance/FinanceFloatingTabBar";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, LineElement, PointElement, TimeScale);
@@ -454,7 +454,7 @@ export default function AnalyticsPage() {
           </div>
         ) : (
           <p style={{ margin: 0, color: "#888", fontStyle: "italic" }}>
-            Klicken Sie auf "Analyse generieren" um eine personalisierte KI-Analyse Ihrer Finanzen zu erhalten.
+            Klicken Sie auf &quot;Analyse generieren&quot; um eine personalisierte KI-Analyse Ihrer Finanzen zu erhalten.
           </p>
         )}
       </motion.div>

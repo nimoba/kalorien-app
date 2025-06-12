@@ -548,7 +548,7 @@ export default function RecurringPaymentsPage() {
                   </label>
                   <select
                     value={frequency}
-                    onChange={(e) => setFrequency(e.target.value as any)}
+                    onChange={(e) => setFrequency(e.target.value as 'monthly' | 'yearly' | 'weekly')}
                     style={{
                       width: "100%",
                       padding: "12px",

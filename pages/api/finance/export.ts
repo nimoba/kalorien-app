@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const rows = transactionsResponse.data.values || [];
     
     // Convert to CSV
-    let csv = rows.map(row => {
+    const csv = rows.map(row => {
       // Escape commas and quotes in the data
       return row.map(cell => {
         const cellStr = (cell || '').toString();

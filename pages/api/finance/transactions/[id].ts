@@ -120,11 +120,11 @@ async function handleDelete(req: NextApiRequest, res: NextApiResponse, id: strin
   }
 }
 
-async function getSheetId(sheets: any, sheetName: string): Promise<number> {
+async function getSheetId(sheets: ReturnType<typeof google.sheets>, sheetName: string): Promise<number> {
   const spreadsheet = await sheets.spreadsheets.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
   });
 
-  const sheet = spreadsheet.data.sheets?.find((s: any) => s.properties?.title === sheetName);
+  const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
   return sheet?.properties?.sheetId || 0;
 }

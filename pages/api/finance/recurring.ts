@@ -11,7 +11,7 @@ function parseDecimal(input: unknown): number {
 function calculateNextPayment(startDate: string, frequency: string): { nextPayment: string; daysUntil: number } {
   const start = new Date(startDate);
   const now = new Date();
-  let next = new Date(start);
+  const next = new Date(start);
 
   // Find the next payment date
   while (next <= now) {

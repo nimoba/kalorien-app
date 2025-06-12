@@ -5,7 +5,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { categoryExpenses, monthlyTrends, savingsRate, expenseGrowth, topExpenses } = req.body;
+  const { categoryExpenses, monthlyTrends, savingsRate, expenseGrowth, topExpenses }: {
+    categoryExpenses: Record<string, number>;
+    monthlyTrends: Array<{ month: string; income: number; expenses: number }>;
+    savingsRate: number;
+    expenseGrowth: number;
+    topExpenses: Array<{ description: string; amount: number; date: string }>;
+  } = req.body;
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -62,7 +68,7 @@ Bitte analysiere diese Daten und gib mir konkrete Empfehlungen zur Optimierung m
   }
 }
 
-function generateFallbackAnalysis(categoryExpenses: any, savingsRate: number, expenseGrowth: number): string {
+function generateFallbackAnalysis(categoryExpenses: Record<string, number>, savingsRate: number, expenseGrowth: number): string {
   let analysis = "📊 FINANZANALYSE\n\n";
 
   // Analyze savings rate
