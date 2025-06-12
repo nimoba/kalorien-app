@@ -179,20 +179,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const intercept = avgY - slope * avgX;
 
-      return x.map((xi, i) => ({
+      const trendPoints = x.map((xi, i) => ({
         datum: verlauf[i]?.datum || `Tag ${i + 1}`,
         gewicht: Number((slope * xi + intercept).toFixed(2)),
       }));
+
+      return { trendPoints, slope };
     }
 
-    const trend = lineRegression(verlauf.map(v => v.gewicht));
+    const { trendPoints, slope } = lineRegression(verlauf.map(v => v.gewicht));
 
     res.status(200).json({
       startgewicht,
       verlauf,
       theoretisch: theoriewerte,
       geglättet: smoothed,
-      trend,
+      trend: trendPoints,
+      trendSteigung: slope,
       fett,
       muskel,
       zielGewicht,

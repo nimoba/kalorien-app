@@ -40,6 +40,7 @@ interface GewichtData {
   theoretisch: GewichtVerlaufEntry[];
   geglättet: GewichtVerlaufEntry[];
   trend: GewichtVerlaufEntry[];
+  trendSteigung: number;
   fett: GewichtKomponentEntry[];
   muskel: GewichtKomponentEntry[];
   zielGewicht: number;
@@ -71,6 +72,7 @@ export default function GewichtSeite() {
     theoretisch,
     geglättet,
     trend,
+    trendSteigung,
     fett,
     muskel,
     zielGewicht
@@ -86,18 +88,18 @@ export default function GewichtSeite() {
   const diff = (letzte - startgewicht).toFixed(1);
   const farbe = parseFloat(diff) < 0 ? "#3cb043" : "#d62e79";
 
-  // 📅 Zielreichweite auf Basis der Trendlinie
-  const trendEnd = trendlinie[trendlinie.length - 1] ?? letzte;
+  // 📅 Zielreichweite auf Basis der Trendlinie (korrigierte Berechnung)
   const zielDifferenz = letzte - zielGewicht;
-  const trendDifferenz = trendEnd - letzte;
-  const verbleibendeTage = trendDifferenz !== 0
-    ? Math.ceil(zielDifferenz / trendDifferenz * trend.length)
+  const verbleibendeTage = (trendSteigung !== 0 && zielGewicht)
+    ? Math.ceil(Math.abs(zielDifferenz) / Math.abs(trendSteigung))
     : null;
 
-  const zieltext =
-    verbleibendeTage && verbleibendeTage > 0
-      ? `🎯 Zielgewicht in ca. ${verbleibendeTage} Tagen`
-      : "🎯 Zielgewicht erreicht oder Trend zu flach";
+  const zieltext = 
+    !zielGewicht 
+      ? "🎯 Kein Zielgewicht definiert"
+      : verbleibendeTage && verbleibendeTage > 0 && Math.abs(trendSteigung) > 0.001
+        ? `🎯 Zielgewicht in ca. ${verbleibendeTage} Tagen`
+        : "🎯 Zielgewicht erreicht oder Trend zu flach";
 
   // Bewertung für Gewichtsverlauf
   const gewichtBewertung = () => {
