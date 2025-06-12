@@ -74,6 +74,33 @@ export default function Dashboard() {
         paddingBottom: "100px",
       }}
     >
+      {/* App Switcher */}
+      <div style={{ 
+        position: "absolute", 
+        top: "20px", 
+        right: "20px",
+        zIndex: 1000
+      }}>
+        <button
+          onClick={() => window.location.href = "/finanzen"}
+          style={{
+            background: "#4caf50",
+            border: "none",
+            borderRadius: "12px",
+            color: "#fff",
+            padding: "8px 12px",
+            fontSize: "14px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            boxShadow: "0 2px 8px rgba(76, 175, 80, 0.3)"
+          }}
+        >
+          💰 Finanzen
+        </button>
+      </div>
+
       <h1>📊 Dein Dashboard</h1>
 
       {/* Kalorien Halbkreis */}
