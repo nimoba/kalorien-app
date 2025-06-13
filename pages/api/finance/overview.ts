@@ -32,10 +32,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: "v4", auth });
 
     // Get transactions
-    const transactionsResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Transaktionen!A2:H",
-    });
+    let transactionsResponse;
+    try {
+      transactionsResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID,
+        range: "Transaktionen!A2:H",
+      });
+    } catch {
+      // Create Transaktionen sheet if it doesn't exist
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID,
+        requestBody: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title: "Transaktionen",
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      // Add headers
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID,
+        range: "Transaktionen!A1:H1",
+        valueInputOption: "RAW",
+        requestBody: {
+          values: [["Datum", "Zeit", "Beschreibung", "Betrag", "Kategorie", "Typ", "Notizen", "ID"]],
+        },
+      });
+
+      transactionsResponse = { data: { values: [] } };
+    }
 
     // Get settings
     let settingsResponse;
@@ -45,7 +76,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         range: "FinanzEinstellungen!A2:C2",
       });
     } catch {
-      // Settings sheet doesn't exist yet, use defaults
+      // Create FinanzEinstellungen sheet if it doesn't exist
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID,
+        requestBody: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title: "FinanzEinstellungen",
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      // Add headers and default values
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID,
+        range: "FinanzEinstellungen!A1:C2",
+        valueInputOption: "RAW",
+        requestBody: {
+          values: [
+            ["Startguthaben", "Währung", "Monatsbudget"],
+            [0, "EUR", 0]
+          ],
+        },
+      });
+
       settingsResponse = { data: { values: [[0, 'EUR', 0]] } };
     }
 

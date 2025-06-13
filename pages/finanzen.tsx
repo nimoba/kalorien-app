@@ -35,10 +35,23 @@ export default function FinanceDashboard() {
     fetch("/api/finance/overview")
       .then((res) => res.json())
       .then((data) => {
-        setData(data);
+        // Ensure all numeric values are valid numbers
+        const safeData = {
+          currentBalance: Number(data.currentBalance) || 0,
+          monthlyIncome: Number(data.monthlyIncome) || 0,
+          monthlyExpenses: Number(data.monthlyExpenses) || 0,
+          todayExpenses: Number(data.todayExpenses) || 0,
+          weekExpenses: Number(data.weekExpenses) || 0,
+          monthExpenses: Number(data.monthExpenses) || 0,
+          recentTransactions: data.recentTransactions || [],
+        };
+        setData(safeData);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((error) => {
+        console.error("Error loading finance data:", error);
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
