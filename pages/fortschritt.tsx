@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FloatingTabBar from '../components/FloatingTabBar';
-import Image from 'next/image';
 
 type PoseType = 'vorn' | 'seite' | 'hinten';
 
@@ -779,11 +778,9 @@ export default function FortschrittsFotosSeite() {
                           border: '1px solid #444'
                         }}
                       >
-                        <Image
+                        <img
                           src={photo.dataUrl}
                           alt={`${photo.pose} vom ${photo.timestamp.toLocaleDateString()}`}
-                          width={120}
-                          height={160}
                           style={{
                             width: '100%',
                             height: 160,
