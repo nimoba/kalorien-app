@@ -18,7 +18,7 @@ export default function FortschrittsFotosSeite() {
   const [selectedPose, setSelectedPose] = useState<PoseType>('vorn');
   const [isCapturing, setIsCapturing] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [overlayOpacity, setOverlayOpacity] = useState(0.3);
+  const [overlayOpacity, setOverlayOpacity] = useState(1);
   const [showGrid, setShowGrid] = useState(true);
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -142,7 +142,7 @@ export default function FortschrittsFotosSeite() {
           src={overlayImages[pose]}
           alt={`${pose} pose overlay`}
           style={{
-            height: '80%', // 80% der Höhe = 10% oben + 10% unten frei
+            height: '90%', // 80% der Höhe = 10% oben + 10% unten frei
             width: 'auto', // Breite automatisch basierend auf originalen Proportionen
             objectFit: 'contain',
             filter: 'invert(1)', // Macht schwarz zu weiß
