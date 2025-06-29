@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FloatingTabBar from '../components/FloatingTabBar';
+import Image from 'next/image';
 
 type PoseType = 'vorn' | 'seite' | 'hinten';
 
@@ -38,7 +39,7 @@ export default function FortschrittsFotosSeite() {
       const response = await fetch('/api/auth/status');
       const data = await response.json();
       setIsAuthenticated(data.authenticated);
-    } catch (error) {
+    } catch {
       setIsAuthenticated(false);
     }
     setAuthLoading(false);
@@ -51,7 +52,7 @@ export default function FortschrittsFotosSeite() {
       if (data.authUrl) {
         window.location.href = data.authUrl;
       }
-    } catch (error) {
+    } catch {
       alert('Login fehlgeschlagen');
     }
   };
@@ -77,12 +78,12 @@ export default function FortschrittsFotosSeite() {
   };
 
   // Kamera stoppen
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
-  };
+  }, [stream]);
 
   // Foto aufnehmen
   const capturePhoto = useCallback(async () => {
@@ -186,7 +187,7 @@ export default function FortschrittsFotosSeite() {
     }
 
     return () => stopCamera();
-  }, [currentMode]);
+  }, [currentMode, stopCamera]);
 
   // Pose-Overlay Komponente
   const PoseOverlay = ({ pose, opacity }: { pose: PoseType; opacity: number }) => {
@@ -204,9 +205,11 @@ export default function FortschrittsFotosSeite() {
           opacity: opacity
         }}
       >
-        <img 
+        <Image 
           src={overlayImages[pose]}
           alt={`${pose} pose overlay`}
+          width={300}
+          height={600}
           style={{
             height: '80%', // 80% der Höhe = 10% oben + 10% unten frei
             width: 'auto', // Breite automatisch basierend auf originalen Proportionen
@@ -612,9 +615,11 @@ export default function FortschrittsFotosSeite() {
                       border: '1px solid #444'
                     }}
                   >
-                    <img
+                    <Image
                       src={photo.dataUrl}
                       alt={`${photo.pose} vom ${photo.timestamp.toLocaleDateString()}`}
+                      width={120}
+                      height={160}
                       style={{
                         width: '100%',
                         height: 160,

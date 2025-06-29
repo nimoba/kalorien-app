@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       authenticated: !!accessToken,
       email: userEmail || null
     });
-  } catch (error) {
+  } catch {
     res.status(200).json({
       authenticated: false,
       email: null
