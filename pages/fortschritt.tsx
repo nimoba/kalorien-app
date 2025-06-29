@@ -128,39 +128,55 @@ export default function FortschrittsFotosSeite() {
       switch (pose) {
         case 'vorn':
           return (
-            <svg viewBox="0 0 200 400" className="w-full h-full">
-              <path
-                d="M100 20 C85 20 75 30 75 45 L75 60 C70 65 65 75 65 85 L65 120 L75 130 L75 180 L70 190 L70 250 L75 260 L75 320 L70 330 L70 380 L80 380 L80 330 L85 320 L85 260 L90 250 L90 190 L95 180 L95 130 L105 130 L105 180 L110 190 L110 250 L115 260 L115 320 L120 330 L120 380 L130 380 L130 330 L125 320 L125 260 L130 250 L130 190 L125 180 L125 130 L135 120 L135 85 C135 75 130 65 125 60 L125 45 C125 30 115 20 100 20 Z"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="2"
-                opacity={opacity}
-              />
+            <svg viewBox="0 0 300 500" className="w-full h-full">
+              {/* Kopf */}
+              <circle cx="150" cy="60" r="35" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              {/* Körper */}
+              <rect x="125" y="95" width="50" height="120" rx="25" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              {/* Arme */}
+              <line x1="90" y1="120" x2="125" y2="140" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              <line x1="175" y1="140" x2="210" y2="120" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              {/* Beine */}
+              <line x1="135" y1="215" x2="120" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              <line x1="165" y1="215" x2="180" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              {/* Füße */}
+              <line x1="115" y1="320" x2="125" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              <line x1="175" y1="320" x2="185" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
             </svg>
           );
         case 'seite':
           return (
-            <svg viewBox="0 0 200 400" className="w-full h-full">
-              <path
-                d="M120 20 C105 20 95 30 95 45 L95 60 C90 65 85 75 85 85 L85 120 L90 130 L90 180 L85 190 L85 250 L90 260 L90 320 L85 330 L85 380 L95 380 L95 330 L100 320 L100 260 L105 250 L105 190 L110 180 L110 130 L115 120 L115 85 C115 75 110 65 105 60 L105 45 C105 30 115 20 120 20 Z"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="2"
-                opacity={opacity}
-              />
+            <svg viewBox="0 0 300 500" className="w-full h-full">
+              {/* Kopf - Profil */}
+              <ellipse cx="170" cy="60" rx="30" ry="35" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              {/* Körper - schlanker im Profil */}
+              <ellipse cx="150" cy="155" rx="20" ry="60" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              {/* Arm */}
+              <line x1="130" y1="120" x2="110" y2="140" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              {/* Beine */}
+              <line x1="140" y1="215" x2="125" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              <line x1="160" y1="215" x2="175" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              {/* Füße */}
+              <line x1="120" y1="320" x2="130" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
+              <line x1="170" y1="320" x2="180" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
             </svg>
           );
         case 'hinten':
           return (
-            <svg viewBox="0 0 200 400" className="w-full h-full">
-              <path
-                d="M100 20 C85 20 75 30 75 45 L75 60 C70 65 65 75 65 85 L65 120 L75 130 L75 180 L70 190 L70 250 L75 260 L75 320 L70 330 L70 380 L80 380 L80 330 L85 320 L85 260 L90 250 L90 190 L95 180 L95 130 L105 130 L105 180 L110 190 L110 250 L115 260 L115 320 L120 330 L120 380 L130 380 L130 330 L125 320 L125 260 L130 250 L130 190 L125 180 L125 130 L135 120 L135 85 C135 75 130 65 125 60 L125 45 C125 30 115 20 100 20 Z"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="2"
-                opacity={opacity}
-                strokeDasharray="5,5"
-              />
+            <svg viewBox="0 0 300 500" className="w-full h-full">
+              {/* Kopf */}
+              <circle cx="150" cy="60" r="35" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
+              {/* Körper */}
+              <rect x="125" y="95" width="50" height="120" rx="25" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
+              {/* Arme */}
+              <line x1="90" y1="120" x2="125" y2="140" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
+              <line x1="175" y1="140" x2="210" y2="120" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
+              {/* Beine */}
+              <line x1="135" y1="215" x2="120" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
+              <line x1="165" y1="215" x2="180" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
+              {/* Füße */}
+              <line x1="115" y1="320" x2="125" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
+              <line x1="175" y1="320" x2="185" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
             </svg>
           );
       }
