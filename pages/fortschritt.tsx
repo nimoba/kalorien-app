@@ -142,8 +142,8 @@ export default function FortschrittsFotosSeite() {
           src={overlayImages[pose]}
           alt={`${pose} pose overlay`}
           style={{
-            maxWidth: '80%',
-            maxHeight: '90%',
+            height: '80%', // 80% der Höhe = 10% oben + 10% unten frei
+            width: 'auto', // Breite automatisch basierend auf originalen Proportionen
             objectFit: 'contain',
             filter: 'invert(1)', // Macht schwarz zu weiß
             mixBlendMode: 'screen' // Macht schwarze Bereiche transparent
