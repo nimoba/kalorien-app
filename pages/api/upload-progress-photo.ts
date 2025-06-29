@@ -42,39 +42,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const filename = `${dateStr}_${timeStr}_${pose}.jpg`;
 
-    // Check if "Fortschrittsbilder" folder exists, create if not
-    const folderQuery = "name='Fortschrittsbilder' and mimeType='application/vnd.google-apps.folder'";
-    const folderSearch = await drive.files.list({
-      q: folderQuery,
-      fields: 'files(id, name)',
-    });
+    // Use your specific shared folder ID
+    const folderId = "1SFH6gk4XH4s6KdCsPDQL1575LBXIo2CZ";
 
-    let folderId;
-    if (folderSearch.data.files && folderSearch.data.files.length > 0) {
-      folderId = folderSearch.data.files[0].id;
-    } else {
-      // Create folder
-      const folderResponse = await drive.files.create({
-        requestBody: {
-          name: 'Fortschrittsbilder',
-          mimeType: 'application/vnd.google-apps.folder',
-        },
-        fields: 'id',
-      });
-      folderId = folderResponse.data.id;
-    }
-
-    // Upload photo to Drive using resumable upload
+    // Upload photo directly to your shared folder
     const uploadResponse = await drive.files.create({
       requestBody: {
         name: filename,
-        parents: folderId ? [folderId] : undefined,
+        parents: [folderId], // Upload directly to your shared folder
       },
       media: {
         mimeType: 'image/jpeg',
         body: stream,
       },
       fields: 'id, name, webViewLink',
+      supportsAllDrives: true,
     });
 
     console.log(`✅ Fortschrittsfoto hochgeladen: ${filename}`);
