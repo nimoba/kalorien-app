@@ -18,7 +18,7 @@ export default function FortschrittsFotosSeite() {
   const [selectedPose, setSelectedPose] = useState<PoseType>('vorn');
   const [isCapturing, setIsCapturing] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [overlayOpacity, setOverlayOpacity] = useState(1);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.3);
   const [showGrid, setShowGrid] = useState(true);
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -55,7 +55,7 @@ export default function FortschrittsFotosSeite() {
   };
 
   // Foto aufnehmen
-  const capturePhoto = useCallback(() => {
+  const capturePhoto = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
@@ -73,20 +73,51 @@ export default function FortschrittsFotosSeite() {
 
     // Zu Base64 konvertieren
     const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const timestamp = new Date();
 
-    // Foto speichern
+    // Foto lokal speichern (für sofortige Anzeige)
     const newPhoto: CapturedPhoto = {
       id: Date.now().toString(),
       pose: selectedPose,
       dataUrl,
-      timestamp: new Date()
+      timestamp
     };
 
     setCapturedPhotos(prev => [...prev, newPhoto]);
     
     // Erfolgs-Feedback
     setIsCapturing(false);
-    alert(`📸 ${selectedPose.toUpperCase()}-Foto erfolgreich aufgenommen!`);
+    
+    // Upload zu Google Drive
+    try {
+      setIsCapturing(true); // Zeige Upload-Status
+      
+      const response = await fetch('/api/upload-progress-photo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          photoData: dataUrl,
+          pose: selectedPose,
+          timestamp: timestamp.toISOString(),
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert(`📸 ${selectedPose.toUpperCase()}-Foto erfolgreich aufgenommen und in Google Drive gespeichert!`);
+      } else {
+        console.error('Upload-Fehler:', result);
+        alert(`📸 Foto aufgenommen, aber Upload-Fehler: ${result.error}`);
+      }
+    } catch (uploadError) {
+      console.error('Upload-Fehler:', uploadError);
+      alert('📸 Foto aufgenommen, aber konnte nicht zu Google Drive hochgeladen werden');
+    } finally {
+      setIsCapturing(false);
+    }
   }, [selectedPose]);
 
   // Countdown für Timer-Aufnahme
@@ -142,7 +173,7 @@ export default function FortschrittsFotosSeite() {
           src={overlayImages[pose]}
           alt={`${pose} pose overlay`}
           style={{
-            height: '90%', // 80% der Höhe = 10% oben + 10% unten frei
+            height: '80%', // 80% der Höhe = 10% oben + 10% unten frei
             width: 'auto', // Breite automatisch basierend auf originalen Proportionen
             objectFit: 'contain',
             filter: 'invert(1)', // Macht schwarz zu weiß
@@ -384,7 +415,7 @@ export default function FortschrittsFotosSeite() {
                 fontSize: 14,
                 fontWeight: 'bold'
               }}>
-                📸 Aufnahme läuft...
+                ☁️ Uploading to Google Drive...
               </div>
             )}
           </div>
