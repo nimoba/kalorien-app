@@ -18,13 +18,43 @@ export default function FortschrittsFotosSeite() {
   const [selectedPose, setSelectedPose] = useState<PoseType>('vorn');
   const [isCapturing, setIsCapturing] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [overlayOpacity, setOverlayOpacity] = useState(1);
+  const [overlayOpacity, setOverlayOpacity] = useState(1.0);
   const [showGrid, setShowGrid] = useState(true);
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Check auth status on page load
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch('/api/auth/status');
+      const data = await response.json();
+      setIsAuthenticated(data.authenticated);
+    } catch (error) {
+      setIsAuthenticated(false);
+    }
+    setAuthLoading(false);
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const response = await fetch('/api/auth/google-login');
+      const data = await response.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    } catch (error) {
+      alert('Login fehlgeschlagen');
+    }
+  };
 
   // Kamera starten
   const startCamera = async () => {
@@ -88,11 +118,11 @@ export default function FortschrittsFotosSeite() {
     // Erfolgs-Feedback
     setIsCapturing(false);
     
-    // Upload zu Google Drive
+    // Upload zu Google Drive via OAuth
     try {
       setIsCapturing(true); // Zeige Upload-Status
       
-      const response = await fetch('/api/upload-progress-photo', {
+      const response = await fetch('/api/upload-progress-photo-oauth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,14 +137,19 @@ export default function FortschrittsFotosSeite() {
       const result = await response.json();
       
       if (response.ok) {
-        alert(`📸 ${selectedPose.toUpperCase()}-Foto erfolgreich aufgenommen und in Google Drive gespeichert!`);
+        alert(`📸 ${selectedPose.toUpperCase()}-Foto erfolgreich in deinem Google Drive gespeichert!`);
       } else {
         console.error('Upload-Fehler:', result);
-        alert(`📸 Foto aufgenommen, aber Upload-Fehler: ${result.error}`);
+        if (response.status === 401) {
+          alert('Google Login abgelaufen. Bitte neu anmelden.');
+          setIsAuthenticated(false);
+        } else {
+          alert(`📸 Foto aufgenommen, aber Upload-Fehler: ${result.error}`);
+        }
       }
     } catch (uploadError) {
       console.error('Upload-Fehler:', uploadError);
-      alert('📸 Foto aufgenommen, aber konnte nicht zu Google Drive hochgeladen werden');
+      alert('📸 Foto aufgenommen, aber Upload zu Google Drive fehlgeschlagen');
     } finally {
       setIsCapturing(false);
     }
@@ -173,7 +208,7 @@ export default function FortschrittsFotosSeite() {
           src={overlayImages[pose]}
           alt={`${pose} pose overlay`}
           style={{
-            height: '90%', // 80% der Höhe = 10% oben + 10% unten frei
+            height: '80%', // 80% der Höhe = 10% oben + 10% unten frei
             width: 'auto', // Breite automatisch basierend auf originalen Proportionen
             objectFit: 'contain',
             filter: 'invert(1)', // Macht schwarz zu weiß
@@ -207,14 +242,77 @@ export default function FortschrittsFotosSeite() {
       color: '#fff',
       paddingBottom: 100
     }}>
-      {/* Header */}
-      <div style={{
-        padding: '24px 24px 16px 24px',
-        borderBottom: '1px solid #444'
-      }}>
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 'bold' }}>
-          📸 Fortschrittsbilder
-        </h1>
+      {/* Auth Check Loading */}
+      {authLoading && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          flexDirection: 'column',
+          gap: 16
+        }}>
+          <div style={{ fontSize: 48 }}>⏳</div>
+          <div>Prüfe Google Drive Berechtigung...</div>
+        </div>
+      )}
+
+      {/* Not Authenticated */}
+      {!authLoading && !isAuthenticated && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          flexDirection: 'column',
+          gap: 24,
+          padding: 24
+        }}>
+          <div style={{ fontSize: 64 }}>🔐</div>
+          <h2 style={{ margin: 0, textAlign: 'center' }}>
+            Google Drive Berechtigung erforderlich
+          </h2>
+          <p style={{ 
+            textAlign: 'center', 
+            color: '#ccc',
+            maxWidth: 400,
+            lineHeight: 1.5
+          }}>
+            Um deine Fortschrittsbilder in deinem persönlichen Google Drive zu speichern, 
+            musst du dich zuerst mit Google anmelden.
+          </p>
+          <button
+            onClick={handleGoogleLogin}
+            style={{
+              backgroundColor: '#4285f4',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 12,
+              padding: '16px 24px',
+              fontSize: 16,
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}
+          >
+            🚀 Mit Google anmelden
+          </button>
+        </div>
+      )}
+
+      {/* Authenticated Content */}
+      {!authLoading && isAuthenticated && (
+        <>
+          {/* Header */}
+          <div style={{
+            padding: '24px 24px 16px 24px',
+            borderBottom: '1px solid #444'
+          }}>
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 'bold' }}>
+              📸 Fortschrittsbilder
+            </h1>
         
         {/* Mode Toggle */}
         <div style={{
@@ -570,6 +668,9 @@ export default function FortschrittsFotosSeite() {
             </div>
           )}
         </div>
+      )}
+
+        </>
       )}
 
       <FloatingTabBar />
