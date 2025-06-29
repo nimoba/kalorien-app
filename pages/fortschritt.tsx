@@ -124,67 +124,31 @@ export default function FortschrittsFotosSeite() {
 
   // Pose-Overlay Komponente
   const PoseOverlay = ({ pose, opacity }: { pose: PoseType; opacity: number }) => {
-    const getOverlayPath = () => {
-      switch (pose) {
-        case 'vorn':
-          return (
-            <svg viewBox="0 0 300 500" className="w-full h-full">
-              {/* Kopf */}
-              <circle cx="150" cy="60" r="35" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              {/* Körper */}
-              <rect x="125" y="95" width="50" height="120" rx="25" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              {/* Arme */}
-              <line x1="90" y1="120" x2="125" y2="140" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              <line x1="175" y1="140" x2="210" y2="120" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              {/* Beine */}
-              <line x1="135" y1="215" x2="120" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              <line x1="165" y1="215" x2="180" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              {/* Füße */}
-              <line x1="115" y1="320" x2="125" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              <line x1="175" y1="320" x2="185" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-            </svg>
-          );
-        case 'seite':
-          return (
-            <svg viewBox="0 0 300 500" className="w-full h-full">
-              {/* Kopf - Profil */}
-              <ellipse cx="170" cy="60" rx="30" ry="35" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              {/* Körper - schlanker im Profil */}
-              <ellipse cx="150" cy="155" rx="20" ry="60" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              {/* Arm */}
-              <line x1="130" y1="120" x2="110" y2="140" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              {/* Beine */}
-              <line x1="140" y1="215" x2="125" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              <line x1="160" y1="215" x2="175" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              {/* Füße */}
-              <line x1="120" y1="320" x2="130" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-              <line x1="170" y1="320" x2="180" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} />
-            </svg>
-          );
-        case 'hinten':
-          return (
-            <svg viewBox="0 0 300 500" className="w-full h-full">
-              {/* Kopf */}
-              <circle cx="150" cy="60" r="35" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
-              {/* Körper */}
-              <rect x="125" y="95" width="50" height="120" rx="25" fill="none" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
-              {/* Arme */}
-              <line x1="90" y1="120" x2="125" y2="140" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
-              <line x1="175" y1="140" x2="210" y2="120" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
-              {/* Beine */}
-              <line x1="135" y1="215" x2="120" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
-              <line x1="165" y1="215" x2="180" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
-              {/* Füße */}
-              <line x1="115" y1="320" x2="125" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
-              <line x1="175" y1="320" x2="185" y2="320" stroke="#ffffff" strokeWidth="2" opacity={opacity} strokeDasharray="3,3" />
-            </svg>
-          );
-      }
+    // Base64 encodierte Bilder (du musst diese durch deine echten Bilder ersetzen)
+    const overlayImages = {
+      vorn: '/images/pose-vorn.png', // Hier dein Vorderansicht-Bild
+      seite: '/images/pose-seite.png', // Hier dein Seitenansicht-Bild  
+      hinten: '/images/pose-vorn.png' // Für hinten nehmen wir erstmal vorn (später separate Datei)
     };
 
     return (
-      <div className="absolute inset-0 pointer-events-none z-10">
-        {getOverlayPath()}
+      <div 
+        className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center"
+        style={{
+          opacity: opacity
+        }}
+      >
+        <img 
+          src={overlayImages[pose]}
+          alt={`${pose} pose overlay`}
+          style={{
+            maxWidth: '80%',
+            maxHeight: '90%',
+            objectFit: 'contain',
+            filter: 'invert(1)', // Macht schwarz zu weiß
+            mixBlendMode: 'screen' // Macht schwarze Bereiche transparent
+          }}
+        />
       </div>
     );
   };
