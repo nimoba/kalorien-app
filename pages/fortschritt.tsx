@@ -61,104 +61,41 @@ export default function FortschrittsFotosSeite() {
   const startCamera = async () => {
     setCameraError(null);
     
-    // Cleanup any existing video
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
+    // Cleanup existing stream first
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
     }
     
     try {
-      // Verschiedene Kamera-Konfigurationen versuchen
-      const constraints = [
-        // Frontkamera für Smartphones (perfekt für Selfie-Fortschrittsfotos)
-        {
-          video: { 
-            facingMode: 'user', // 📱 Frontkamera/Selfie-Kamera
-            width: { ideal: 1080, max: 1920 },
-            height: { ideal: 1920, max: 2560 }
-          }
-        },
-        // Fallback für Desktop/andere Geräte
-        {
-          video: { 
-            facingMode: 'user',
-            width: { ideal: 720, max: 1280 },
-            height: { ideal: 1280, max: 1920 }
-          }
-        },
-        // Minimaler Fallback
-        {
-          video: true
+      // Einfachere Kamera-Konfiguration
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         }
-      ];
-
-      let mediaStream = null;
-      for (const constraint of constraints) {
-        try {
-          mediaStream = await navigator.mediaDevices.getUserMedia(constraint);
-          break;
-        } catch (err) {
-          console.log('Constraint failed, trying next...', err);
-          continue;
-        }
-      }
-
-      if (!mediaStream) {
-        throw new Error('Keine Kamera-Konfiguration funktioniert');
-      }
+      });
 
       setStream(mediaStream);
       
-      // Warten auf Video-Element und dann Stream setzen
+      // Video-Element Setup mit requestAnimationFrame für smooth playback
       if (videoRef.current) {
         const video = videoRef.current;
-        
-        // Event-Handler vor dem Setzen des Streams
-        const handleLoadedMetadata = () => {
-          if (video && video.srcObject === mediaStream) {
-            video.play().catch(err => {
-              // Nur loggen wenn das Video noch das aktuelle Stream hat
-              if (video.srcObject === mediaStream) {
-                console.error('Video play failed:', err);
-                setCameraError('Video konnte nicht gestartet werden');
-              }
-            });
-          }
-        };
-
-        const handleCanPlay = () => {
-          if (video && video.srcObject === mediaStream && video.paused) {
-            video.play().catch(err => {
-              if (video.srcObject === mediaStream) {
-                console.error('Video play failed on canplay:', err);
-              }
-            });
-          }
-        };
-
-        // Event-Listener setzen
-        video.addEventListener('loadedmetadata', handleLoadedMetadata);
-        video.addEventListener('canplay', handleCanPlay);
-        
-        // Stream setzen
         video.srcObject = mediaStream;
         
-        // Auto-play versuchen
-        setTimeout(() => {
-          if (video && video.srcObject === mediaStream && video.paused) {
-            video.play().catch(() => {
-              // Silent fail - Event-Handler werden es nochmal versuchen
-            });
-          }
-        }, 100);
-        
-        // Cleanup-Function für Event-Listener
-        const cleanup = () => {
-          video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-          video.removeEventListener('canplay', handleCanPlay);
-        };
-        
-        // Cleanup nach 5 Sekunden (sollte bis dahin geklappt haben)
-        setTimeout(cleanup, 5000);
+        // Warte auf Video-Ready
+        await new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            video.play()
+              .then(() => resolve(undefined))
+              .catch(err => {
+                console.error('Video play failed:', err);
+                setCameraError('Video konnte nicht gestartet werden');
+                resolve(undefined);
+              });
+          };
+        });
       }
     } catch (error) {
       console.error('❌ Kamera-Zugriff fehlgeschlagen:', error);
@@ -283,8 +220,11 @@ export default function FortschrittsFotosSeite() {
       stopCamera();
     }
 
-    return () => stopCamera();
-  }, [currentMode, stopCamera]);
+    return () => {
+      // Cleanup beim Unmount
+      stopCamera();
+    };
+  }, [currentMode]); // stopCamera aus dependencies entfernt um infinite loop zu vermeiden
 
   // Pose-Overlay Komponente
   const PoseOverlay = ({ pose, opacity }: { pose: PoseType; opacity: number }) => {
@@ -606,14 +546,15 @@ export default function FortschrittsFotosSeite() {
                 {stream && (
                   <video
                     ref={videoRef}
-                    autoPlay={false}  // Deaktiviert autoplay
+                    autoPlay
                     playsInline
                     muted
                     style={{
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
-                      backgroundColor: '#000'
+                      backgroundColor: '#000',
+                      display: 'block' // Verhindert inline spacing issues
                     }}
                   />
                 )}
@@ -692,7 +633,7 @@ export default function FortschrittsFotosSeite() {
               }}>
                 <button
                   onClick={startCountdown}
-                  disabled={!stream || countdown !== null || cameraError !== null}
+                  disabled={!stream || countdown !== null || cameraError !== null || isCapturing}
                   style={{
                     backgroundColor: '#36a2eb',
                     color: '#fff',
@@ -701,17 +642,18 @@ export default function FortschrittsFotosSeite() {
                     padding: '16px 24px',
                     fontSize: 16,
                     fontWeight: 'bold',
-                    cursor: 'pointer',
-                    opacity: (!stream || countdown !== null || cameraError) ? 0.5 : 1,
+                    cursor: (!stream || countdown !== null || cameraError || isCapturing) ? 'not-allowed' : 'pointer',
+                    opacity: (!stream || countdown !== null || cameraError || isCapturing) ? 0.5 : 1,
                     flex: 1,
-                    maxWidth: 200
+                    maxWidth: 200,
+                    transition: 'opacity 0.2s'
                   }}
                 >
                   ⏱️ Timer (10s)
                 </button>
                 <button
                   onClick={capturePhoto}
-                  disabled={!stream || countdown !== null || cameraError !== null}
+                  disabled={!stream || countdown !== null || cameraError !== null || isCapturing}
                   style={{
                     backgroundColor: '#22c55e',
                     color: '#fff',
@@ -720,10 +662,11 @@ export default function FortschrittsFotosSeite() {
                     padding: '16px 24px',
                     fontSize: 16,
                     fontWeight: 'bold',
-                    cursor: 'pointer',
-                    opacity: (!stream || countdown !== null || cameraError) ? 0.5 : 1,
+                    cursor: (!stream || countdown !== null || cameraError || isCapturing) ? 'not-allowed' : 'pointer',
+                    opacity: (!stream || countdown !== null || cameraError || isCapturing) ? 0.5 : 1,
                     flex: 1,
-                    maxWidth: 200
+                    maxWidth: 200,
+                    transition: 'opacity 0.2s'
                   }}
                 >
                   📸 Sofort
