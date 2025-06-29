@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 Du bist ein deutscher Kochexperte. Erstelle ein Rezept basierend auf den verfügbaren Zutaten.
 
 VERFÜGBARE ZUTATEN:
-${verfügbareZutaten.map((z: any) => `- ${z.name} (${z.menge} ${z.einheit})`).join('\n')}
+${verfügbareZutaten.map((z: { name: string; menge: number; einheit: string }) => `- ${z.name} (${z.menge} ${z.einheit})`).join('\n')}
 
 PRÄFERENZEN:
 - Zielkalorien: ${präferenzen?.zielKalorien || 'flexibel'}
@@ -103,7 +103,7 @@ Gib nur den JSON zurück, keine anderen Texte oder Kommentare.
     });
 
     const gptJson = await gptRes.json();
-    let antwort = gptJson.choices?.[0]?.message?.content || "";
+    const antwort = gptJson.choices?.[0]?.message?.content || "";
 
     if (!antwort) {
       console.error("❌ GPT-Antwort leer:", gptJson);

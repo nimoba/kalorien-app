@@ -7,8 +7,14 @@ import { useEffect, useState } from "react";
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
 
+interface KcalHistoryEntry {
+  datum: string;
+  kcalKumuliert: number;
+  verbrauchKumuliert: number;
+}
+
 export default function KcalBilanzChart({ refresh }: { refresh: number }) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<KcalHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = () => {

@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         
         return new Date(jahr, monat - 1, tag);
-      } catch (error) {
+      } catch {
         return null;
       }
     };
@@ -104,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       range: "Ziele!A2:G2",
     });
 
-    const [zielKcalRaw, , , , , zielGewichtRaw, tdeeRaw] = zielRes.data.values?.[0] || [];
+    const [, , , , , zielGewichtRaw, tdeeRaw] = zielRes.data.values?.[0] || [];
     const zielGewicht = zielGewichtRaw ? Number(zielGewichtRaw) : null;
     const tdee = Number(tdeeRaw) || 2600;
 
@@ -179,20 +179,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const intercept = avgY - slope * avgX;
 
-      return x.map((xi, i) => ({
+      const trendPoints = x.map((xi, i) => ({
         datum: verlauf[i]?.datum || `Tag ${i + 1}`,
         gewicht: Number((slope * xi + intercept).toFixed(2)),
       }));
+
+      return { trendPoints, slope };
     }
 
-    const trend = lineRegression(verlauf.map(v => v.gewicht));
+    const { trendPoints, slope } = lineRegression(verlauf.map(v => v.gewicht));
 
     res.status(200).json({
       startgewicht,
       verlauf,
       theoretisch: theoriewerte,
       geglättet: smoothed,
-      trend,
+      trend: trendPoints,
+      trendSteigung: slope,
       fett,
       muskel,
       zielGewicht,

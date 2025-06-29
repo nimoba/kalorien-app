@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
 
-function parseDecimal(input: any): string {
+function parseDecimal(input: unknown): string {
   if (typeof input === "string") {
     return input.replace(",", ".");
   }
@@ -55,6 +55,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         values: [neueZeile],
       },
     });
+
+    // Update habit tracking
+    try {
+      await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/habits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ foodLogged: false, weightLogged: true })
+      });
+    } catch {
+      // Habit tracking is optional, don't fail the main operation
+    }
 
     res.status(200).json({ success: true });
   } catch (err) {

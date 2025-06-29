@@ -74,21 +74,30 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   };
 
   const handleFoto = async (base64: string) => {
-    const res = await fetch('/api/kalorien-bild', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: base64 }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setName(data.name || 'Foto-Schätzung');
-      setBasisKcal(String(data.kcal));
-      setBasisEiweiss(String(data.eiweiss));
-      setBasisFett(String(data.fett));
-      setBasisKh(String(data.kh));
-      setMenge(data.menge ? String(data.menge) : '100');
-    } else {
-      alert('❌ Foto konnte nicht analysiert werden');
+    try {
+      console.log('📸 Sende Foto an API, Größe:', base64.length);
+      const res = await fetch('/api/kalorien-bild', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 }),
+      });
+      const data = await res.json();
+      console.log('📸 API Antwort:', data);
+      
+      if (res.ok) {
+        setName(data.name || 'Foto-Schätzung');
+        setBasisKcal(String(data.kcal || data.Kalorien || ''));
+        setBasisEiweiss(String(data.eiweiss || data.eiweiß || data.Eiweiß || ''));
+        setBasisFett(String(data.fett || data.Fett || ''));
+        setBasisKh(String(data.kh || data.Kohlenhydrate || ''));
+        setMenge(data.menge ? String(data.menge) : '100');
+      } else {
+        console.error('❌ Foto API Fehler:', data);
+        alert(`❌ Foto konnte nicht analysiert werden: ${data.error || 'Unbekannter Fehler'}`);
+      }
+    } catch (error) {
+      console.error('❌ Netzwerk Fehler:', error);
+      alert('❌ Netzwerk Fehler beim Foto-Upload');
     }
   };
 
@@ -241,10 +250,34 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
               onChange={e => {
                 const file = e.target.files?.[0];
                 if (!file) return;
+                
+                // Check file type
+                if (!file.type.startsWith('image/')) {
+                  alert('❌ Bitte wählen Sie eine Bilddatei aus');
+                  return;
+                }
+                
+                // Check file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                  alert('❌ Bild ist zu groß (max 10MB)');
+                  return;
+                }
+                
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                  const b = reader.result?.toString().split(',')[1];
-                  if (b) handleFoto(b);
+                  const result = reader.result?.toString();
+                  if (result) {
+                    const base64 = result.split(',')[1];
+                    if (base64) {
+                      console.log('📸 Bild geladen, Größe:', base64.length);
+                      handleFoto(base64);
+                    } else {
+                      alert('❌ Fehler beim Lesen der Bilddatei');
+                    }
+                  }
+                };
+                reader.onerror = () => {
+                  alert('❌ Fehler beim Lesen der Bilddatei');
                 };
                 reader.readAsDataURL(file);
               }}

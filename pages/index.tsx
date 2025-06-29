@@ -12,11 +12,24 @@ import GewichtForm from "../components/GewichtForm";
 import FloatingTabBar from "../components/FloatingTabBar";
 import KcalBilanzChart from "../components/charts/KcalBilanzChart";
 import SportForm from "../components/SportForm";
+import DayCounter from "../components/DayCounter";
+
+interface DashboardData {
+  kalorien: number;
+  ziel: number;
+  kh: number;
+  zielKh: number;
+  eiweiss: number;
+  zielEiweiss: number;
+  fett: number;
+  zielFett: number;
+  eintraege: { zeit: string; kcal: number }[];
+}
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [daten, setDaten] = useState<any>(null);
+  const [daten, setDaten] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showWeight, setShowWeight] = useState(false);
   const [showSport, setShowSport] = useState(false);
@@ -61,6 +74,7 @@ export default function Dashboard() {
         paddingBottom: "100px",
       }}
     >
+
       <h1>📊 Dein Dashboard</h1>
 
       {/* Kalorien Halbkreis */}
@@ -68,10 +82,13 @@ export default function Dashboard() {
 
       {/* Makro-Balken */}
       <div style={{ marginTop: 40 }}>
-        <MakroBalken label="Kohlenhydrate" value={daten.kh} ziel={daten.zielKh} farbe="#36a2eb" />
-        <MakroBalken label="Eiweiß" value={daten.eiweiss} ziel={daten.zielEiweiss} farbe="#4bc0c0" />
-        <MakroBalken label="Fett" value={daten.fett} ziel={daten.zielFett} farbe="#ffcd56" />
+        <MakroBalken label="Kohlenhydrate" value={daten.kh} ziel={daten.zielKh} />
+        <MakroBalken label="Eiweiß" value={daten.eiweiss} ziel={daten.zielEiweiss} />
+        <MakroBalken label="Fett" value={daten.fett} ziel={daten.zielFett} />
       </div>
+
+      {/* Tage Counter */}
+      <DayCounter refresh={refreshBilanz} />
 
       {/* Tagesverlauf */}
       <div style={{ marginTop: 40 }}>

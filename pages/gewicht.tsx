@@ -24,8 +24,30 @@ ChartJS.register(
   Legend
 );
 
+interface GewichtVerlaufEntry {
+  datum: string;
+  gewicht: number;
+}
+
+interface GewichtKomponentEntry {
+  datum: string;
+  wert: number;
+}
+
+interface GewichtData {
+  startgewicht: number;
+  verlauf: GewichtVerlaufEntry[];
+  theoretisch: GewichtVerlaufEntry[];
+  geglättet: GewichtVerlaufEntry[];
+  trend: GewichtVerlaufEntry[];
+  trendSteigung: number;
+  fett: GewichtKomponentEntry[];
+  muskel: GewichtKomponentEntry[];
+  zielGewicht: number;
+}
+
 export default function GewichtSeite() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<GewichtData | null>(null);
   const [analyse, setAnalyse] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,33 +72,34 @@ export default function GewichtSeite() {
     theoretisch,
     geglättet,
     trend,
+    trendSteigung,
     fett,
     muskel,
     zielGewicht
   } = data;
 
-  const labels = verlauf.map((e: any) => e.datum);
-  const echteWerte = verlauf.map((e: any) => e.gewicht);
-  const theoriewerte = theoretisch.map((e: any) => e.gewicht);
-  const smoothed = geglättet.map((e: any) => e.gewicht);
-  const trendlinie = trend.map((e: any) => e.gewicht);
+  const labels = verlauf.map((e) => e.datum);
+  const echteWerte = verlauf.map((e) => e.gewicht);
+  const theoriewerte = theoretisch.map((e) => e.gewicht);
+  const smoothed = geglättet.map((e) => e.gewicht);
+  const trendlinie = trend.map((e) => e.gewicht);
 
   const letzte = echteWerte[echteWerte.length - 1] || startgewicht;
   const diff = (letzte - startgewicht).toFixed(1);
   const farbe = parseFloat(diff) < 0 ? "#3cb043" : "#d62e79";
 
-  // 📅 Zielreichweite auf Basis der Trendlinie
-  const trendEnd = trendlinie[trendlinie.length - 1] ?? letzte;
+  // 📅 Zielreichweite auf Basis der Trendlinie (korrigierte Berechnung)
   const zielDifferenz = letzte - zielGewicht;
-  const trendDifferenz = trendEnd - letzte;
-  const verbleibendeTage = trendDifferenz !== 0
-    ? Math.ceil(zielDifferenz / trendDifferenz * trend.length)
+  const verbleibendeTage = (trendSteigung !== 0 && zielGewicht)
+    ? Math.ceil(Math.abs(zielDifferenz) / Math.abs(trendSteigung))
     : null;
 
-  const zieltext =
-    verbleibendeTage && verbleibendeTage > 0
-      ? `🎯 Zielgewicht in ca. ${verbleibendeTage} Tagen`
-      : "🎯 Zielgewicht erreicht oder Trend zu flach";
+  const zieltext = 
+    !zielGewicht 
+      ? "🎯 Kein Zielgewicht definiert"
+      : verbleibendeTage && verbleibendeTage > 0 && Math.abs(trendSteigung) > 0.001
+        ? `🎯 Zielgewicht in ca. ${verbleibendeTage} Tagen`
+        : "🎯 Zielgewicht erreicht oder Trend zu flach";
 
   // Bewertung für Gewichtsverlauf
   const gewichtBewertung = () => {
@@ -131,7 +154,7 @@ export default function GewichtSeite() {
         borderWidth: 2,
         tension: 0,
       },
-      zielGewicht && {
+      ...(zielGewicht ? [{
         label: "Zielgewicht",
         data: new Array(labels.length).fill(zielGewicht),
         borderColor: "#ffffffaa",
@@ -139,8 +162,8 @@ export default function GewichtSeite() {
         pointRadius: 0,
         borderDash: [2, 2],
         tension: 0,
-      }
-    ].filter(Boolean),
+      }] : [])
+    ],
   };
 
   const options = {
@@ -189,11 +212,11 @@ export default function GewichtSeite() {
 
   // Körperzusammensetzung Chart Data
   const koerperChartData = {
-    labels: verlauf.map((e: any) => e.datum),
+    labels: verlauf.map((e) => e.datum),
     datasets: [
       {
         label: "Körperfett (%)",
-        data: fett.map((e: any) => e.wert),
+        data: fett.map((e) => e.wert),
         borderColor: "#ffa600",
         backgroundColor: "#ffa60033",
         tension: 0.25,
@@ -203,7 +226,7 @@ export default function GewichtSeite() {
       },
       {
         label: "Muskelmasse (%)",
-        data: muskel.map((e: any) => e.wert),
+        data: muskel.map((e) => e.wert),
         borderColor: "#00cc99",
         backgroundColor: "#00cc9933",
         tension: 0.25,

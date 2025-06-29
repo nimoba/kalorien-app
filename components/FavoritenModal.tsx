@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface FavoritItem {
@@ -23,14 +23,7 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMenge, setSelectedMenge] = useState<Record<string, number>>({});
 
-  // Favoriten laden beim Öffnen
-  useEffect(() => {
-    if (isOpen && favoriten.length === 0) {
-      loadFavoriten();
-    }
-  }, [isOpen]);
-
-  const loadFavoriten = async () => {
+  const loadFavoriten = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/favoriten');
@@ -50,7 +43,14 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
       console.error('Fehler beim Laden der Favoriten:', error);
     }
     setLoading(false);
-  };
+  }, []);
+
+  // Favoriten laden beim Öffnen
+  useEffect(() => {
+    if (isOpen && favoriten.length === 0) {
+      loadFavoriten();
+    }
+  }, [isOpen, favoriten.length, loadFavoriten]);
 
   // Live-Filterung basierend auf Suchbegriff
   const filteredFavoriten = useMemo(() => {

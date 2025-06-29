@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
 
-function parseDecimal(input: any): number {
+function parseDecimal(input: unknown): number {
   if (typeof input === "string") {
     return parseFloat(input.replace(",", "."));
   }

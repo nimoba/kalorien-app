@@ -38,12 +38,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: "Kein Text erhalten" });
 
-  const auth = new google.auth.GoogleAuth({
-    credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || ""),
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
+  // const auth = new google.auth.GoogleAuth({
+  //   credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || ""),
+  //   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  // });
 
-  const sheets = google.sheets({ version: "v4", auth });
+  // const sheets = google.sheets({ version: "v4", auth });
 
   // 🧠 Favoriten zuerst prüfen
   const favorit = await checkFavoritMatch(text);

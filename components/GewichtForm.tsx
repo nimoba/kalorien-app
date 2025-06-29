@@ -105,19 +105,19 @@ export default function GewichtForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
 
-        <label>Muskelmasse (%)</label>
-        <input
-          type="number"
-          value={muskel}
-          onChange={(e) => setMuskel(e.target.value)}
-          style={inputStyle}
-        />
-
         <label>Wasseranteil (%)</label> {/* ✨ Neues Feld */}
         <input
           type="number"
           value={wasser}
           onChange={(e) => setWasser(e.target.value)}
+          style={inputStyle}
+        />
+
+        <label>Muskelmasse (%)</label>
+        <input
+          type="number"
+          value={muskel}
+          onChange={(e) => setMuskel(e.target.value)}
           style={inputStyle}
         />
 

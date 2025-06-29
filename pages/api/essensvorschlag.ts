@@ -74,7 +74,7 @@ Gib **nur den JSON-Code zurück**, keine Kommentare, keine Erklärung.
     });
 
     const json = await gptRes.json();
-    let antwort = json.choices?.[0]?.message?.content || "";
+    const antwort = json.choices?.[0]?.message?.content || "";
 
     // JSON-Block extrahieren
     const clean = antwort.replace(/```json|```/g, "").trim();
