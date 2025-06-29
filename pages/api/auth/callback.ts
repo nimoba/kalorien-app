@@ -24,10 +24,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const userInfo = await oauth2.userinfo.get();
 
     // Store tokens in cookie (in production, use secure storage)
+    const thirtyDaysInSeconds = 30 * 24 * 60 * 60; // 30 Tage
+
     res.setHeader('Set-Cookie', [
-      `google_access_token=${tokens.access_token}; Path=/; HttpOnly; SameSite=Strict`,
-      `google_refresh_token=${tokens.refresh_token}; Path=/; HttpOnly; SameSite=Strict`,
-      `user_email=${userInfo.data.email}; Path=/; HttpOnly; SameSite=Strict`
+      `google_access_token=${tokens.access_token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`,
+      `google_refresh_token=${tokens.refresh_token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`,
+      `user_email=${userInfo.data.email}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`
     ]);
 
     // Redirect back to fortschritt page
