@@ -64,15 +64,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       parents: folderId ? [folderId] : undefined,
     };
 
-    const media = {
-      mimeType: 'image/jpeg',
-      body: buffer,
-    };
-
+    // Use multipart upload with proper stream format
     const uploadResponse = await drive.files.create({
       requestBody: fileMetadata,
-      media: media,
+      media: {
+        mimeType: 'image/jpeg',
+        body: buffer,
+      },
       fields: 'id, name, webViewLink',
+      uploadType: 'multipart',
     });
 
     console.log(`✅ Fortschrittsfoto hochgeladen: ${filename}`);
