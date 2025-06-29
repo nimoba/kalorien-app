@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
+import { Readable } from "stream";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -21,9 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const drive = google.drive({ version: "v3", auth });
 
-    // Convert base64 to buffer
+    // Convert base64 to buffer and create readable stream
     const base64Data = photoData.replace(/^data:image\/[a-z]+;base64,/, "");
     const buffer = Buffer.from(base64Data, 'base64');
+    
+    // Create readable stream from buffer
+    const stream = new Readable();
+    stream.push(buffer);
+    stream.push(null);
 
     // Create filename with timestamp and pose
     const date = new Date(timestamp);
@@ -58,21 +64,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       folderId = folderResponse.data.id;
     }
 
-    // Upload photo to Drive
-    const fileMetadata = {
-      name: filename,
-      parents: folderId ? [folderId] : undefined,
-    };
-
-    // Use multipart upload with proper stream format
+    // Upload photo to Drive using resumable upload
     const uploadResponse = await drive.files.create({
-      requestBody: fileMetadata,
+      requestBody: {
+        name: filename,
+        parents: folderId ? [folderId] : undefined,
+      },
       media: {
         mimeType: 'image/jpeg',
-        body: buffer,
+        body: stream,
       },
       fields: 'id, name, webViewLink',
-      uploadType: 'multipart',
     });
 
     console.log(`✅ Fortschrittsfoto hochgeladen: ${filename}`);
