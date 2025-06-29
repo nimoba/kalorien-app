@@ -14,13 +14,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Photo data and pose are required' });
     }
 
-    // Simple Drive Auth - just for file upload
-    const auth = new google.auth.GoogleAuth({
-      credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || ""),
-      scopes: ["https://www.googleapis.com/auth/drive.file"],
+    // Get tokens from cookies
+    const accessToken = req.cookies.google_access_token;
+    const refreshToken = req.cookies.google_refresh_token;
+
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Not authenticated with Google' });
+    }
+
+    // Setup OAuth client with user's tokens
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/auth/callback`
+    );
+
+    oauth2Client.setCredentials({
+      access_token: accessToken,
+      refresh_token: refreshToken,
     });
 
-    const drive = google.drive({ version: "v3", auth });
+    const drive = google.drive({ version: "v3", auth: oauth2Client });
 
     // Convert base64 to stream
     const base64Data = photoData.replace(/^data:image\/[a-z]+;base64,/, "");
@@ -39,11 +53,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }).replace(':', '-');
     const filename = `${dateStr}_${timeStr}_${pose}.jpg`;
 
-    // Direct upload to your shared folder - NO folder creation, NO searching
+    // Check/create Fortschrittsbilder folder in user's drive
+    const folderQuery = "name='Fortschrittsbilder' and mimeType='application/vnd.google-apps.folder'";
+    const folderSearch = await drive.files.list({
+      q: folderQuery,
+      fields: 'files(id, name)',
+    });
+
+    let folderId;
+    if (folderSearch.data.files && folderSearch.data.files.length > 0) {
+      folderId = folderSearch.data.files[0].id;
+    } else {
+      // Create folder in user's drive
+      const folderResponse = await drive.files.create({
+        requestBody: {
+          name: 'Fortschrittsbilder',
+          mimeType: 'application/vnd.google-apps.folder',
+        },
+        fields: 'id',
+      });
+      folderId = folderResponse.data.id;
+    }
+
+    // Upload to user's personal drive
     const uploadResponse = await drive.files.create({
       requestBody: {
         name: filename,
-        parents: ["1SFH6gk4XH4s6KdCsPDQL1575LBXIo2CZ"], // Your shared folder ID
+        parents: folderId ? [folderId] : undefined,
       },
       media: {
         mimeType: 'image/jpeg',
@@ -52,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fields: 'id, name, webViewLink',
     });
 
-    console.log(`✅ Upload erfolgreich: ${filename}`);
+    console.log(`✅ Upload zu persönlichem Drive erfolgreich: ${filename}`);
 
     res.status(200).json({
       success: true,
@@ -62,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error) {
-    console.error("❌ Upload Fehler:", error);
+    console.error("❌ OAuth Upload Fehler:", error);
     res.status(500).json({ 
       error: "Upload fehlgeschlagen",
       details: error instanceof Error ? error.message : 'Unknown error'
