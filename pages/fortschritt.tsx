@@ -61,6 +61,12 @@ export default function FortschrittsFotosSeite() {
   // Kamera starten
   const startCamera = async () => {
     setCameraError(null);
+    
+    // Cleanup any existing video
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    
     try {
       // Verschiedene Kamera-Konfigurationen versuchen
       const constraints = [
@@ -103,18 +109,57 @@ export default function FortschrittsFotosSeite() {
 
       setStream(mediaStream);
       
+      // Warten auf Video-Element und dann Stream setzen
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+        const video = videoRef.current;
         
-        // Warten bis Video geladen ist
-        videoRef.current.onloadedmetadata = () => {
-          if (videoRef.current) {
-            videoRef.current.play().catch(err => {
-              console.error('Video play failed:', err);
-              setCameraError('Video konnte nicht gestartet werden');
+        // Event-Handler vor dem Setzen des Streams
+        const handleLoadedMetadata = () => {
+          if (video && video.srcObject === mediaStream) {
+            video.play().catch(err => {
+              // Nur loggen wenn das Video noch das aktuelle Stream hat
+              if (video.srcObject === mediaStream) {
+                console.error('Video play failed:', err);
+                setCameraError('Video konnte nicht gestartet werden');
+              }
             });
           }
         };
+
+        const handleCanPlay = () => {
+          if (video && video.srcObject === mediaStream && video.paused) {
+            video.play().catch(err => {
+              if (video.srcObject === mediaStream) {
+                console.error('Video play failed on canplay:', err);
+              }
+            });
+          }
+        };
+
+        // Event-Listener setzen
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+        video.addEventListener('canplay', handleCanPlay);
+        
+        // Stream setzen
+        video.srcObject = mediaStream;
+        
+        // Auto-play versuchen
+        setTimeout(() => {
+          if (video && video.srcObject === mediaStream && video.paused) {
+            video.play().catch(() => {
+              // Silent fail - Event-Handler werden es nochmal versuchen
+            });
+          }
+        }, 100);
+        
+        // Cleanup-Function für Event-Listener
+        const cleanup = () => {
+          video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          video.removeEventListener('canplay', handleCanPlay);
+        };
+        
+        // Cleanup nach 5 Sekunden (sollte bis dahin geklappt haben)
+        setTimeout(cleanup, 5000);
       }
     } catch (error) {
       console.error('❌ Kamera-Zugriff fehlgeschlagen:', error);
@@ -128,6 +173,13 @@ export default function FortschrittsFotosSeite() {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
+    
+    // Video-Element cleanup
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+      videoRef.current.pause();
+    }
+    
     setCameraError(null);
   }, [stream]);
 
@@ -555,7 +607,7 @@ export default function FortschrittsFotosSeite() {
                 {stream && (
                   <video
                     ref={videoRef}
-                    autoPlay
+                    autoPlay={false}  // Deaktiviert autoplay
                     playsInline
                     muted
                     style={{
