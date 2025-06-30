@@ -59,6 +59,7 @@ export default function FortschrittsFotosSeite() {
 
   // Kamera starten
   const startCamera = async () => {
+    console.log('📷 Starting camera...');
     setCameraError(null);
     
     // Cleanup existing stream first
@@ -68,34 +69,64 @@ export default function FortschrittsFotosSeite() {
     }
     
     try {
-      // Einfachere Kamera-Konfiguration
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+      // Kamera-Konfigurationen für verschiedene Geräte
+      const constraints = [
+        // Versuch 1: Frontkamera bevorzugt
+        {
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        },
+        // Versuch 2: Jede verfügbare Kamera
+        {
+          video: true
         }
-      });
+      ];
+
+      let mediaStream = null;
+      
+      for (const constraint of constraints) {
+        try {
+          console.log('Trying constraint:', constraint);
+          mediaStream = await navigator.mediaDevices.getUserMedia(constraint);
+          console.log('✅ Got media stream');
+          break;
+        } catch (err) {
+          console.log('Constraint failed:', err);
+          continue;
+        }
+      }
+
+      if (!mediaStream) {
+        throw new Error('Keine Kamera verfügbar');
+      }
 
       setStream(mediaStream);
       
-      // Video-Element Setup mit requestAnimationFrame für smooth playback
+      // Video-Element Setup
       if (videoRef.current) {
         const video = videoRef.current;
         video.srcObject = mediaStream;
         
-        // Warte auf Video-Ready
-        await new Promise((resolve) => {
-          video.onloadedmetadata = () => {
-            video.play()
-              .then(() => resolve(undefined))
-              .catch(err => {
-                console.error('Video play failed:', err);
-                setCameraError('Video konnte nicht gestartet werden');
-                resolve(undefined);
-              });
-          };
-        });
+        // Warte auf Video-Ready mit Promise
+        try {
+          await video.play();
+          console.log('✅ Video playing');
+        } catch (playError) {
+          console.error('Video play error:', playError);
+          // Versuche es nochmal nach kurzer Verzögerung
+          setTimeout(async () => {
+            try {
+              await video.play();
+              console.log('✅ Video playing (retry)');
+            } catch (retryError) {
+              console.error('Video play retry failed:', retryError);
+              setCameraError('Video konnte nicht gestartet werden');
+            }
+          }, 100);
+        }
       }
     } catch (error) {
       console.error('❌ Kamera-Zugriff fehlgeschlagen:', error);
@@ -104,7 +135,7 @@ export default function FortschrittsFotosSeite() {
   };
 
   // Kamera stoppen
-  const stopCamera = useCallback(() => {
+  const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
@@ -117,7 +148,7 @@ export default function FortschrittsFotosSeite() {
     }
     
     setCameraError(null);
-  }, [stream]);
+  };
 
   // Foto aufnehmen
   const capturePhoto = useCallback(async () => {
@@ -214,17 +245,26 @@ export default function FortschrittsFotosSeite() {
 
   // Kamera starten wenn Camera-Mode aktiviert
   useEffect(() => {
-    if (currentMode === 'camera') {
+    if (currentMode === 'camera' && isAuthenticated && !authLoading) {
       startCamera();
     } else {
-      stopCamera();
+      // Cleanup existing stream wenn mode wechselt
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
     }
 
     return () => {
       // Cleanup beim Unmount
-      stopCamera();
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
     };
-  }, [currentMode]); // stopCamera aus dependencies entfernt um infinite loop zu vermeiden
+  }, [currentMode, isAuthenticated, authLoading]); // stream nicht in dependencies um loops zu vermeiden
 
   // Pose-Overlay Komponente
   const PoseOverlay = ({ pose, opacity }: { pose: PoseType; opacity: number }) => {
