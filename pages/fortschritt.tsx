@@ -57,83 +57,15 @@ export default function FortschrittsFotosSeite() {
     }
   };
 
-  // Kamera starten
-  const startCamera = async () => {
-    console.log('📷 Starting camera...');
-    setCameraError(null);
-    
-    // Cleanup existing stream first
+  // Kamera stoppen - wird nicht mehr als separate Funktion benötigt
+  const cleanupCamera = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
-      setStream(null);
     }
-    
-    try {
-      // Kamera-Konfigurationen für verschiedene Geräte
-      const constraints = [
-        // Versuch 1: Frontkamera bevorzugt
-        {
-          video: { 
-            facingMode: 'user',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        },
-        // Versuch 2: Jede verfügbare Kamera
-        {
-          video: true
-        }
-      ];
-
-      let mediaStream = null;
-      
-      for (const constraint of constraints) {
-        try {
-          console.log('Trying constraint:', constraint);
-          mediaStream = await navigator.mediaDevices.getUserMedia(constraint);
-          console.log('✅ Got media stream');
-          break;
-        } catch (err) {
-          console.log('Constraint failed:', err);
-          continue;
-        }
-      }
-
-      if (!mediaStream) {
-        throw new Error('Keine Kamera verfügbar');
-      }
-
-      setStream(mediaStream);
-      
-      // Video-Element Setup
-      if (videoRef.current) {
-        const video = videoRef.current;
-        video.srcObject = mediaStream;
-        
-        // Warte auf Video-Ready mit Promise
-        try {
-          await video.play();
-          console.log('✅ Video playing');
-        } catch (playError) {
-          console.error('Video play error:', playError);
-          // Versuche es nochmal nach kurzer Verzögerung
-          setTimeout(async () => {
-            try {
-              await video.play();
-              console.log('✅ Video playing (retry)');
-            } catch (retryError) {
-              console.error('Video play retry failed:', retryError);
-              setCameraError('Video konnte nicht gestartet werden');
-            }
-          }, 100);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Kamera-Zugriff fehlgeschlagen:', error);
-      setCameraError(`Kamera-Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
   };
-
 
   // Foto aufnehmen
   const capturePhoto = useCallback(async () => {
@@ -230,26 +162,59 @@ export default function FortschrittsFotosSeite() {
 
   // Kamera starten wenn Camera-Mode aktiviert
   useEffect(() => {
-    if (currentMode === 'camera' && isAuthenticated && !authLoading) {
-      startCamera();
-    } else {
-      // Cleanup existing stream wenn mode wechselt
+    let mounted = true;
+    
+    const initCamera = async () => {
+      if (currentMode === 'camera' && isAuthenticated && !authLoading && mounted) {
+        console.log('📷 Initializing camera...');
+        setCameraError(null);
+        
+        try {
+          const mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' }
+          });
+          
+          if (mounted) {
+            setStream(mediaStream);
+            
+            if (videoRef.current) {
+              videoRef.current.srcObject = mediaStream;
+              try {
+                await videoRef.current.play();
+                console.log('✅ Camera started successfully');
+              } catch (err) {
+                console.error('Play error:', err);
+              }
+            }
+          } else {
+            // Component unmounted während wir warteten
+            mediaStream.getTracks().forEach(track => track.stop());
+          }
+        } catch (error) {
+          if (mounted) {
+            console.error('❌ Camera error:', error);
+            setCameraError(`Kamera-Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
+          }
+        }
+      }
+    };
+    
+    if (currentMode === 'camera') {
+      initCamera();
+    }
+    
+    // Cleanup
+    return () => {
+      mounted = false;
       if (stream) {
+        console.log('🧹 Cleaning up camera stream');
         stream.getTracks().forEach(track => track.stop());
-        setStream(null);
       }
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-    }
-
-    return () => {
-      // Cleanup beim Unmount
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
     };
-  }, [currentMode, isAuthenticated, authLoading]); // stream nicht in dependencies um loops zu vermeiden
+  }, [currentMode, isAuthenticated, authLoading]); // stream aus dependencies entfernt
 
   // Pose-Overlay Komponente
   const PoseOverlay = ({ pose, opacity }: { pose: PoseType; opacity: number }) => {
@@ -455,7 +420,11 @@ export default function FortschrittsFotosSeite() {
                   ❌ {cameraError}
                   <br />
                   <button
-                    onClick={startCamera}
+                    onClick={() => {
+                      setCameraError(null);
+                      setCurrentMode('gallery');
+                      setTimeout(() => setCurrentMode('camera'), 100);
+                    }}
                     style={{
                       marginTop: 8,
                       backgroundColor: 'transparent',
