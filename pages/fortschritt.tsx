@@ -134,21 +134,6 @@ export default function FortschrittsFotosSeite() {
     }
   };
 
-  // Kamera stoppen
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-    
-    // Video-Element cleanup
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-      videoRef.current.pause();
-    }
-    
-    setCameraError(null);
-  };
 
   // Foto aufnehmen
   const capturePhoto = useCallback(async () => {
