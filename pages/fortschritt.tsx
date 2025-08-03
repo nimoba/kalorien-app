@@ -230,7 +230,7 @@ export default function FortschrittsFotosSeite() {
         videoRef.current.srcObject = null;
       }
     };
-  }, [currentMode, isAuthenticated, authLoading, stream]); // Added stream to dependencies for proper cleanup
+  }, [currentMode, isAuthenticated, authLoading]); // stream removed from dependencies to prevent flickering
 
   // Pose-Overlay Komponente mit echten Bildern
   const PoseOverlay = ({ pose, opacity }: { pose: PoseType; opacity: number }) => {
