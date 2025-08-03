@@ -161,12 +161,13 @@ export default function FortschrittsFotosSeite() {
         setCameraError(null);
         
         try {
-          // Request camera with better constraints
+          // Request camera without zoom
           const mediaStream = await navigator.mediaDevices.getUserMedia({
             video: { 
               facingMode: 'user',
-              width: { ideal: 1280 },
-              height: { ideal: 1920 }
+              width: { ideal: 720 },
+              height: { ideal: 1280 },
+              zoom: 1.0
             },
             audio: false
           });
@@ -218,18 +219,19 @@ export default function FortschrittsFotosSeite() {
       initCamera();
     }
     
-    // Cleanup
+    // Cleanup when switching away from camera or unmounting
     return () => {
       mounted = false;
       if (stream) {
         console.log('🧹 Cleaning up camera stream');
         stream.getTracks().forEach(track => track.stop());
+        setStream(null);
       }
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
     };
-  }, [currentMode, isAuthenticated, authLoading]); // stream aus dependencies entfernt
+  }, [currentMode, isAuthenticated, authLoading, stream]); // Added stream to dependencies for proper cleanup
 
   // Pose-Overlay Komponente mit echten Bildern
   const PoseOverlay = ({ pose, opacity }: { pose: PoseType; opacity: number }) => {
@@ -257,9 +259,9 @@ export default function FortschrittsFotosSeite() {
           src={poseImage}
           alt={`Pose ${pose}`}
           style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
-            objectFit: 'contain',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
             filter: 'brightness(1.5) contrast(0.7)',
             mixBlendMode: 'screen'
           }}
