@@ -249,12 +249,12 @@ export default function FortschrittsFotosSeite() {
         setCameraError(null);
         
         try {
-          // Request camera without zoom
+          // Request camera with portrait constraints
           const mediaStream = await navigator.mediaDevices.getUserMedia({
             video: { 
               facingMode: 'user',
-              width: { ideal: 720 },
-              height: { ideal: 1280 }
+              width: { min: 480, ideal: 720, max: 1080 },
+              height: { min: 640, ideal: 1280, max: 1920 }
             },
             audio: false
           });
@@ -346,8 +346,8 @@ export default function FortschrittsFotosSeite() {
           src={poseImage}
           alt={`Pose ${pose}`}
           style={{
-            width: '80%',
-            height: '80%',
+            width: '95%',
+            height: '95%',
             objectFit: 'contain',
             filter: 'brightness(1.5) contrast(0.7)',
             mixBlendMode: 'screen'
@@ -654,7 +654,7 @@ export default function FortschrittsFotosSeite() {
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover',
+                    objectFit: 'contain',
                     backgroundColor: '#000',
                     display: stream ? 'block' : 'none' // Show only when stream is ready
                   }}

@@ -29,8 +29,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-    // First, find or create the Fortschrittsfotos folder
-    const folderQuery = "name='Fortschrittsfotos' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+    // First, find or create the Fortschrittsbilder folder (same as upload API)
+    const folderQuery = "name='Fortschrittsbilder' and mimeType='application/vnd.google-apps.folder' and trashed=false";
     const folderResponse = await drive.files.list({
       q: folderQuery,
       fields: 'files(id, name)',
