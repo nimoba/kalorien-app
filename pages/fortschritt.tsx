@@ -25,9 +25,18 @@ export default function FortschrittsFotosSeite() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  
+  // Gallery view states
+  const [galleryView, setGalleryView] = useState<'grid' | 'compare' | 'timeline' | 'flipbook'>('grid');
+  const [comparePhotos, setComparePhotos] = useState<[CapturedPhoto | null, CapturedPhoto | null]>([null, null]);
+  const [flipbookSpeed, setFlipbookSpeed] = useState(500); // milliseconds per frame
+  const [isFlipbookPlaying, setIsFlipbookPlaying] = useState(false);
+  const [flipbookIndex, setFlipbookIndex] = useState(0);
+  const [selectedPoseFilter, setSelectedPoseFilter] = useState<PoseType | 'all'>('all');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const flipbookIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check auth status on page load
   useEffect(() => {
@@ -151,6 +160,32 @@ export default function FortschrittsFotosSeite() {
     return () => clearTimeout(timer);
   }, [countdown, capturePhoto]);
 
+  // Flipbook effect
+  useEffect(() => {
+    if (isFlipbookPlaying && capturedPhotos.length > 0) {
+      const filteredPhotos = selectedPoseFilter === 'all' 
+        ? capturedPhotos 
+        : capturedPhotos.filter(p => p.pose === selectedPoseFilter);
+      
+      if (filteredPhotos.length > 0) {
+        flipbookIntervalRef.current = setInterval(() => {
+          setFlipbookIndex((prev) => (prev + 1) % filteredPhotos.length);
+        }, flipbookSpeed);
+      }
+    } else {
+      if (flipbookIntervalRef.current) {
+        clearInterval(flipbookIntervalRef.current);
+        flipbookIntervalRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (flipbookIntervalRef.current) {
+        clearInterval(flipbookIntervalRef.current);
+      }
+    };
+  }, [isFlipbookPlaying, flipbookSpeed, capturedPhotos, selectedPoseFilter]);
+
   // Kamera starten wenn Camera-Mode aktiviert
   useEffect(() => {
     let mounted = true;
@@ -258,9 +293,9 @@ export default function FortschrittsFotosSeite() {
           src={poseImage}
           alt={`Pose ${pose}`}
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
+            width: '80%',
+            height: '80%',
+            objectFit: 'contain',
             filter: 'brightness(1.5) contrast(0.7)',
             mixBlendMode: 'screen'
           }}
@@ -710,83 +745,370 @@ export default function FortschrittsFotosSeite() {
                 </div>
               ) : (
                 <div>
-                  <h3 style={{ 
-                    marginBottom: 16, 
-                    color: '#fff',
-                    fontSize: 18 
-                  }}>
-                    📸 Aufgenommene Fotos ({capturedPhotos.length})
-                  </h3>
-                  
-                  {/* Foto Grid */}
+                  {/* View Mode Selector */}
                   <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                    gap: 12
+                    display: 'flex',
+                    gap: 8,
+                    marginBottom: 16,
+                    backgroundColor: '#1e1e1e',
+                    padding: 4,
+                    borderRadius: 8
                   }}>
-                    {capturedPhotos.map(photo => (
-                      <div
-                        key={photo.id}
+                    {(['grid', 'compare', 'timeline', 'flipbook'] as const).map(view => (
+                      <button
+                        key={view}
+                        onClick={() => setGalleryView(view)}
                         style={{
-                          backgroundColor: '#1e1e1e',
-                          borderRadius: 8,
-                          overflow: 'hidden',
-                          border: '1px solid #444'
+                          flex: 1,
+                          padding: '8px 12px',
+                          borderRadius: 6,
+                          border: 'none',
+                          backgroundColor: galleryView === view ? '#36a2eb' : 'transparent',
+                          color: galleryView === view ? '#fff' : '#ccc',
+                          fontSize: 13,
+                          fontWeight: galleryView === view ? 'bold' : 'normal',
+                          cursor: 'pointer',
+                          textTransform: 'capitalize'
                         }}
                       >
-                        <img
-                          src={photo.dataUrl}
-                          alt={`${photo.pose} vom ${photo.timestamp.toLocaleDateString()}`}
+                        {view === 'grid' && '📷 Übersicht'}
+                        {view === 'compare' && '🔍 Vergleich'}
+                        {view === 'timeline' && '📅 Timeline'}
+                        {view === 'flipbook' && '🎬 Animation'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Pose Filter */}
+                  {(galleryView === 'timeline' || galleryView === 'flipbook') && (
+                    <div style={{
+                      display: 'flex',
+                      gap: 8,
+                      marginBottom: 16
+                    }}>
+                      {(['all', 'vorn', 'seite', 'hinten'] as const).map(pose => (
+                        <button
+                          key={pose}
+                          onClick={() => setSelectedPoseFilter(pose)}
                           style={{
-                            width: '100%',
-                            height: 160,
-                            objectFit: 'cover'
-                          }}
-                        />
-                        <div style={{
-                          padding: 8,
-                          textAlign: 'center'
-                        }}>
-                          <div style={{
+                            padding: '6px 12px',
+                            borderRadius: 6,
+                            border: '1px solid',
+                            borderColor: selectedPoseFilter === pose ? '#36a2eb' : '#444',
+                            backgroundColor: selectedPoseFilter === pose ? '#36a2eb22' : 'transparent',
+                            color: selectedPoseFilter === pose ? '#36a2eb' : '#ccc',
                             fontSize: 12,
-                            fontWeight: 'bold',
-                            color: '#36a2eb',
-                            textTransform: 'capitalize',
-                            marginBottom: 4
+                            cursor: 'pointer',
+                            textTransform: 'capitalize'
+                          }}
+                        >
+                          {pose === 'all' ? 'Alle' : pose}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Grid View */}
+                  {galleryView === 'grid' && (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: 12
+                    }}>
+                      {capturedPhotos.map(photo => (
+                        <div
+                          key={photo.id}
+                          style={{
+                            backgroundColor: '#1e1e1e',
+                            borderRadius: 8,
+                            overflow: 'hidden',
+                            border: '1px solid #444',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => {
+                            if (comparePhotos[0] === null) {
+                              setComparePhotos([photo, null]);
+                              setGalleryView('compare');
+                            }
+                          }}
+                        >
+                          <img
+                            src={photo.dataUrl}
+                            alt={`${photo.pose} vom ${photo.timestamp.toLocaleDateString()}`}
+                            style={{
+                              width: '100%',
+                              height: 160,
+                              objectFit: 'cover'
+                            }}
+                          />
+                          <div style={{
+                            padding: 8,
+                            textAlign: 'center'
                           }}>
-                            {photo.pose}
+                            <div style={{
+                              fontSize: 12,
+                              fontWeight: 'bold',
+                              color: '#36a2eb',
+                              textTransform: 'capitalize',
+                              marginBottom: 4
+                            }}>
+                              {photo.pose}
+                            </div>
+                            <div style={{
+                              fontSize: 10,
+                              color: '#888'
+                            }}>
+                              {photo.timestamp.toLocaleDateString('de-DE')}
+                            </div>
                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Compare View */}
+                  {galleryView === 'compare' && (
+                    <div>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: 16,
+                        marginBottom: 16
+                      }}>
+                        {[0, 1].map(index => (
+                          <div key={index} style={{
+                            backgroundColor: '#1e1e1e',
+                            borderRadius: 8,
+                            padding: 12,
+                            border: '2px solid #444'
+                          }}>
+                            <div style={{
+                              fontSize: 12,
+                              color: '#888',
+                              marginBottom: 8,
+                              textAlign: 'center'
+                            }}>
+                              {index === 0 ? 'Vorher' : 'Nachher'}
+                            </div>
+                            {comparePhotos[index] ? (
+                              <div>
+                                <img
+                                  src={comparePhotos[index]!.dataUrl}
+                                  alt={`${comparePhotos[index]!.pose}`}
+                                  style={{
+                                    width: '100%',
+                                    aspectRatio: '9/16',
+                                    objectFit: 'cover',
+                                    borderRadius: 4,
+                                    marginBottom: 8
+                                  }}
+                                />
+                                <div style={{
+                                  textAlign: 'center',
+                                  fontSize: 11,
+                                  color: '#ccc'
+                                }}>
+                                  {comparePhotos[index]!.pose} • {comparePhotos[index]!.timestamp.toLocaleDateString('de-DE')}
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                style={{
+                                  aspectRatio: '9/16',
+                                  backgroundColor: '#0a0a0a',
+                                  borderRadius: 4,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexDirection: 'column',
+                                  gap: 8,
+                                  cursor: 'pointer',
+                                  border: '2px dashed #444'
+                                }}
+                                onClick={() => {
+                                  // Show photo selector
+                                  const selectedPhoto = capturedPhotos[Math.floor(Math.random() * capturedPhotos.length)];
+                                  const newCompare: [CapturedPhoto | null, CapturedPhoto | null] = [...comparePhotos];
+                                  newCompare[index] = selectedPhoto;
+                                  setComparePhotos(newCompare);
+                                }}
+                              >
+                                <div style={{ fontSize: 32 }}>➕</div>
+                                <div style={{ fontSize: 12, color: '#888' }}>Foto wählen</div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setComparePhotos([null, null])}
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          backgroundColor: '#444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 8,
+                          fontSize: 14,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🔄 Vergleich zurücksetzen
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Timeline View */}
+                  {galleryView === 'timeline' && (
+                    <div style={{
+                      display: 'flex',
+                      overflowX: 'auto',
+                      gap: 16,
+                      padding: '16px 0',
+                      backgroundColor: '#1e1e1e',
+                      borderRadius: 8
+                    }}>
+                      {(selectedPoseFilter === 'all' 
+                        ? capturedPhotos 
+                        : capturedPhotos.filter(p => p.pose === selectedPoseFilter)
+                      ).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()).map((photo, index) => (
+                        <div
+                          key={photo.id}
+                          style={{
+                            flexShrink: 0,
+                            textAlign: 'center'
+                          }}
+                        >
                           <div style={{
                             fontSize: 10,
-                            color: '#888'
+                            color: '#888',
+                            marginBottom: 8
                           }}>
                             {photo.timestamp.toLocaleDateString('de-DE')}
                           </div>
+                          <img
+                            src={photo.dataUrl}
+                            alt={`${photo.pose}`}
+                            style={{
+                              width: 150,
+                              height: 267,
+                              objectFit: 'cover',
+                              borderRadius: 8,
+                              border: '2px solid #444'
+                            }}
+                          />
+                          <div style={{
+                            fontSize: 11,
+                            color: '#36a2eb',
+                            marginTop: 8,
+                            textTransform: 'capitalize'
+                          }}>
+                            {photo.pose}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Future: Hier kommen Vergleichs-Features */}
-                  <div style={{
-                    marginTop: 32,
-                    padding: 20,
-                    backgroundColor: '#1e1e1e',
-                    borderRadius: 12,
-                    border: '2px dashed #444',
-                    textAlign: 'center',
-                    color: '#888'
-                  }}>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>🔄</div>
-                    <div style={{ fontSize: 14, marginBottom: 4, color: '#ccc' }}>
-                      Vergleichs-Features
+                      ))}
                     </div>
-                    <div style={{ fontSize: 12 }}>
-                      Side-by-Side Vergleiche • Timeline • Progress-Videos
-                      <br />
-                      <em>Coming Soon...</em>
+                  )}
+
+                  {/* Flipbook View */}
+                  {galleryView === 'flipbook' && (
+                    <div>
+                      {capturedPhotos.length > 0 && (
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 16
+                        }}>
+                          {/* Display */}
+                          <div style={{
+                            backgroundColor: '#000',
+                            borderRadius: 12,
+                            overflow: 'hidden',
+                            border: '2px solid #444',
+                            maxWidth: 300
+                          }}>
+                            {(() => {
+                              const filteredPhotos = selectedPoseFilter === 'all' 
+                                ? capturedPhotos 
+                                : capturedPhotos.filter(p => p.pose === selectedPoseFilter);
+                              const currentPhoto = filteredPhotos[flipbookIndex % filteredPhotos.length];
+                              
+                              return currentPhoto ? (
+                                <img
+                                  src={currentPhoto.dataUrl}
+                                  alt={`${currentPhoto.pose}`}
+                                  style={{
+                                    width: '100%',
+                                    aspectRatio: '9/16',
+                                    objectFit: 'cover'
+                                  }}
+                                />
+                              ) : null;
+                            })()}
+                          </div>
+
+                          {/* Controls */}
+                          <div style={{
+                            display: 'flex',
+                            gap: 12,
+                            alignItems: 'center'
+                          }}>
+                            <button
+                              onClick={() => setIsFlipbookPlaying(!isFlipbookPlaying)}
+                              style={{
+                                padding: '12px 24px',
+                                backgroundColor: isFlipbookPlaying ? '#e74c3c' : '#22c55e',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: 8,
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {isFlipbookPlaying ? '⏸️ Pause' : '▶️ Play'}
+                            </button>
+                          </div>
+
+                          {/* Speed Control */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            width: '100%',
+                            maxWidth: 300
+                          }}>
+                            <label style={{
+                              fontSize: 12,
+                              color: '#ccc'
+                            }}>
+                              Geschwindigkeit:
+                            </label>
+                            <input
+                              type="range"
+                              min="100"
+                              max="2000"
+                              step="100"
+                              value={flipbookSpeed}
+                              onChange={(e) => setFlipbookSpeed(Number(e.target.value))}
+                              style={{
+                                flex: 1,
+                                accentColor: '#36a2eb'
+                              }}
+                            />
+                            <span style={{
+                              fontSize: 12,
+                              color: '#888',
+                              minWidth: 50
+                            }}>
+                              {flipbookSpeed}ms
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
