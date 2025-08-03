@@ -34,6 +34,7 @@ export default function FortschrittsFotosSeite() {
   const [isFlipbookPlaying, setIsFlipbookPlaying] = useState(false);
   const [flipbookIndex, setFlipbookIndex] = useState(0);
   const [selectedPoseFilter, setSelectedPoseFilter] = useState<PoseType | 'all'>('all');
+  const [selectingPhotoFor, setSelectingPhotoFor] = useState<0 | 1 | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -654,7 +655,7 @@ export default function FortschrittsFotosSeite() {
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'contain',
+                    objectFit: 'cover',
                     backgroundColor: '#000',
                     display: stream ? 'block' : 'none' // Show only when stream is ready
                   }}
@@ -964,8 +965,10 @@ export default function FortschrittsFotosSeite() {
                                     aspectRatio: '9/16',
                                     objectFit: 'cover',
                                     borderRadius: 4,
-                                    marginBottom: 8
+                                    marginBottom: 8,
+                                    cursor: 'pointer'
                                   }}
+                                  onClick={() => setSelectingPhotoFor(index as 0 | 1)}
                                 />
                                 <div style={{
                                   textAlign: 'center',
@@ -974,6 +977,26 @@ export default function FortschrittsFotosSeite() {
                                 }}>
                                   {comparePhotos[index]!.pose} • {comparePhotos[index]!.timestamp.toLocaleDateString('de-DE')}
                                 </div>
+                                <button
+                                  onClick={() => {
+                                    const newCompare: [CapturedPhoto | null, CapturedPhoto | null] = [...comparePhotos];
+                                    newCompare[index] = null;
+                                    setComparePhotos(newCompare);
+                                  }}
+                                  style={{
+                                    marginTop: 8,
+                                    width: '100%',
+                                    padding: '6px',
+                                    backgroundColor: '#333',
+                                    color: '#ccc',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    fontSize: 11,
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  ❌ Entfernen
+                                </button>
                               </div>
                             ) : (
                               <div
@@ -989,13 +1012,7 @@ export default function FortschrittsFotosSeite() {
                                   cursor: 'pointer',
                                   border: '2px dashed #444'
                                 }}
-                                onClick={() => {
-                                  // Show photo selector
-                                  const selectedPhoto = capturedPhotos[Math.floor(Math.random() * capturedPhotos.length)];
-                                  const newCompare: [CapturedPhoto | null, CapturedPhoto | null] = [...comparePhotos];
-                                  newCompare[index] = selectedPhoto;
-                                  setComparePhotos(newCompare);
-                                }}
+                                onClick={() => setSelectingPhotoFor(index as 0 | 1)}
                               >
                                 <div style={{ fontSize: 32 }}>➕</div>
                                 <div style={{ fontSize: 12, color: '#888' }}>Foto wählen</div>
@@ -1004,6 +1021,99 @@ export default function FortschrittsFotosSeite() {
                           </div>
                         ))}
                       </div>
+                      
+                      {/* Photo Selector Modal */}
+                      {selectingPhotoFor !== null && (
+                        <div style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                          zIndex: 1000,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          padding: 20
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: 20
+                          }}>
+                            <h3 style={{ margin: 0, color: '#fff' }}>
+                              Foto für {selectingPhotoFor === 0 ? 'Vorher' : 'Nachher'} auswählen
+                            </h3>
+                            <button
+                              onClick={() => setSelectingPhotoFor(null)}
+                              style={{
+                                backgroundColor: 'transparent',
+                                border: 'none',
+                                color: '#fff',
+                                fontSize: 24,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          
+                          <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                            gap: 12
+                          }}>
+                            {capturedPhotos.map(photo => (
+                              <div
+                                key={photo.id}
+                                onClick={() => {
+                                  const newCompare: [CapturedPhoto | null, CapturedPhoto | null] = [...comparePhotos];
+                                  newCompare[selectingPhotoFor] = photo;
+                                  setComparePhotos(newCompare);
+                                  setSelectingPhotoFor(null);
+                                }}
+                                style={{
+                                  cursor: 'pointer',
+                                  border: '2px solid transparent',
+                                  borderRadius: 8,
+                                  overflow: 'hidden',
+                                  transition: 'border-color 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.borderColor = '#36a2eb';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.borderColor = 'transparent';
+                                }}
+                              >
+                                <img
+                                  src={photo.dataUrl}
+                                  alt={`${photo.pose}`}
+                                  style={{
+                                    width: '100%',
+                                    height: 150,
+                                    objectFit: 'cover'
+                                  }}
+                                />
+                                <div style={{
+                                  padding: 4,
+                                  backgroundColor: '#1e1e1e',
+                                  fontSize: 10,
+                                  textAlign: 'center',
+                                  color: '#ccc'
+                                }}>
+                                  {photo.pose}<br />
+                                  {photo.timestamp.toLocaleDateString('de-DE')}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       <button
                         onClick={() => setComparePhotos([null, null])}
                         style={{
