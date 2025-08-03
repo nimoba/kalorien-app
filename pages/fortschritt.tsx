@@ -92,7 +92,13 @@ export default function FortschrittsFotosSeite() {
       
       if (data.photos && data.photos.length > 0) {
         // Convert timestamps to Date objects and merge with existing photos
-        const drivePhotos = data.photos.map((photo: any) => ({
+        const drivePhotos = data.photos.map((photo: {
+          id: string;
+          pose: PoseType;
+          dataUrl: string;
+          timestamp: string;
+          name?: string;
+        }) => ({
           ...photo,
           timestamp: new Date(photo.timestamp)
         }));
