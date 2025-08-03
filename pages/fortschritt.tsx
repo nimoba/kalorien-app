@@ -161,21 +161,33 @@ export default function FortschrittsFotosSeite() {
         setCameraError(null);
         
         try {
+          // Request camera with better constraints
           const mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user' }
+            video: { 
+              facingMode: 'user',
+              width: { ideal: 1280 },
+              height: { ideal: 1920 }
+            },
+            audio: false
           });
           
           if (mounted) {
             setStream(mediaStream);
             
+            // Wait for video element to be ready
             if (videoRef.current) {
               videoRef.current.srcObject = mediaStream;
-              try {
-                await videoRef.current.play();
-                console.log('✅ Camera started successfully');
-              } catch (err) {
-                console.error('Play error:', err);
-              }
+              
+              // Wait for metadata to load before playing
+              videoRef.current.onloadedmetadata = async () => {
+                try {
+                  await videoRef.current?.play();
+                  console.log('✅ Camera started successfully');
+                } catch (err) {
+                  console.error('Play error:', err);
+                  setCameraError('Fehler beim Starten der Kamera. Bitte versuche es erneut.');
+                }
+              };
             }
           } else {
             // Component unmounted während wir warteten
@@ -184,7 +196,19 @@ export default function FortschrittsFotosSeite() {
         } catch (error) {
           if (mounted) {
             console.error('❌ Camera error:', error);
-            setCameraError(`Kamera-Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
+            let errorMessage = 'Kamera-Fehler: ';
+            if (error instanceof Error) {
+              if (error.name === 'NotAllowedError') {
+                errorMessage += 'Kamera-Zugriff wurde verweigert. Bitte erlaube den Zugriff in deinen Browser-Einstellungen.';
+              } else if (error.name === 'NotFoundError') {
+                errorMessage += 'Keine Kamera gefunden.';
+              } else {
+                errorMessage += error.message;
+              }
+            } else {
+              errorMessage += 'Unbekannter Fehler';
+            }
+            setCameraError(errorMessage);
           }
         }
       }
@@ -207,8 +231,12 @@ export default function FortschrittsFotosSeite() {
     };
   }, [currentMode, isAuthenticated, authLoading]); // stream aus dependencies entfernt
 
-  // Pose-Overlay Komponente
+  // Pose-Overlay Komponente mit echten Bildern
   const PoseOverlay = ({ pose, opacity }: { pose: PoseType; opacity: number }) => {
+    const poseImage = pose === 'vorn' ? '/images/pose-vorn.png' : 
+                     pose === 'seite' ? '/images/pose-seite.png' : 
+                     '/images/pose-hinten.png';
+    
     return (
       <div 
         style={{
@@ -225,16 +253,17 @@ export default function FortschrittsFotosSeite() {
           opacity: opacity
         }}
       >
-        <div style={{
-          fontSize: 200,
-          color: 'rgba(255, 255, 255, 0.3)',
-          textAlign: 'center',
-          lineHeight: 1
-        }}>
-          {pose === 'vorn' && '🧍‍♂️'}
-          {pose === 'seite' && '🚶‍♂️'} 
-          {pose === 'hinten' && '🕴️'}
-        </div>
+        <img 
+          src={poseImage}
+          alt={`Pose ${pose}`}
+          style={{
+            maxWidth: '80%',
+            maxHeight: '80%',
+            objectFit: 'contain',
+            filter: 'brightness(1.5) contrast(0.7)',
+            mixBlendMode: 'screen'
+          }}
+        />
       </div>
     );
   };
@@ -528,21 +557,19 @@ export default function FortschrittsFotosSeite() {
                 marginBottom: 20,
                 border: '2px solid #444'
               }}>
-                {stream && (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      backgroundColor: '#000',
-                      display: 'block' // Verhindert inline spacing issues
-                    }}
-                  />
-                )}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    backgroundColor: '#000',
+                    display: stream ? 'block' : 'none' // Show only when stream is ready
+                  }}
+                />
                 
                 {/* Kamera nicht bereit Overlay */}
                 {!stream && !cameraError && (
