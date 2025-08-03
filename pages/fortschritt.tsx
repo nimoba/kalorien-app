@@ -166,8 +166,7 @@ export default function FortschrittsFotosSeite() {
             video: { 
               facingMode: 'user',
               width: { ideal: 720 },
-              height: { ideal: 1280 },
-              zoom: 1.0
+              height: { ideal: 1280 }
             },
             audio: false
           });
