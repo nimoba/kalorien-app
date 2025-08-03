@@ -57,15 +57,6 @@ export default function FortschrittsFotosSeite() {
     }
   };
 
-  // Kamera stoppen - wird nicht mehr als separate Funktion benötigt
-  const cleanupCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  };
 
   // Foto aufnehmen
   const capturePhoto = useCallback(async () => {
