@@ -971,7 +971,7 @@ export default function FortschrittsFotosSeite() {
                       {(selectedPoseFilter === 'all' 
                         ? capturedPhotos 
                         : capturedPhotos.filter(p => p.pose === selectedPoseFilter)
-                      ).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()).map((photo, index) => (
+                      ).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()).map((photo) => (
                         <div
                           key={photo.id}
                           style={{
