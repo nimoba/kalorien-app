@@ -257,8 +257,8 @@ export default function FortschrittsFotosSeite() {
           src={poseImage}
           alt={`Pose ${pose}`}
           style={{
-            maxWidth: '80%',
-            maxHeight: '80%',
+            maxWidth: '100%',
+            maxHeight: '100%',
             objectFit: 'contain',
             filter: 'brightness(1.5) contrast(0.7)',
             mixBlendMode: 'screen'
