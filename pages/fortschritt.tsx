@@ -25,6 +25,7 @@ export default function FortschrittsFotosSeite() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [photosLoading, setPhotosLoading] = useState(false);
   
   // Gallery view states
   const [galleryView, setGalleryView] = useState<'grid' | 'compare' | 'timeline' | 'flipbook'>('grid');
@@ -42,6 +43,13 @@ export default function FortschrittsFotosSeite() {
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  // Load photos from Google Drive when authenticated and in gallery mode
+  useEffect(() => {
+    if (isAuthenticated && !authLoading && currentMode === 'gallery') {
+      loadPhotosFromDrive();
+    }
+  }, [isAuthenticated, authLoading, currentMode]);
 
   const checkAuthStatus = async () => {
     try {
@@ -63,6 +71,45 @@ export default function FortschrittsFotosSeite() {
       }
     } catch {
       alert('Login fehlgeschlagen');
+    }
+  };
+
+  const loadPhotosFromDrive = async () => {
+    try {
+      setPhotosLoading(true);
+      console.log('Loading photos from Google Drive...');
+      const response = await fetch('/api/get-progress-photos');
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          setIsAuthenticated(false);
+          return;
+        }
+        throw new Error('Failed to fetch photos');
+      }
+      
+      const data = await response.json();
+      
+      if (data.photos && data.photos.length > 0) {
+        // Convert timestamps to Date objects and merge with existing photos
+        const drivePhotos = data.photos.map((photo: any) => ({
+          ...photo,
+          timestamp: new Date(photo.timestamp)
+        }));
+        
+        // Merge with existing photos (avoid duplicates based on ID)
+        setCapturedPhotos(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newPhotos = drivePhotos.filter((p: CapturedPhoto) => !existingIds.has(p.id));
+          return [...prev, ...newPhotos];
+        });
+        
+        console.log(`Loaded ${data.photos.length} photos from Google Drive`);
+      }
+    } catch (error) {
+      console.error('Error loading photos from Drive:', error);
+    } finally {
+      setPhotosLoading(false);
     }
   };
 
@@ -729,7 +776,18 @@ export default function FortschrittsFotosSeite() {
           {/* Gallery Mode */}
           {currentMode === 'gallery' && (
             <div style={{ padding: '0 24px 24px' }}>
-              {capturedPhotos.length === 0 ? (
+              {photosLoading ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '60px 20px',
+                  color: '#888'
+                }}>
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#ccc' }}>
+                    Lade Fotos von Google Drive...
+                  </h3>
+                </div>
+              ) : capturedPhotos.length === 0 ? (
                 <div style={{
                   textAlign: 'center',
                   padding: '60px 20px',
