@@ -35,6 +35,7 @@ export default function FortschrittsFotosSeite() {
   const [flipbookIndex, setFlipbookIndex] = useState(0);
   const [selectedPoseFilter, setSelectedPoseFilter] = useState<PoseType | 'all'>('all');
   const [selectingPhotoFor, setSelectingPhotoFor] = useState<0 | 1 | null>(null);
+  const [videoRotation, setVideoRotation] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -250,13 +251,12 @@ export default function FortschrittsFotosSeite() {
         setCameraError(null);
         
         try {
-          // Request camera with portrait constraints for mobile
+          // Request camera with front camera
           const mediaStream = await navigator.mediaDevices.getUserMedia({
             video: { 
-              facingMode: 'environment', // Use back camera which often works better in portrait
-              width: { ideal: 720 },
-              height: { ideal: 1280 },
-              aspectRatio: { ideal: 0.5625 } // 9/16 as decimal
+              facingMode: 'user', // Front camera
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
             },
             audio: false
           });
@@ -272,6 +272,20 @@ export default function FortschrittsFotosSeite() {
               videoRef.current.onloadedmetadata = async () => {
                 try {
                   await videoRef.current?.play();
+                  
+                  // Check if video is landscape and needs rotation
+                  const videoWidth = videoRef.current.videoWidth;
+                  const videoHeight = videoRef.current.videoHeight;
+                  console.log(`📐 Video dimensions: ${videoWidth}x${videoHeight}`);
+                  
+                  // If width > height, video is in landscape, rotate it
+                  if (videoWidth > videoHeight) {
+                    console.log('🔄 Video is landscape, rotating to portrait');
+                    setVideoRotation(90);
+                  } else {
+                    setVideoRotation(0);
+                  }
+                  
                   console.log('✅ Camera started successfully');
                 } catch (err) {
                   console.error('Play error:', err);
@@ -656,12 +670,18 @@ export default function FortschrittsFotosSeite() {
                   playsInline
                   muted
                   style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
+                    width: videoRotation === 90 ? '177.78%' : '100%', // 16/9 aspect ratio when rotated
+                    height: videoRotation === 90 ? '177.78%' : '100%',
+                    objectFit: 'cover',
                     backgroundColor: '#000',
                     display: stream ? 'block' : 'none', // Show only when stream is ready
-                    transform: 'rotate(0deg)' // Can be adjusted if needed
+                    transform: videoRotation === 90 ? 'rotate(90deg) scale(0.5625)' : 'none',
+                    transformOrigin: 'center center',
+                    position: videoRotation === 90 ? 'absolute' : 'static',
+                    top: videoRotation === 90 ? '50%' : 'auto',
+                    left: videoRotation === 90 ? '50%' : 'auto',
+                    marginTop: videoRotation === 90 ? '-88.89%' : '0',
+                    marginLeft: videoRotation === 90 ? '-88.89%' : '0'
                   }}
                 />
                 
