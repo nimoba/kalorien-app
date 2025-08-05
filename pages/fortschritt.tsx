@@ -250,12 +250,13 @@ export default function FortschrittsFotosSeite() {
         setCameraError(null);
         
         try {
-          // Request camera with portrait constraints
+          // Request camera with portrait constraints for mobile
           const mediaStream = await navigator.mediaDevices.getUserMedia({
             video: { 
               facingMode: 'user',
-              width: { min: 480, ideal: 720, max: 1080 },
-              height: { min: 640, ideal: 1280, max: 1920 }
+              width: { ideal: 720 },
+              height: { ideal: 1280 },
+              aspectRatio: { ideal: 9/16 }
             },
             audio: false
           });
