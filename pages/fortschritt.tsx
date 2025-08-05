@@ -251,12 +251,10 @@ export default function FortschrittsFotosSeite() {
         setCameraError(null);
         
         try {
-          // Request camera with front camera
+          // Request camera with front camera - let browser handle orientation
           const mediaStream = await navigator.mediaDevices.getUserMedia({
             video: { 
-              facingMode: 'user', // Front camera
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
+              facingMode: 'user' // Front camera, no specific dimensions
             },
             audio: false
           });
@@ -271,7 +269,9 @@ export default function FortschrittsFotosSeite() {
               // Wait for metadata to load before playing
               videoRef.current.onloadedmetadata = async () => {
                 try {
-                  await videoRef.current?.play();
+                  if (!videoRef.current) return;
+                  
+                  await videoRef.current.play();
                   
                   // Check if video is landscape and needs rotation
                   const videoWidth = videoRef.current.videoWidth;
