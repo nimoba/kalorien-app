@@ -253,10 +253,10 @@ export default function FortschrittsFotosSeite() {
           // Request camera with portrait constraints for mobile
           const mediaStream = await navigator.mediaDevices.getUserMedia({
             video: { 
-              facingMode: 'user',
+              facingMode: 'environment', // Use back camera which often works better in portrait
               width: { ideal: 720 },
               height: { ideal: 1280 },
-              aspectRatio: { ideal: 9/16 }
+              aspectRatio: { ideal: 0.5625 } // 9/16 as decimal
             },
             audio: false
           });
@@ -646,7 +646,9 @@ export default function FortschrittsFotosSeite() {
                 overflow: 'hidden',
                 aspectRatio: '9/16',
                 marginBottom: 20,
-                border: '2px solid #444'
+                border: '2px solid #444',
+                maxWidth: '100%',
+                margin: '0 auto 20px'
               }}>
                 <video
                   ref={videoRef}
@@ -658,7 +660,8 @@ export default function FortschrittsFotosSeite() {
                     height: '100%',
                     objectFit: 'contain',
                     backgroundColor: '#000',
-                    display: stream ? 'block' : 'none' // Show only when stream is ready
+                    display: stream ? 'block' : 'none', // Show only when stream is ready
+                    transform: 'rotate(0deg)' // Can be adjusted if needed
                   }}
                 />
                 
