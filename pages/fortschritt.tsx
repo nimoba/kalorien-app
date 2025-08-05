@@ -655,7 +655,7 @@ export default function FortschrittsFotosSeite() {
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover',
+                    objectFit: 'contain',
                     backgroundColor: '#000',
                     display: stream ? 'block' : 'none' // Show only when stream is ready
                   }}
