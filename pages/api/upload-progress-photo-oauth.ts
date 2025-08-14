@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
 import { Readable } from "stream";
+import { getAuthenticatedClient, handleAuthError } from "../../utils/google-oauth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -14,25 +15,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Photo data and pose are required' });
     }
 
-    // Get tokens from cookies
-    const accessToken = req.cookies.google_access_token;
-    const refreshToken = req.cookies.google_refresh_token;
-
-    if (!accessToken) {
-      return res.status(401).json({ error: 'Not authenticated with Google' });
+    // Get authenticated OAuth client with automatic token refresh
+    const oauth2Client = await getAuthenticatedClient(req, res);
+    
+    if (!oauth2Client) {
+      return handleAuthError(res, 'Authentication failed. Please login again.');
     }
-
-    // Setup OAuth client with user's tokens
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/auth/callback`
-    );
-
-    oauth2Client.setCredentials({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
 
     const drive = google.drive({ version: "v3", auth: oauth2Client });
 
@@ -99,9 +87,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error("❌ OAuth Upload Fehler:", error);
+    
+    // Check if it's an auth error
+    if (error instanceof Error && error.message.includes('invalid_grant')) {
+      return handleAuthError(res, 'Google authentication expired. Please login again.');
+    }
+    
     res.status(500).json({ 
       error: "Upload fehlgeschlagen",
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' ? (error as Error).stack : undefined
     });
   }
 }

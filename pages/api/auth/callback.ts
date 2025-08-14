@@ -25,12 +25,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Store tokens in cookie (in production, use secure storage)
     const thirtyDaysInSeconds = 30 * 24 * 60 * 60; // 30 Tage
+    
+    // Calculate token expiry time (tokens.expiry_date is in milliseconds)
+    const expiryDate = tokens.expiry_date || (Date.now() + (3600 * 1000)); // Default to 1 hour if not provided
 
-    res.setHeader('Set-Cookie', [
+    const cookies = [
       `google_access_token=${tokens.access_token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`,
-      `google_refresh_token=${tokens.refresh_token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`,
-      `user_email=${userInfo.data.email}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`
-    ]);
+      `user_email=${userInfo.data.email}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`,
+      `google_token_expiry=${expiryDate}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`
+    ];
+    
+    // Only set refresh token if it exists (it might not on subsequent logins)
+    if (tokens.refresh_token) {
+      cookies.push(
+        `google_refresh_token=${tokens.refresh_token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`
+      );
+    }
+    
+    res.setHeader('Set-Cookie', cookies);
 
     // Redirect back to fortschritt page
     res.redirect('/fortschritt?auth=success');

@@ -83,11 +83,15 @@ export default function FortschrittsFotosSeite() {
       const response = await fetch('/api/get-progress-photos');
       
       if (!response.ok) {
-        if (response.status === 401) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        
+        if (response.status === 401 || errorData.requiresAuth) {
+          console.log('Authentication required, resetting auth state');
           setIsAuthenticated(false);
           return;
         }
-        throw new Error('Failed to fetch photos');
+        throw new Error(errorData.error || 'Failed to fetch photos');
       }
       
       const data = await response.json();
@@ -178,11 +182,13 @@ export default function FortschrittsFotosSeite() {
         alert(`📸 ${selectedPose.toUpperCase()}-Foto erfolgreich in deinem Google Drive gespeichert!`);
       } else {
         console.error('Upload-Fehler:', result);
-        if (response.status === 401) {
+        if (response.status === 401 || result.requiresAuth) {
           alert('Google Login abgelaufen. Bitte neu anmelden.');
           setIsAuthenticated(false);
+          // Clear the authentication status to force re-login
+          await checkAuthStatus();
         } else {
-          alert(`📸 Foto aufgenommen, aber Upload-Fehler: ${result.error}`);
+          alert(`📸 Foto aufgenommen, aber Upload-Fehler: ${result.error || result.details || 'Unbekannter Fehler'}`);
         }
       }
     } catch (uploadError) {
