@@ -22,9 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ],
       // Use 'consent' for first-time auth to ensure we get refresh token
       // Use 'select_account' for re-auth if we already have a refresh token
-      prompt: existingRefreshToken ? 'select_account' : 'consent',
-      // This forces approval prompt to ensure we get a refresh token
-      approval_prompt: 'force'
+      prompt: existingRefreshToken ? 'select_account' : 'consent'
     });
 
     res.status(200).json({ authUrl });
