@@ -99,9 +99,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error("❌ OAuth Upload Fehler:", error);
     
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('invalid_grant')) {
+    // Check for various auth/permission errors
+    const errorMessage = error instanceof Error ? error.message : '';
+    
+    if (errorMessage.includes('invalid_grant') || 
+        errorMessage.includes('Token has been expired or revoked')) {
       return handleAuthError(res, 'Google authentication expired. Please login again.');
+    }
+    
+    if (errorMessage.includes('Insufficient Permission') || 
+        errorMessage.includes('insufficient authentication scopes')) {
+      // Need to re-authenticate with proper permissions
+      return handleAuthError(res, 'Insufficient permissions. Please re-authorize the app with Google Drive access.');
     }
     
     res.status(500).json({ 

@@ -9,6 +9,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/auth/callback`
     );
 
+    // Check if user already has a refresh token
+    const existingRefreshToken = req.cookies?.google_refresh_token;
+    
     // Generate OAuth URL
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -17,9 +20,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email'
       ],
-      // Only prompt for consent if we don't have a refresh token
-      // 'select_account' allows user to choose account without forcing full consent
-      prompt: 'select_account'
+      // Use 'consent' for first-time auth to ensure we get refresh token
+      // Use 'select_account' for re-auth if we already have a refresh token
+      prompt: existingRefreshToken ? 'select_account' : 'consent',
+      // This forces approval prompt to ensure we get a refresh token
+      approval_prompt: 'force'
     });
 
     res.status(200).json({ authUrl });
