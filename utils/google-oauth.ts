@@ -17,8 +17,9 @@ export async function getAuthenticatedClient(
     const refreshToken = req.cookies.google_refresh_token;
     const expiryDate = req.cookies.google_token_expiry;
 
-    if (!accessToken || !refreshToken) {
-      console.error("No tokens found in cookies");
+    // Must have at least a refresh token to proceed
+    if (!refreshToken) {
+      console.error("No refresh token found in cookies");
       return null;
     }
 
@@ -35,13 +36,21 @@ export async function getAuthenticatedClient(
       expiry_date: expiryDate ? parseInt(expiryDate) : undefined,
     });
 
-    // Check if token is expired or will expire in the next minute
+    // Check if we need to refresh the token
     const now = Date.now();
     const tokenExpiry = expiryDate ? parseInt(expiryDate) : 0;
-    const isExpired = tokenExpiry > 0 && tokenExpiry < now + 60000; // 1 minute buffer
+    
+    // Refresh if: no access token, no expiry date, or token is expired/expiring soon
+    const needsRefresh = !accessToken || 
+                        tokenExpiry === 0 || 
+                        tokenExpiry < now + 60000; // 1 minute buffer
 
-    if (isExpired) {
-      console.log("Access token expired or expiring soon, attempting refresh...");
+    if (needsRefresh) {
+      console.log("Token refresh needed:", { 
+        hasAccessToken: !!accessToken, 
+        hasExpiry: tokenExpiry > 0,
+        isExpired: tokenExpiry > 0 && tokenExpiry < now 
+      });
       
       try {
         // Refresh the access token
@@ -53,11 +62,11 @@ export async function getAuthenticatedClient(
           `google_access_token=${credentials.access_token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`,
         ];
 
-        if (credentials.refresh_token) {
-          newCookies.push(
-            `google_refresh_token=${credentials.refresh_token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`
-          );
-        }
+        // Always keep the refresh token (use new one if provided, otherwise keep existing)
+        const finalRefreshToken = credentials.refresh_token || refreshToken;
+        newCookies.push(
+          `google_refresh_token=${finalRefreshToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${thirtyDaysInSeconds}`
+        );
 
         if (credentials.expiry_date) {
           newCookies.push(

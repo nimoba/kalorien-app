@@ -8,19 +8,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  console.log('Upload API called with pose:', req.body?.pose);
+
   try {
     const { photoData, pose, timestamp } = req.body;
 
     if (!photoData || !pose) {
+      console.error('Missing required data:', { hasPhotoData: !!photoData, hasPose: !!pose });
       return res.status(400).json({ error: 'Photo data and pose are required' });
     }
 
+    console.log('Getting authenticated OAuth client...');
     // Get authenticated OAuth client with automatic token refresh
     const oauth2Client = await getAuthenticatedClient(req, res);
     
     if (!oauth2Client) {
+      console.error('Failed to get authenticated OAuth client');
       return handleAuthError(res, 'Authentication failed. Please login again.');
     }
+    
+    console.log('OAuth client obtained successfully');
 
     const drive = google.drive({ version: "v3", auth: oauth2Client });
 
@@ -42,6 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const filename = `${dateStr}_${timeStr}_${pose}.jpg`;
 
     // Check/create Fortschrittsbilder folder in user's drive
+    console.log('Searching for Fortschrittsbilder folder...');
     const folderQuery = "name='Fortschrittsbilder' and mimeType='application/vnd.google-apps.folder'";
     const folderSearch = await drive.files.list({
       q: folderQuery,
@@ -51,7 +59,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let folderId;
     if (folderSearch.data.files && folderSearch.data.files.length > 0) {
       folderId = folderSearch.data.files[0].id;
+      console.log('Found existing folder with ID:', folderId);
     } else {
+      console.log('Creating new Fortschrittsbilder folder...');
       // Create folder in user's drive
       const folderResponse = await drive.files.create({
         requestBody: {
@@ -61,6 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fields: 'id',
       });
       folderId = folderResponse.data.id;
+      console.log('Created new folder with ID:', folderId);
     }
 
     // Upload to user's personal drive

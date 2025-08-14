@@ -17,7 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email'
       ],
-      prompt: 'consent' // Force consent to get refresh token
+      // Only prompt for consent if we don't have a refresh token
+      // 'select_account' allows user to choose account without forcing full consent
+      prompt: 'select_account'
     });
 
     res.status(200).json({ authUrl });
