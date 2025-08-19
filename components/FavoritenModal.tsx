@@ -119,7 +119,7 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
                     key={item.name}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ duration: 0.2 }}
                     style={itemStyle}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
