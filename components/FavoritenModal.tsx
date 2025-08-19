@@ -114,7 +114,7 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
             </div>
           ) : (
             <div style={listStyle}>
-                {filteredFavoriten.map((item, index) => (
+                {filteredFavoriten.map((item) => (
                   <motion.div
                     key={item.name}
                     initial={{ opacity: 0, y: 10 }}
