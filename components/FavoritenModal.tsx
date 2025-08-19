@@ -114,13 +114,11 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
             </div>
           ) : (
             <div style={listStyle}>
-              <AnimatePresence>
                 {filteredFavoriten.map((item, index) => (
                   <motion.div
                     key={item.name}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
                     transition={{ delay: index * 0.05 }}
                     style={itemStyle}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
@@ -164,7 +162,6 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
                     </button>
                   </motion.div>
                 ))}
-              </AnimatePresence>
             </div>
           )}
         </div>
