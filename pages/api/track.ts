@@ -11,7 +11,7 @@ async function checkFavoritMatch(name: string) {
   const sheets = google.sheets({ version: "v4", auth });
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: "Favoriten!A2:E",
+    range: "Favoriten!A2:G", // Erweitert um Einheit und Einheitsgewicht
   });
 
   const zeilen = res.data.values || [];
@@ -19,12 +19,17 @@ async function checkFavoritMatch(name: string) {
 
   for (const z of zeilen) {
     if (z[0].trim().toLowerCase() === nameClean) {
+      const unit = z[5] || 'g';
+      const unitWeight = z[6] ? Number(z[6]) : undefined;
+      
       return {
         Kalorien: z[1],
         Eiweiß: z[2],
         Fett: z[3],
         Kohlenhydrate: z[4],
-        menge: 100, // Favoriten gelten als "pro 100g"
+        menge: unit === 'Stück' || unit === 'Portion' ? 1 : 100, // Default Menge basierend auf Einheit
+        unit: unit,
+        unitWeight: unitWeight,
         from: "favoriten",
       };
     }
@@ -73,10 +78,22 @@ Antworte **nur** im folgenden JSON-Format:
   "Eiweiß": ...,
   "Fett": ...,
   "Kohlenhydrate": ...,
-  "menge": ...
+  "menge": ...,
+  "unit": ...,
+  "unitWeight": ...
 }
 
-"menge" steht für die geschätzte **verzehrte Menge in g oder ml**. Die Nährwerte sind aber **pro 100 g/ml**.`,
+- "menge": geschätzte **verzehrte Menge** in der angegebenen Einheit
+- "unit": "g", "ml", "Stück", oder "Portion"
+- "unitWeight": Gramm pro Einheit (nur bei Stück/Portion, sonst weglassen)
+
+Beispiele:
+- "2 Äpfel" → unit: "Stück", menge: 2, unitWeight: 180
+- "250ml Milch" → unit: "ml", menge: 250
+- "1 Portion Nudeln" → unit: "Portion", menge: 1, unitWeight: 300
+- "100g Reis" → unit: "g", menge: 100
+
+Die Nährwerte sind immer **pro 100 g/ml**.`,
         },
         { role: "user", content: text },
       ],

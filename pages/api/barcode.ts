@@ -83,6 +83,24 @@ Antwort **nur** im folgenden JSON-Format:
       menge = parsed.menge ?? menge; // GPT liefert Menge → falls vorhanden, übernehmen
     }
 
+    // 🔍 Einheits-Erkennung
+    let unit: 'g' | 'ml' | 'Stück' | 'Portion' = 'g';
+    let unitWeight: number | undefined;
+
+    // Versuche Einheit aus Produktdaten zu erkennen
+    const categories = p.categories_tags || [];
+    const isLiquid = categories.some((cat: string) => 
+      cat.includes('beverage') || cat.includes('drink') || cat.includes('milk') || cat.includes('juice')
+    );
+    
+    if (isLiquid) {
+      unit = 'ml';
+    } else if (p.serving_quantity && p.serving_quantity !== 100) {
+      // Wenn Portionsgröße verfügbar und nicht 100g, als Stück behandeln
+      unit = 'Stück';
+      unitWeight = p.serving_quantity;
+    }
+
     // ✅ Nur Daten zurückgeben – NICHT speichern
     res.status(200).json({
       name: produktname,
@@ -91,6 +109,8 @@ Antwort **nur** im folgenden JSON-Format:
       Fett: fett,
       Kohlenhydrate: kohlenhydrate,
       menge,
+      unit,
+      unitWeight,
       quelle: fehlenMakros ? "gpt" : "openfoodfacts",
     });
   } catch (err) {

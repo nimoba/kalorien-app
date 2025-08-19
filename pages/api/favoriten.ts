@@ -8,6 +8,8 @@ export interface FavoritItem {
   eiweiss: number;
   fett: number;
   kh: number;
+  unit: 'g' | 'ml' | 'Stück' | 'Portion';
+  unitWeight?: number; // grams per unit (for Stück/Portion)
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -22,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const favoritenRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Favoriten!A2:E", // A=Name, B=Kcal, C=Eiweiß, D=Fett, E=KH
+      range: "Favoriten!A2:G", // A=Name, B=Kcal, C=Eiweiß, D=Fett, E=KH, F=Einheit, G=Einheitsgewicht
     });
 
     const rows = favoritenRes.data.values || [];
@@ -35,6 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         eiweiss: Number(row[2]) || 0,
         fett: Number(row[3]) || 0,
         kh: Number(row[4]) || 0,
+        unit: (row[5] as 'g' | 'ml' | 'Stück' | 'Portion') || 'g', // Default zu 'g' für bestehende Einträge
+        unitWeight: row[6] ? Number(row[6]) : undefined,
       }))
       .sort((a, b) => a.name.localeCompare(b.name)); // Alphabetisch sortieren
 

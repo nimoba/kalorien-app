@@ -24,15 +24,32 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [gptInput, setGptInput] = useState('');
   const [scanning, setScanning] = useState(false);
   const [showFavoriten, setShowFavoriten] = useState(false);
+  
+  // === Einheiten-System ===
+  const [selectedUnit, setSelectedUnit] = useState<'g' | 'ml' | 'Stück' | 'Portion'>('g');
+  const [unitWeight, setUnitWeight] = useState(''); // Gewicht pro Einheit für Stück/Portion
 
   const parseNum = (v: string) => parseFloat(v.replace(',', '.') || '0');
   const mengeVal = parseNum(menge) || 0;
+  const unitWeightVal = parseNum(unitWeight) || 0;
 
-  // Berechnete Werte
-  const calcKcal    = () => ((parseNum(basisKcal)    / 100) * mengeVal) || 0;
-  const calcEiweiss = () => ((parseNum(basisEiweiss) / 100) * mengeVal) || 0;
-  const calcFett    = () => ((parseNum(basisFett)    / 100) * mengeVal) || 0;
-  const calcKh      = () => ((parseNum(basisKh)      / 100) * mengeVal) || 0;
+  // Berechnete Werte basierend auf Einheit
+  const getActualAmount = () => {
+    if (selectedUnit === 'g' || selectedUnit === 'ml') {
+      return mengeVal;
+    } else if (selectedUnit === 'Stück' || selectedUnit === 'Portion') {
+      return mengeVal * unitWeightVal;
+    }
+    return mengeVal;
+  };
+
+  const actualAmount = getActualAmount();
+  
+  // Berechnete Werte (Basis-Werte sind immer pro 100g/100ml)
+  const calcKcal    = () => ((parseNum(basisKcal)    / 100) * actualAmount) || 0;
+  const calcEiweiss = () => ((parseNum(basisEiweiss) / 100) * actualAmount) || 0;
+  const calcFett    = () => ((parseNum(basisFett)    / 100) * actualAmount) || 0;
+  const calcKh      = () => ((parseNum(basisKh)      / 100) * actualAmount) || 0;
 
   // === API-Handler (GPT, Barcode, Foto, Favoriten, Speichern) ===
 
@@ -51,6 +68,15 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
       setMenge(data.menge ? String(data.menge) : '100');
+      
+      // Einheit von GPT setzen, falls vorhanden
+      if (data.unit) {
+        setSelectedUnit(data.unit);
+      }
+      if (data.unitWeight) {
+        setUnitWeight(String(data.unitWeight));
+      }
+      
       setGptInput('');
     } else {
       alert('❌ Fehler bei GPT');
@@ -68,6 +94,14 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       setBasisFett(String(data.Fett));
       setBasisKh(String(data.Kohlenhydrate));
       setMenge(data.menge ? String(data.menge) : '100');
+      
+      // Einheit von Barcode setzen, falls vorhanden
+      if (data.unit) {
+        setSelectedUnit(data.unit);
+      }
+      if (data.unitWeight) {
+        setUnitWeight(String(data.unitWeight));
+      }
     } else {
       alert('❌ Produkt nicht gefunden');
     }
@@ -108,6 +142,10 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     setBasisFett(String(item.fett));
     setBasisKh(String(item.kh));
     setMenge(String(menge));
+    setSelectedUnit(item.unit);
+    if (item.unitWeight) {
+      setUnitWeight(String(item.unitWeight));
+    }
   };
 
   const handleSpeichern = async () => {
@@ -125,6 +163,9 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         fett:    calcFett(),
         kh:      calcKh(),
         uhrzeit,
+        unit: selectedUnit,
+        unitWeight: unitWeightVal,
+        menge: mengeVal,
       }),
     });
     if (res.ok) {
@@ -173,7 +214,35 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
 
-        <label>Menge (g/ml):</label>
+        {/* Einheiten-Auswahl */}
+        <label>Einheit:</label>
+        <select
+          value={selectedUnit}
+          onChange={e => setSelectedUnit(e.target.value as 'g' | 'ml' | 'Stück' | 'Portion')}
+          style={inputStyle}
+        >
+          <option value="g">Gramm (g)</option>
+          <option value="ml">Milliliter (ml)</option>
+          <option value="Stück">Stück</option>
+          <option value="Portion">Portion</option>
+        </select>
+
+        {/* Gewicht pro Einheit für Stück/Portion */}
+        {(selectedUnit === 'Stück' || selectedUnit === 'Portion') && (
+          <>
+            <label>Gewicht pro {selectedUnit} (in g):</label>
+            <input
+              value={unitWeight}
+              onChange={e => setUnitWeight(e.target.value)}
+              placeholder={selectedUnit === 'Stück' ? 'z.B. 180 für 1 Apfel' : 'z.B. 350 für 1 Portion'}
+              inputMode="decimal"
+              pattern="[0-9.,]*"
+              style={inputStyle}
+            />
+          </>
+        )}
+
+        <label>Menge ({selectedUnit}):</label>
         <input
           value={menge}
           onChange={e => setMenge(e.target.value)}

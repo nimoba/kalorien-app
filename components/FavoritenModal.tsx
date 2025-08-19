@@ -9,6 +9,8 @@ export interface FavoritItem {
   eiweiss: number;
   fett: number;
   kh: number;
+  unit: 'g' | 'ml' | 'Stück' | 'Portion';
+  unitWeight?: number; // grams per unit (for Stück/Portion)
 }
 
 interface Props {
@@ -30,9 +32,9 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
       const data = await res.json();
       if (res.ok) {
         setFavoriten(data);
-        // Standardmenge 100g für alle Items setzen
+        // Standardmenge basierend auf Einheit setzen
         const defaultMengen = data.reduce((acc: Record<string, number>, item: FavoritItem) => {
-          acc[item.name] = 100;
+          acc[item.name] = item.unit === 'Stück' || item.unit === 'Portion' ? 1 : 100;
           return acc;
         }, {});
         setSelectedMenge(defaultMengen);
@@ -62,10 +64,24 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
     );
   }, [favoriten, searchTerm]);
 
+  // Konvertierungslogik für Favoriten
+  const getDisplayUnit = (item: FavoritItem) => {
+    if (item.unit === 'g' || item.unit === 'ml') {
+      return `100${item.unit}`;
+    } else if (item.unit === 'Stück' || item.unit === 'Portion') {
+      return `1 ${item.unit}${item.unitWeight ? ` (${item.unitWeight}g)` : ''}`;
+    }
+    return '100g';
+  };
+
   const handleSelect = (item: FavoritItem) => {
-    const menge = selectedMenge[item.name] || 100;
+    const menge = selectedMenge[item.name] || getDefaultMenge(item);
     onSelect(item, menge);
     onClose();
+  };
+  
+  const getDefaultMenge = (item: FavoritItem) => {
+    return item.unit === 'Stück' || item.unit === 'Portion' ? 1 : 100;
   };
 
   const updateMenge = (itemName: string, menge: number) => {
@@ -130,6 +146,9 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
                       <div style={itemNutritionStyle}>
                         {item.kcal} kcal • {item.eiweiss}g P • {item.fett}g F • {item.kh}g KH
                       </div>
+                      <div style={unitInfoStyle}>
+                        pro {getDisplayUnit(item)}
+                      </div>
                     </div>
 
                     {/* Menge Input */}
@@ -142,7 +161,7 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
                         min="1"
                         step="1"
                       />
-                      <span style={mengeUnitStyle}>g</span>
+                      <span style={mengeUnitStyle}>{item.unit}</span>
                     </div>
 
                     {/* Add Button */}
@@ -285,6 +304,13 @@ const itemNutritionStyle: React.CSSProperties = {
   color: '#aaa',
   fontSize: 12,
   lineHeight: 1.2,
+};
+
+const unitInfoStyle: React.CSSProperties = {
+  color: '#888',
+  fontSize: 10,
+  fontStyle: 'italic',
+  marginTop: 2,
 };
 
 const mengeContainerStyle: React.CSSProperties = {

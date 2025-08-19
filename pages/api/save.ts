@@ -8,13 +8,40 @@ function parseDecimal(input: unknown): number {
   return typeof input === "number" ? input : NaN;
 }
 
+// Konvertiert zu Basis-Werten (pro 100g/100ml) für Favoriten-Speicherung
+function toBase100Values(kcal: number, eiweiss: number, fett: number, kh: number, 
+                        unit: string, menge: number, unitWeight?: number): 
+                        {kcal: number, eiweiss: number, fett: number, kh: number} {
+  let actualGrams: number;
+  
+  if (unit === 'g' || unit === 'ml') {
+    actualGrams = menge;
+  } else if (unit === 'Stück' || unit === 'Portion') {
+    actualGrams = menge * (unitWeight || 1);
+  } else {
+    actualGrams = menge; // Fallback
+  }
+  
+  // Konvertiere zu pro 100g Basis
+  const factor = 100 / actualGrams;
+  
+  return {
+    kcal: kcal * factor,
+    eiweiss: eiweiss * factor,
+    fett: fett * factor,
+    kh: kh * factor
+  };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { name, kcal, eiweiss, fett, kh, uhrzeit } = req.body;
+  const { name, kcal, eiweiss, fett, kh, uhrzeit, unit, unitWeight, menge } = req.body;
 
   const kcalVal = parseDecimal(kcal);
   const eiweissVal = parseDecimal(eiweiss);
   const fettVal = parseDecimal(fett);
   const khVal = parseDecimal(kh);
+  const mengeVal = parseDecimal(menge);
+  const unitWeightVal = unitWeight ? parseDecimal(unitWeight) : undefined;
 
   if (
     !name ||
@@ -57,12 +84,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const exists = values.map(v => v.toLowerCase()).includes(name.toLowerCase());
 
     if (!exists) {
+      // Konvertiere zu Basis-Werten für Favoriten-Speicherung
+      const baseValues = toBase100Values(kcalVal, eiweissVal, fettVal, khVal, unit || 'g', mengeVal || 1, unitWeightVal);
+      
       await sheets.spreadsheets.values.append({
         spreadsheetId: process.env.GOOGLE_SHEET_ID,
-        range: "Favoriten!A:E",
+        range: "Favoriten!A:G", // Erweitert um Einheit und Einheitsgewicht
         valueInputOption: "USER_ENTERED",
         requestBody: {
-          values: [[name.toLowerCase(), kcalVal, eiweissVal, fettVal, khVal]],
+          values: [[
+            name.toLowerCase(), 
+            baseValues.kcal, 
+            baseValues.eiweiss, 
+            baseValues.fett, 
+            baseValues.kh,
+            unit || 'g',
+            unitWeightVal || ''
+          ]],
         },
       });
     }
