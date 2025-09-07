@@ -150,7 +150,7 @@ export default function RezeptBuilder({ isOpen, onClose, onUseRecipe }: Props) {
       } else {
         alert(`❌ Foto konnte nicht analysiert werden: ${data.error || 'Unbekannter Fehler'}`);
       }
-    } catch (error) {
+    } catch {
       alert('❌ Netzwerk Fehler beim Foto-Upload');
     }
   };
