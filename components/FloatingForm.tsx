@@ -447,37 +447,6 @@ const fotoButtonStyle: React.CSSProperties = {
   alignItems: 'center', justifyContent: 'center',
   cursor: 'pointer',
 };
-const rowStyle: React.CSSProperties = {
-  display: 'flex', alignItems: 'center',
-  gap: 4,   // kleiner Abstand zwischen Input und Berechnung
-  marginBottom: 6,
-};
-const calcStyle: React.CSSProperties = {
-  fontSize: 14,
-  fontWeight: 'bold',
-  color: '#ccc',
-  minWidth: 60,
-  textAlign: 'right',
-};
-const macroGroup: React.CSSProperties = {
-  display: 'flex', alignItems: 'center',
-  gap: 4,   // kleiner Abstand zwischen Macro-Input und Berechnung
-};
-const macroLabel: React.CSSProperties = {
-  fontSize: 12, color: '#aaa',
-};
-const macroInput: React.CSSProperties = {
-  width: 40, padding: 4, fontSize: 12,
-  borderRadius: 6, border: '1px solid #555',
-  backgroundColor: '#1e1e1e', color: '#fff',
-};
-const calcMacroStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 'bold',
-  color: '#ccc',
-  width: 32,
-  textAlign: 'right',
-};
 const nutritionRowStyle: React.CSSProperties = {
   display: 'flex',
   gap: 8,
