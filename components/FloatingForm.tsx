@@ -150,14 +150,19 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     }
   };
 
-  const handleUseRecipe = (name: string, totalKcal: number, totalEiweiss: number, totalFett: number, totalKh: number) => {
+  const handleUseRecipe = (name: string, totalKcal: number, totalEiweiss: number, totalFett: number, totalKh: number, totalWeight: number) => {
     setName(name);
-    // Set the values as if they were for 100g, since we want to use them directly
-    setBasisKcal(String(totalKcal));
-    setBasisEiweiss(String(totalEiweiss));
-    setBasisFett(String(totalFett));
-    setBasisKh(String(totalKh));
-    setMenge('100');
+    // Calculate per-100g values based on total weight
+    const per100gKcal = totalWeight > 0 ? (totalKcal * 100) / totalWeight : 0;
+    const per100gEiweiss = totalWeight > 0 ? (totalEiweiss * 100) / totalWeight : 0;
+    const per100gFett = totalWeight > 0 ? (totalFett * 100) / totalWeight : 0;
+    const per100gKh = totalWeight > 0 ? (totalKh * 100) / totalWeight : 0;
+    
+    setBasisKcal(String(per100gKcal.toFixed(1)));
+    setBasisEiweiss(String(per100gEiweiss.toFixed(1)));
+    setBasisFett(String(per100gFett.toFixed(1)));
+    setBasisKh(String(per100gKh.toFixed(1)));
+    setMenge(String(totalWeight));
     setSelectedUnit('g');
     setUnitWeight('');
   };

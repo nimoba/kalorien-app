@@ -21,7 +21,7 @@ interface Ingredient {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onUseRecipe: (name: string, totalKcal: number, totalEiweiss: number, totalFett: number, totalKh: number) => void;
+  onUseRecipe: (name: string, totalKcal: number, totalEiweiss: number, totalFett: number, totalKh: number, totalWeight: number) => void;
 }
 
 export default function RezeptBuilder({ isOpen, onClose, onUseRecipe }: Props) {
@@ -66,6 +66,15 @@ export default function RezeptBuilder({ isOpen, onClose, onUseRecipe }: Props) {
   const getTotalEiweiss = () => ingredients.reduce((sum, ing) => sum + ing.eiweiss, 0);
   const getTotalFett = () => ingredients.reduce((sum, ing) => sum + ing.fett, 0);
   const getTotalKh = () => ingredients.reduce((sum, ing) => sum + ing.kh, 0);
+  const getTotalWeight = () => ingredients.reduce((sum, ing) => {
+    // Convert all ingredients to grams for total weight
+    if (ing.unit === 'g' || ing.unit === 'ml') {
+      return sum + ing.menge;
+    } else if ((ing.unit === 'Stück' || ing.unit === 'Portion') && ing.unitWeight) {
+      return sum + (ing.menge * ing.unitWeight);
+    }
+    return sum + ing.menge; // fallback
+  }, 0);
 
   const clearForm = () => {
     setName('');
@@ -201,12 +210,19 @@ export default function RezeptBuilder({ isOpen, onClose, onUseRecipe }: Props) {
       return;
     }
     
+    const totalWeight = getTotalWeight();
+    if (totalWeight === 0) {
+      alert('❌ Gesamtgewicht des Rezepts ist 0g');
+      return;
+    }
+    
     onUseRecipe(
       `Rezept: ${rezeptName}`,
       getTotalKcal(),
       getTotalEiweiss(),
       getTotalFett(),
-      getTotalKh()
+      getTotalKh(),
+      totalWeight
     );
     
     // Reset form
@@ -446,6 +462,9 @@ export default function RezeptBuilder({ isOpen, onClose, onUseRecipe }: Props) {
                 <span>P: {getTotalEiweiss().toFixed(1)}g</span>
                 <span>F: {getTotalFett().toFixed(1)}g</span>
                 <span>KH: {getTotalKh().toFixed(1)}g</span>
+              </div>
+              <div style={{ ...totalsRowStyle, marginTop: 8, fontSize: 12, color: '#aaa' }}>
+                <span>Gesamtgewicht: {getTotalWeight().toFixed(1)}g</span>
               </div>
             </div>
 
