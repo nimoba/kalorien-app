@@ -271,56 +271,57 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           style={inputStyle}
         />
 
-        {/* Basiswerte pro 100g + Berechnung */}
-        <label>Kalorien (pro 100 g):</label>
-        <div style={rowStyle}>
-          <input
-            value={basisKcal}
-            onChange={e => setBasisKcal(e.target.value)}
-            onBlur={() => setBasisKcal(parseNum(basisKcal).toFixed(1))}
-            inputMode="decimal"
-            pattern="[0-9.,]*"
-            style={inputStyle}
-          />
-          <span style={calcStyle}>{calcKcal().toFixed(1)} kcal</span>
-        </div>
-
-        <div style={rowStyle}>
-          <div style={macroGroup}>
-            <label style={macroLabel}>KH/100g:</label>
+        {/* Nährwerte pro 100g */}
+        <label>Nährwerte pro 100g:</label>
+        
+        <div style={nutritionRowStyle}>
+          <div style={nutritionGroupStyle}>
+            <label style={nutritionLabelStyle}>Kcal:</label>
             <input
-              value={basisKh}
-              onChange={e => setBasisKh(e.target.value)}
-              onBlur={() => setBasisKh(parseNum(basisKh).toFixed(1))}
+              value={basisKcal}
+              onChange={e => setBasisKcal(e.target.value)}
+              onBlur={() => setBasisKcal(parseNum(basisKcal).toFixed(1))}
               inputMode="decimal"
               pattern="[0-9.,]*"
-              style={macroInput}
+              style={nutritionInputStyle}
             />
-            <span style={calcMacroStyle}>{calcKh().toFixed(1)}</span>
+            <span style={calcNutritionStyle}>{calcKcal().toFixed(1)}</span>
           </div>
-          <div style={macroGroup}>
-            <label style={macroLabel}>F/100g:</label>
-            <input
-              value={basisFett}
-              onChange={e => setBasisFett(e.target.value)}
-              onBlur={() => setBasisFett(parseNum(basisFett).toFixed(1))}
-              inputMode="decimal"
-              pattern="[0-9.,]*"
-              style={macroInput}
-            />
-            <span style={calcMacroStyle}>{calcFett().toFixed(1)}</span>
-          </div>
-          <div style={macroGroup}>
-            <label style={macroLabel}>P/100g:</label>
+          <div style={nutritionGroupStyle}>
+            <label style={nutritionLabelStyle}>P:</label>
             <input
               value={basisEiweiss}
               onChange={e => setBasisEiweiss(e.target.value)}
               onBlur={() => setBasisEiweiss(parseNum(basisEiweiss).toFixed(1))}
               inputMode="decimal"
               pattern="[0-9.,]*"
-              style={macroInput}
+              style={nutritionInputStyle}
             />
-            <span style={calcMacroStyle}>{calcEiweiss().toFixed(1)}</span>
+            <span style={calcNutritionStyle}>{calcEiweiss().toFixed(1)}</span>
+          </div>
+          <div style={nutritionGroupStyle}>
+            <label style={nutritionLabelStyle}>F:</label>
+            <input
+              value={basisFett}
+              onChange={e => setBasisFett(e.target.value)}
+              onBlur={() => setBasisFett(parseNum(basisFett).toFixed(1))}
+              inputMode="decimal"
+              pattern="[0-9.,]*"
+              style={nutritionInputStyle}
+            />
+            <span style={calcNutritionStyle}>{calcFett().toFixed(1)}</span>
+          </div>
+          <div style={nutritionGroupStyle}>
+            <label style={nutritionLabelStyle}>KH:</label>
+            <input
+              value={basisKh}
+              onChange={e => setBasisKh(e.target.value)}
+              onBlur={() => setBasisKh(parseNum(basisKh).toFixed(1))}
+              inputMode="decimal"
+              pattern="[0-9.,]*"
+              style={nutritionInputStyle}
+            />
+            <span style={calcNutritionStyle}>{calcKh().toFixed(1)}</span>
           </div>
         </div>
 
@@ -476,4 +477,37 @@ const calcMacroStyle: React.CSSProperties = {
   color: '#ccc',
   width: 32,
   textAlign: 'right',
+};
+const nutritionRowStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 8,
+  marginBottom: 8,
+};
+const nutritionGroupStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  flex: 1,
+};
+const nutritionLabelStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: '#aaa',
+  marginBottom: 4,
+};
+const nutritionInputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: 4,
+  fontSize: 12,
+  borderRadius: 4,
+  border: '1px solid #555',
+  backgroundColor: '#1e1e1e',
+  color: '#fff',
+  textAlign: 'center',
+  marginBottom: 4,
+};
+const calcNutritionStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 'bold',
+  color: '#ccc',
+  textAlign: 'center',
 };
