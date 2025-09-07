@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import BarcodeScanner from './BarcodeScanner';
 import FavoritenModal from './FavoritenModal';
+import RezeptBuilder from './RezeptBuilder';
 import type { FavoritItem } from './FavoritenModal';
 
 interface Props {
@@ -24,6 +25,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [gptInput, setGptInput] = useState('');
   const [scanning, setScanning] = useState(false);
   const [showFavoriten, setShowFavoriten] = useState(false);
+  const [showRezeptBuilder, setShowRezeptBuilder] = useState(false);
   
   // === Einheiten-System ===
   const [selectedUnit, setSelectedUnit] = useState<'g' | 'ml' | 'Stück' | 'Portion'>('g');
@@ -148,6 +150,18 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     }
   };
 
+  const handleUseRecipe = (name: string, totalKcal: number, totalEiweiss: number, totalFett: number, totalKh: number) => {
+    setName(name);
+    // Set the values as if they were for 100g, since we want to use them directly
+    setBasisKcal(String(totalKcal));
+    setBasisEiweiss(String(totalEiweiss));
+    setBasisFett(String(totalFett));
+    setBasisKh(String(totalKh));
+    setMenge('100');
+    setSelectedUnit('g');
+    setUnitWeight('');
+  };
+
   const handleSpeichern = async () => {
     const now = new Date();
     const uhrzeit = now.toLocaleTimeString('de-DE', {
@@ -185,6 +199,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         style={formStyle}
       >
         <button onClick={onClose} style={closeStyle}>✕</button>
+        <button onClick={() => setShowRezeptBuilder(true)} style={recipeButtonStyle}>📖</button>
         <h2 style={{ marginBottom: 12 }}>➕ Neuer Eintrag</h2>
 
         {/* GPT Beschreibung */}
@@ -371,6 +386,13 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           onClose={() => setShowFavoriten(false)}
           onSelect={handleFavorit}
         />
+
+        {/* Rezept Builder */}
+        <RezeptBuilder
+          isOpen={showRezeptBuilder}
+          onClose={() => setShowRezeptBuilder(false)}
+          onUseRecipe={handleUseRecipe}
+        />
       </motion.div>
     </div>
   );
@@ -393,6 +415,13 @@ const closeStyle: React.CSSProperties = {
   position: 'absolute', top: 12, right: 12,
   background: 'transparent', color: '#fff',
   fontSize: 20, border: 'none', cursor: 'pointer',
+};
+const recipeButtonStyle: React.CSSProperties = {
+  position: 'absolute', top: 12, right: 48,
+  background: '#f39c12', color: '#fff',
+  fontSize: 16, border: 'none', cursor: 'pointer',
+  borderRadius: 6, padding: '4px 8px',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
 };
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: 8, fontSize: 14,
