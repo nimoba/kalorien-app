@@ -335,14 +335,14 @@ export default function RezeptBuilder({ isOpen, onClose, onUseRecipe }: Props) {
               <span style={calcStyle}>{calcKcal().toFixed(1)}</span>
             </div>
             <div style={nutritionGroupStyle}>
-              <label style={nutritionLabelStyle}>P:</label>
+              <label style={nutritionLabelStyle}>KH:</label>
               <input
-                value={basisEiweiss}
-                onChange={e => setBasisEiweiss(e.target.value)}
+                value={basisKh}
+                onChange={e => setBasisKh(e.target.value)}
                 inputMode="decimal"
                 style={nutritionInputStyle}
               />
-              <span style={calcStyle}>{calcEiweiss().toFixed(1)}</span>
+              <span style={calcStyle}>{calcKh().toFixed(1)}</span>
             </div>
             <div style={nutritionGroupStyle}>
               <label style={nutritionLabelStyle}>F:</label>
@@ -355,14 +355,14 @@ export default function RezeptBuilder({ isOpen, onClose, onUseRecipe }: Props) {
               <span style={calcStyle}>{calcFett().toFixed(1)}</span>
             </div>
             <div style={nutritionGroupStyle}>
-              <label style={nutritionLabelStyle}>KH:</label>
+              <label style={nutritionLabelStyle}>P:</label>
               <input
-                value={basisKh}
-                onChange={e => setBasisKh(e.target.value)}
+                value={basisEiweiss}
+                onChange={e => setBasisEiweiss(e.target.value)}
                 inputMode="decimal"
                 style={nutritionInputStyle}
               />
-              <span style={calcStyle}>{calcKh().toFixed(1)}</span>
+              <span style={calcStyle}>{calcEiweiss().toFixed(1)}</span>
             </div>
           </div>
 

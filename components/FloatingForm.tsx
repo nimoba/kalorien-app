@@ -288,16 +288,16 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <span style={calcNutritionStyle}>{calcKcal().toFixed(1)}</span>
           </div>
           <div style={nutritionGroupStyle}>
-            <label style={nutritionLabelStyle}>P:</label>
+            <label style={nutritionLabelStyle}>KH:</label>
             <input
-              value={basisEiweiss}
-              onChange={e => setBasisEiweiss(e.target.value)}
-              onBlur={() => setBasisEiweiss(parseNum(basisEiweiss).toFixed(1))}
+              value={basisKh}
+              onChange={e => setBasisKh(e.target.value)}
+              onBlur={() => setBasisKh(parseNum(basisKh).toFixed(1))}
               inputMode="decimal"
               pattern="[0-9.,]*"
               style={nutritionInputStyle}
             />
-            <span style={calcNutritionStyle}>{calcEiweiss().toFixed(1)}</span>
+            <span style={calcNutritionStyle}>{calcKh().toFixed(1)}</span>
           </div>
           <div style={nutritionGroupStyle}>
             <label style={nutritionLabelStyle}>F:</label>
@@ -312,16 +312,16 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <span style={calcNutritionStyle}>{calcFett().toFixed(1)}</span>
           </div>
           <div style={nutritionGroupStyle}>
-            <label style={nutritionLabelStyle}>KH:</label>
+            <label style={nutritionLabelStyle}>P:</label>
             <input
-              value={basisKh}
-              onChange={e => setBasisKh(e.target.value)}
-              onBlur={() => setBasisKh(parseNum(basisKh).toFixed(1))}
+              value={basisEiweiss}
+              onChange={e => setBasisEiweiss(e.target.value)}
+              onBlur={() => setBasisEiweiss(parseNum(basisEiweiss).toFixed(1))}
               inputMode="decimal"
               pattern="[0-9.,]*"
               style={nutritionInputStyle}
             />
-            <span style={calcNutritionStyle}>{calcKh().toFixed(1)}</span>
+            <span style={calcNutritionStyle}>{calcEiweiss().toFixed(1)}</span>
           </div>
         </div>
 
