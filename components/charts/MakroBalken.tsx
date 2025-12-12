@@ -1,5 +1,6 @@
 'use client';
 
+import React from "react";
 import { motion } from "framer-motion";
 import { getStatusInfo } from "../../utils/colors";
 
@@ -9,7 +10,7 @@ interface Props {
   ziel: number;
 }
 
-const macroIcons: Record<string, { icon: JSX.Element; color: string }> = {
+const macroIcons: Record<string, { icon: React.ReactElement; color: string }> = {
   "Kohlenhydrate": {
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

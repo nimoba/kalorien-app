@@ -1,5 +1,6 @@
 'use client';
 
+import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -12,7 +13,7 @@ const tabs = [
 ];
 
 // Custom SVG Icons for cleaner look
-const icons: Record<string, JSX.Element> = {
+const icons: Record<string, React.ReactElement> = {
   dashboard: (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="7" height="9" rx="1" />
@@ -99,7 +100,7 @@ function TabButton({
   onClick,
 }: {
   label: string;
-  icon: JSX.Element;
+  icon: React.ReactElement;
   active: boolean;
   onClick: () => void;
 }) {
