@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from "framer-motion";
-import { getProgressColor, getStatusInfo } from "../../utils/colors";
+import { getStatusInfo } from "../../utils/colors";
 
 interface Props {
   label: string;

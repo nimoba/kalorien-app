@@ -108,7 +108,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
       } else {
         alert(`Foto konnte nicht analysiert werden: ${data.error || 'Unbekannter Fehler'}`);
       }
-    } catch (error) {
+    } catch {
       setIsLoading(false);
       alert('Netzwerk Fehler beim Foto-Upload');
     }

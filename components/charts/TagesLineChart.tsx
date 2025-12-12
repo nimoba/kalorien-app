@@ -14,7 +14,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import type { ChartData, ChartOptions } from 'chart.js';
 import { motion } from 'framer-motion';
-import { getProgressColor, getStatusInfo } from '../../utils/colors';
+import { getStatusInfo } from '../../utils/colors';
 
 ChartJS.register(
   LineElement,

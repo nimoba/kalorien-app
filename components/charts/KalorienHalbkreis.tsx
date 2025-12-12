@@ -20,7 +20,6 @@ interface Props {
 
 export function KalorienHalbkreis({ gegessen, ziel }: Props) {
   const rest = Math.max(ziel - gegessen, 0);
-  const progress = Math.min(gegessen / ziel, 1);
   const pct = gegessen / ziel;
   const statusInfo = getStatusInfo(pct);
   const remaining = ziel - gegessen;
