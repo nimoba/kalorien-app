@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export interface FavoritItem {
   name: string;
@@ -10,7 +10,7 @@ export interface FavoritItem {
   fett: number;
   kh: number;
   unit: 'g' | 'ml' | 'Stück' | 'Portion';
-  unitWeight?: number; // grams per unit (for Stück/Portion)
+  unitWeight?: number;
 }
 
 interface Props {
@@ -32,14 +32,11 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
       const data = await res.json();
       if (res.ok) {
         setFavoriten(data);
-        // Standardmenge basierend auf Einheit setzen
         const defaultMengen = data.reduce((acc: Record<string, number>, item: FavoritItem) => {
           acc[item.name] = item.unit === 'Stück' || item.unit === 'Portion' ? 1 : 100;
           return acc;
         }, {});
         setSelectedMenge(defaultMengen);
-      } else {
-        console.error('Fehler beim Laden der Favoriten:', data.error);
       }
     } catch (error) {
       console.error('Fehler beim Laden der Favoriten:', error);
@@ -47,24 +44,18 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
     setLoading(false);
   }, []);
 
-  // Favoriten laden beim Öffnen
   useEffect(() => {
     if (isOpen && favoriten.length === 0) {
       loadFavoriten();
     }
   }, [isOpen, favoriten.length, loadFavoriten]);
 
-  // Live-Filterung basierend auf Suchbegriff
   const filteredFavoriten = useMemo(() => {
     if (!searchTerm.trim()) return favoriten;
-    
     const term = searchTerm.toLowerCase();
-    return favoriten.filter(item => 
-      item.name.toLowerCase().includes(term)
-    );
+    return favoriten.filter(item => item.name.toLowerCase().includes(term));
   }, [favoriten, searchTerm]);
 
-  // Konvertierungslogik für Favoriten
   const getDisplayUnit = (item: FavoritItem) => {
     if (item.unit === 'g' || item.unit === 'ml') {
       return `100${item.unit}`;
@@ -79,83 +70,121 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
     onSelect(item, menge);
     onClose();
   };
-  
+
   const getDefaultMenge = (item: FavoritItem) => {
     return item.unit === 'Stück' || item.unit === 'Portion' ? 1 : 100;
   };
 
   const updateMenge = (itemName: string, menge: number) => {
-    setSelectedMenge(prev => ({
-      ...prev,
-      [itemName]: menge
-    }));
+    setSelectedMenge(prev => ({ ...prev, [itemName]: menge }));
   };
 
   if (!isOpen) return null;
 
   return (
-    <div style={overlayStyle}>
+    <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.2 }}
-        style={modalStyle}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={overlayStyle}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
       >
-        {/* Header */}
-        <div style={headerStyle}>
-          <h2 style={{ margin: 0, color: '#fff', fontSize: 20 }}>⭐ Favoriten</h2>
-          <button onClick={onClose} style={closeButtonStyle}>✕</button>
-        </div>
-
-        {/* Suchfeld */}
-        <div style={{ padding: '0 20px', marginBottom: 16 }}>
-          <input
-            type="text"
-            placeholder="🔍 Favoriten durchsuchen..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={searchInputStyle}
-            autoFocus
-          />
-        </div>
-
-        {/* Content */}
-        <div style={contentStyle}>
-          {loading ? (
-            <div style={loadingStyle}>⏳ Lade Favoriten...</div>
-          ) : filteredFavoriten.length === 0 ? (
-            <div style={emptyStyle}>
-              {searchTerm ? '🔍 Keine Treffer gefunden' : '📝 Noch keine Favoriten vorhanden'}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          style={modalStyle}
+        >
+          {/* Header */}
+          <div style={headerStyle}>
+            <div style={headerIconStyle}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
             </div>
-          ) : (
-            <div style={listStyle}>
-                {filteredFavoriten.map((item) => (
+            <div>
+              <h2 style={titleStyle}>Favoriten</h2>
+              <p style={subtitleStyle}>{favoriten.length} gespeicherte Einträge</p>
+            </div>
+            <button onClick={onClose} style={closeButtonStyle}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Search */}
+          <div style={searchContainerStyle}>
+            <div style={searchInputWrapperStyle}>
+              <svg style={searchIconStyle} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Favoriten durchsuchen..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={searchInputStyle}
+                autoFocus
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} style={clearSearchStyle}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div style={contentStyle}>
+            {loading ? (
+              <div style={loadingContainerStyle}>
+                <div style={spinnerStyle} />
+                <span style={{ color: '#71717a', fontSize: 14 }}>Lade Favoriten...</span>
+              </div>
+            ) : filteredFavoriten.length === 0 ? (
+              <div style={emptyStyle}>
+                <div style={emptyIconStyle}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </div>
+                <p style={{ color: '#71717a', margin: 0 }}>
+                  {searchTerm ? 'Keine Treffer gefunden' : 'Noch keine Favoriten vorhanden'}
+                </p>
+              </div>
+            ) : (
+              <div style={listStyle}>
+                {filteredFavoriten.map((item, index) => (
                   <motion.div
                     key={item.name}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ delay: index * 0.03 }}
                     style={itemStyle}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    {/* Item Info */}
                     <div style={itemInfoStyle}>
                       <div style={itemNameStyle}>{item.name}</div>
-                      <div style={itemNutritionStyle}>
-                        {item.kcal} kcal • {item.eiweiss}g P • {item.fett}g F • {item.kh}g KH
+                      <div style={nutritionRowStyle}>
+                        <span style={{ ...nutritionTagStyle, color: '#f97316' }}>{item.kcal} kcal</span>
+                        <span style={{ ...nutritionTagStyle, color: '#ef4444' }}>{item.eiweiss}g P</span>
+                        <span style={{ ...nutritionTagStyle, color: '#eab308' }}>{item.fett}g F</span>
+                        <span style={{ ...nutritionTagStyle, color: '#6366f1' }}>{item.kh}g KH</span>
                       </div>
-                      <div style={unitInfoStyle}>
-                        pro {getDisplayUnit(item)}
-                      </div>
+                      <div style={unitInfoStyle}>pro {getDisplayUnit(item)}</div>
                     </div>
 
-                    {/* Menge Input */}
                     <div style={mengeContainerStyle}>
                       <input
                         type="number"
-                        value={selectedMenge[item.name] || 100}
+                        value={selectedMenge[item.name] || getDefaultMenge(item)}
                         onChange={(e) => updateMenge(item.name, Number(e.target.value))}
                         style={mengeInputStyle}
                         min="1"
@@ -164,90 +193,148 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
                       <span style={mengeUnitStyle}>{item.unit}</span>
                     </div>
 
-                    {/* Add Button */}
-                    <button
+                    <motion.button
                       onClick={() => handleSelect(item)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       style={addButtonStyle}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#2980b9';
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = '#36a2eb';
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
                     >
-                      ➕
-                    </button>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </motion.button>
                   </motion.div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          {!loading && favoriten.length > 0 && (
+            <div style={footerStyle}>
+              <span style={{ color: '#52525b', fontSize: 12 }}>
+                {filteredFavoriten.length} von {favoriten.length} Favoriten
+              </span>
             </div>
           )}
-        </div>
-
-        {/* Footer mit Infos */}
-        {!loading && favoriten.length > 0 && (
-          <div style={footerStyle}>
-            {filteredFavoriten.length} von {favoriten.length} Favoriten
-          </div>
-        )}
+        </motion.div>
       </motion.div>
-    </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </AnimatePresence>
   );
 }
 
-// === STYLES ===
+// Styles
 const overlayStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0, left: 0, right: 0, bottom: 0,
-  background: 'rgba(0,0,0,0.8)',
+  background: 'rgba(0, 0, 0, 0.8)',
+  backdropFilter: 'blur(8px)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  zIndex: 1000,
-  backdropFilter: 'blur(4px)',
+  zIndex: 1001,
+  padding: 20,
 };
 
 const modalStyle: React.CSSProperties = {
-  backgroundColor: '#2a2a2a',
-  borderRadius: 16,
-  width: '95%',
+  background: '#1c1c26',
+  borderRadius: 24,
+  width: '100%',
   maxWidth: 500,
   maxHeight: '85vh',
-  boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
 };
 
 const headerStyle: React.CSSProperties = {
   display: 'flex',
-  justifyContent: 'space-between',
   alignItems: 'center',
+  gap: 14,
   padding: '20px 20px 16px 20px',
-  borderBottom: '1px solid #444',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+};
+
+const headerIconStyle: React.CSSProperties = {
+  width: 44,
+  height: 44,
+  borderRadius: 14,
+  background: 'rgba(251, 191, 36, 0.15)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+const titleStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 18,
+  fontWeight: 600,
+  color: '#fff',
+  letterSpacing: '-0.02em',
+};
+
+const subtitleStyle: React.CSSProperties = {
+  margin: '2px 0 0 0',
+  fontSize: 13,
+  color: '#71717a',
 };
 
 const closeButtonStyle: React.CSSProperties = {
-  background: 'transparent',
+  marginLeft: 'auto',
+  width: 36,
+  height: 36,
+  borderRadius: 10,
   border: 'none',
-  color: '#fff',
-  fontSize: 24,
+  background: 'rgba(255, 255, 255, 0.05)',
+  color: '#71717a',
   cursor: 'pointer',
-  padding: 4,
-  borderRadius: 4,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+const searchContainerStyle: React.CSSProperties = {
+  padding: '16px 20px',
+};
+
+const searchInputWrapperStyle: React.CSSProperties = {
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+};
+
+const searchIconStyle: React.CSSProperties = {
+  position: 'absolute',
+  left: 14,
 };
 
 const searchInputStyle: React.CSSProperties = {
   width: '100%',
-  padding: 12,
-  fontSize: 16,
-  borderRadius: 12,
-  border: '2px solid #444',
-  backgroundColor: '#1e1e1e',
+  padding: '12px 40px 12px 44px',
+  fontSize: 15,
+  borderRadius: 14,
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  background: 'rgba(255, 255, 255, 0.03)',
   color: '#fff',
   outline: 'none',
-  transition: 'border-color 0.2s',
+};
+
+const clearSearchStyle: React.CSSProperties = {
+  position: 'absolute',
+  right: 12,
+  width: 24,
+  height: 24,
+  borderRadius: 6,
+  border: 'none',
+  background: 'rgba(255, 255, 255, 0.1)',
+  color: '#71717a',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 };
 
 const contentStyle: React.CSSProperties = {
@@ -257,34 +344,59 @@ const contentStyle: React.CSSProperties = {
   flexDirection: 'column',
 };
 
-const loadingStyle: React.CSSProperties = {
+const loadingContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
   padding: 40,
-  textAlign: 'center',
-  color: '#ccc',
-  fontSize: 16,
+  gap: 16,
+};
+
+const spinnerStyle: React.CSSProperties = {
+  width: 32,
+  height: 32,
+  border: '3px solid rgba(251, 191, 36, 0.2)',
+  borderTopColor: '#fbbf24',
+  borderRadius: '50%',
+  animation: 'spin 1s linear infinite',
 };
 
 const emptyStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
   padding: 40,
+  gap: 16,
   textAlign: 'center',
-  color: '#888',
-  fontSize: 16,
+};
+
+const emptyIconStyle: React.CSSProperties = {
+  width: 64,
+  height: 64,
+  borderRadius: 16,
+  background: 'rgba(255, 255, 255, 0.03)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 };
 
 const listStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
-  padding: '8px 0',
+  padding: '0 12px 12px 12px',
 };
 
 const itemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  padding: '12px 20px',
-  borderBottom: '1px solid #333',
+  padding: 14,
+  marginBottom: 8,
+  background: 'rgba(255, 255, 255, 0.03)',
+  borderRadius: 14,
+  border: '1px solid rgba(255, 255, 255, 0.06)',
   gap: 12,
-  transition: 'background-color 0.2s',
-  cursor: 'pointer',
 };
 
 const itemInfoStyle: React.CSSProperties = {
@@ -294,66 +406,70 @@ const itemInfoStyle: React.CSSProperties = {
 
 const itemNameStyle: React.CSSProperties = {
   color: '#fff',
-  fontSize: 16,
-  fontWeight: '500',
-  marginBottom: 4,
+  fontSize: 15,
+  fontWeight: 500,
+  marginBottom: 6,
   textTransform: 'capitalize',
 };
 
-const itemNutritionStyle: React.CSSProperties = {
-  color: '#aaa',
-  fontSize: 12,
-  lineHeight: 1.2,
+const nutritionRowStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 8,
+  flexWrap: 'wrap',
+  marginBottom: 4,
+};
+
+const nutritionTagStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 600,
 };
 
 const unitInfoStyle: React.CSSProperties = {
-  color: '#888',
-  fontSize: 10,
-  fontStyle: 'italic',
-  marginTop: 2,
+  color: '#52525b',
+  fontSize: 11,
 };
 
 const mengeContainerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: 4,
+  gap: 6,
 };
 
 const mengeInputStyle: React.CSSProperties = {
-  width: 60,
-  padding: 6,
+  width: 56,
+  padding: '8px 6px',
   fontSize: 14,
-  borderRadius: 6,
-  border: '1px solid #555',
-  backgroundColor: '#1e1e1e',
+  fontWeight: 600,
+  borderRadius: 10,
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  background: 'rgba(255, 255, 255, 0.03)',
   color: '#fff',
   textAlign: 'center',
+  outline: 'none',
 };
 
 const mengeUnitStyle: React.CSSProperties = {
-  color: '#aaa',
+  color: '#71717a',
   fontSize: 12,
+  minWidth: 28,
 };
 
 const addButtonStyle: React.CSSProperties = {
-  backgroundColor: '#36a2eb',
+  width: 40,
+  height: 40,
+  borderRadius: 12,
   border: 'none',
-  borderRadius: 8,
+  background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
   color: '#fff',
-  fontSize: 16,
-  width: 36,
-  height: 36,
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  transition: 'all 0.2s',
+  flexShrink: 0,
 };
 
 const footerStyle: React.CSSProperties = {
-  padding: '12px 20px',
-  borderTop: '1px solid #444',
-  color: '#888',
-  fontSize: 12,
+  padding: '14px 20px',
+  borderTop: '1px solid rgba(255, 255, 255, 0.06)',
   textAlign: 'center',
 };
