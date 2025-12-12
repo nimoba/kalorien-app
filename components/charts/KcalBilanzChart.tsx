@@ -1,11 +1,12 @@
 'use client';
 
-import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
+import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler } from "chart.js";
 import { Line } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
-ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
 interface KcalHistoryEntry {
   datum: string;
@@ -33,27 +34,41 @@ export default function KcalBilanzChart({ refresh }: { refresh: number }) {
 
   if (loading) {
     return (
-      <div style={{
-        backgroundColor: '#1e1e1e',
-        borderRadius: 12,
-        padding: 20,
-        marginTop: 24,
-      }}>
-        <p style={{ color: "#fff", margin: 0 }}>⏳ Lade Bilanz-Daten...</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          background: 'rgba(28, 28, 38, 0.6)',
+          borderRadius: 20,
+          padding: 20,
+          marginTop: 20,
+          border: '1px solid rgba(255, 255, 255, 0.06)',
+          height: 300,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: 12 }} />
+      </motion.div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div style={{
-        backgroundColor: '#1e1e1e',
-        borderRadius: 12,
-        padding: 20,
-        marginTop: 24,
-      }}>
-        <p style={{ color: "#fff", margin: 0 }}>Keine Bilanz-Daten verfügbar</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          background: 'rgba(28, 28, 38, 0.6)',
+          borderRadius: 20,
+          padding: 20,
+          marginTop: 20,
+          border: '1px solid rgba(255, 255, 255, 0.06)',
+        }}
+      >
+        <p style={{ color: "#71717a", margin: 0, textAlign: 'center' }}>Keine Bilanz-Daten verfügbar</p>
+      </motion.div>
     );
   }
 
@@ -61,42 +76,44 @@ export default function KcalBilanzChart({ refresh }: { refresh: number }) {
   const gegessen = data.map((e) => e.kcalKumuliert);
   const verbraucht = data.map((e) => e.verbrauchKumuliert);
 
-  // Aktuelle Bilanz berechnen
   const letzteGegessen = gegessen[gegessen.length - 1] || 0;
   const letzteVerbraucht = verbraucht[verbraucht.length - 1] || 0;
   const bilanz = letzteGegessen - letzteVerbraucht;
 
-  const bewertung = () => {
-    if (bilanz <= -3000) return { farbe: '#27ae60', text: 'Excellent! 🎉' };
-    if (bilanz <= -1000) return { farbe: '#2ecc71', text: 'Sehr gut! 💪' };
-    if (bilanz <= 1000) return { farbe: '#f39c12', text: 'Ausgeglichen 👍' };
-    return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️' };
+  const getStatusInfo = () => {
+    if (bilanz <= -3000) return { color: '#10b981', text: 'Excellent', gradient: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' };
+    if (bilanz <= -1000) return { color: '#22c55e', text: 'Good', gradient: 'linear-gradient(135deg, #22c55e 0%, #4ade80 100%)' };
+    if (bilanz <= 1000) return { color: '#f59e0b', text: 'Balance', gradient: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)' };
+    return { color: '#ef4444', text: 'Watch out', gradient: 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)' };
   };
 
-  const bewertungInfo = bewertung();
+  const statusInfo = getStatusInfo();
 
   const chartData: ChartData<"line"> = {
     labels,
     datasets: [
       {
-        label: "Gegessen (kumuliert)",
+        label: "Gegessen",
         data: gegessen,
-        borderColor: "#8e44ad",
-        backgroundColor: "#8e44ad33",
-        tension: 0.25,
-        borderWidth: 3,
-        pointRadius: 3,
-        pointHoverRadius: 6,
+        borderColor: "#8b5cf6",
+        backgroundColor: "rgba(139, 92, 246, 0.1)",
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        pointBackgroundColor: "#8b5cf6",
       },
       {
-        label: "Verbrauch (kumuliert)",
+        label: "Verbrauch",
         data: verbraucht,
-        borderColor: "#36a2eb",
+        borderColor: "#6366f1",
         borderDash: [4, 4],
-        tension: 0.15,
-        borderWidth: 3,
-        pointRadius: 3,
-        pointHoverRadius: 6,
+        tension: 0.4,
+        borderWidth: 2,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        pointBackgroundColor: "#6366f1",
       },
     ],
   };
@@ -105,97 +122,157 @@ export default function KcalBilanzChart({ refresh }: { refresh: number }) {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { 
+      legend: {
         position: "bottom",
         labels: {
-          color: '#fff',
-          font: { size: 12 },
+          color: '#71717a',
+          font: { size: 11, family: 'Inter, sans-serif' },
           usePointStyle: true,
+          padding: 16,
         },
       },
       tooltip: {
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'rgba(28, 28, 38, 0.95)',
         titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: '#444',
+        bodyColor: '#a1a1aa',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
         borderWidth: 1,
+        padding: 12,
+        cornerRadius: 10,
       },
     },
     scales: {
       x: {
-        ticks: { color: '#ccc', font: { size: 11 } },
-        grid: { color: '#333' },
+        ticks: { color: '#52525b', font: { size: 10, family: 'Inter, sans-serif' } },
+        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+        border: { display: false },
       },
-      y: { 
+      y: {
         beginAtZero: false,
-        ticks: { color: '#ccc', font: { size: 11 } },
-        grid: { color: '#333' },
+        ticks: { color: '#52525b', font: { size: 10, family: 'Inter, sans-serif' } },
+        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+        border: { display: false },
       },
     },
   };
 
   return (
-    <div style={{
-      backgroundColor: '#1e1e1e',
-      borderRadius: 12,
-      padding: 20,
-      marginTop: 24,
-      border: `2px solid ${bewertungInfo.farbe}33`,
-    }}>
-      {/* Content */}
-      <div>
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16
-        }}>
-          <div>
-            <h3 style={{ 
-              marginBottom: 4, 
-              color: '#fff',
-              fontSize: 18,
-              fontWeight: 'bold'
-            }}>
-              📉 Kcal-Bilanz (Verbrauch vs. Realität)
-            </h3>
-            {/* Bilanz-Anzeige unter dem Titel */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              marginTop: 4
-            }}>
-              <span style={{
-                fontSize: 20,
-                fontWeight: 'bold',
-                color: bewertungInfo.farbe,
-              }}>
-                {bilanz >= 0 ? '+' : ''}{Math.round(bilanz)} kcal
-              </span>
-              <span style={{
-                fontSize: 12,
-                color: '#aaa',
-              }}>
-                {bilanz < 0 ? 'Defizit' : 'Überschuss'}
-              </span>
-            </div>
-          </div>
-          <span style={{
-            fontSize: 12,
-            color: bewertungInfo.farbe,
-            fontWeight: 'bold'
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.3 }}
+      style={{
+        background: 'rgba(28, 28, 38, 0.6)',
+        borderRadius: 20,
+        padding: 20,
+        marginTop: 20,
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+      }}
+    >
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 16
+      }}>
+        <div>
+          <h3 style={{
+            margin: 0,
+            color: '#fff',
+            fontSize: 16,
+            fontWeight: 600,
+            letterSpacing: '-0.02em',
           }}>
-            {bewertungInfo.text}
+            Kalorienbilanz
+          </h3>
+          <p style={{
+            margin: '4px 0 0 0',
+            fontSize: 12,
+            color: '#71717a',
+          }}>
+            Verbrauch vs. Aufnahme
+          </p>
+        </div>
+        <div style={{
+          background: `${statusInfo.color}15`,
+          padding: '5px 10px',
+          borderRadius: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+        }}>
+          <div style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: statusInfo.color,
+          }} />
+          <span style={{
+            fontSize: 11,
+            color: statusInfo.color,
+            fontWeight: 600,
+          }}>
+            {statusInfo.text}
           </span>
         </div>
+      </div>
 
-        {/* Chart */}
-        <div style={{ height: '300px' }}>
-          <Line data={chartData} options={options} />
+      {/* Bilanz Display */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.03)',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <div>
+          <div style={{
+            fontSize: 28,
+            fontWeight: 700,
+            color: statusInfo.color,
+            letterSpacing: '-0.03em',
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            {bilanz >= 0 ? '+' : ''}{Math.round(bilanz).toLocaleString()}
+          </div>
+          <div style={{
+            fontSize: 12,
+            color: '#71717a',
+            marginTop: 2,
+          }}>
+            kcal {bilanz < 0 ? 'Defizit' : 'Überschuss'}
+          </div>
+        </div>
+        <div style={{
+          width: 48,
+          height: 48,
+          borderRadius: 14,
+          background: `${statusInfo.color}15`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          {bilanz < 0 ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={statusInfo.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+              <polyline points="17 18 23 18 23 12" />
+            </svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={statusInfo.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+              <polyline points="17 6 23 6 23 12" />
+            </svg>
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Chart */}
+      <div style={{ height: '240px' }}>
+        <Line data={chartData} options={options} />
+      </div>
+    </motion.div>
   );
 }
