@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, KeyboardEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BarcodeScanner from './BarcodeScanner';
 import FavoritenModal from './FavoritenModal';
@@ -26,6 +26,40 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [selectedUnit, setSelectedUnit] = useState<'g' | 'ml' | 'Stück' | 'Portion'>('g');
   const [unitWeight, setUnitWeight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // Helper: advance to next input on Enter (mobile "Weiter" button)
+  const handleNextField = (e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = formRef.current;
+      if (!form) return;
+      const inputs = Array.from(
+        form.querySelectorAll<HTMLElement>('input:not([type="file"]), select')
+      );
+      const idx = inputs.indexOf(e.currentTarget as HTMLElement);
+      if (idx >= 0 && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
+      } else {
+        // Last field: blur to dismiss keyboard
+        (e.currentTarget as HTMLElement).blur();
+      }
+    }
+  };
+
+  // Reset menge to sensible default when switching unit types
+  const handleUnitChange = (newUnit: typeof selectedUnit) => {
+    const wasWeight = selectedUnit === 'g' || selectedUnit === 'ml';
+    const isWeight = newUnit === 'g' || newUnit === 'ml';
+    setSelectedUnit(newUnit);
+    if (wasWeight && !isWeight) {
+      // g/ml → Stück/Portion: reset to 1
+      setMenge('1');
+    } else if (!wasWeight && isWeight) {
+      // Stück/Portion → g/ml: reset to 100
+      setMenge('100');
+    }
+  };
 
   const parseNum = (v: string) => parseFloat(v.replace(',', '.') || '0');
   const mengeVal = parseNum(menge) || 0;
@@ -171,6 +205,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   return (
     <div style={overlayStyle}>
       <motion.div
+        ref={formRef}
         initial={{ opacity: 0, y: 50, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 50, scale: 0.95 }}
@@ -244,13 +279,13 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         {/* Product Name */}
         <div style={sectionStyle}>
           <label style={labelStyle}>Produktname</label>
-          <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} placeholder="Name eingeben" />
+          <input value={name} onChange={e => setName(e.target.value)} onKeyDown={handleNextField} enterKeyHint="next" style={inputStyle} placeholder="Name eingeben" />
         </div>
 
         {/* Unit Selection */}
         <div style={sectionStyle}>
           <label style={labelStyle}>Einheit</label>
-          <select value={selectedUnit} onChange={e => setSelectedUnit(e.target.value as typeof selectedUnit)} style={selectStyle}>
+          <select value={selectedUnit} onChange={e => handleUnitChange(e.target.value as typeof selectedUnit)} onKeyDown={handleNextField} style={selectStyle}>
             <option value="g">Gramm (g)</option>
             <option value="ml">Milliliter (ml)</option>
             <option value="Stück">Stück</option>
@@ -265,6 +300,8 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <input
               value={unitWeight}
               onChange={e => setUnitWeight(e.target.value)}
+              onKeyDown={handleNextField}
+              enterKeyHint="next"
               placeholder={selectedUnit === 'Stück' ? 'z.B. 180 für 1 Apfel' : 'z.B. 350 für 1 Portion'}
               inputMode="decimal"
               style={inputStyle}
@@ -275,7 +312,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         {/* Amount */}
         <div style={sectionStyle}>
           <label style={labelStyle}>Menge ({selectedUnit})</label>
-          <input value={menge} onChange={e => setMenge(e.target.value)} inputMode="decimal" style={inputStyle} />
+          <input value={menge} onChange={e => setMenge(e.target.value)} onKeyDown={handleNextField} enterKeyHint="next" inputMode="decimal" style={inputStyle} />
         </div>
 
         {/* Nutrition Grid */}
@@ -284,15 +321,17 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
           <div style={nutritionGridStyle}>
             {[
               { key: 'kcal', label: 'Kcal', value: basisKcal, setValue: setBasisKcal, calc: calcKcal, color: '#6366f1' },
-              { key: 'kh', label: 'KH', value: basisKh, setValue: setBasisKh, calc: calcKh, color: '#f59e0b' },
               { key: 'fett', label: 'Fett', value: basisFett, setValue: setBasisFett, calc: calcFett, color: '#ec4899' },
+              { key: 'kh', label: 'KH', value: basisKh, setValue: setBasisKh, calc: calcKh, color: '#f59e0b' },
               { key: 'eiweiss', label: 'Protein', value: basisEiweiss, setValue: setBasisEiweiss, calc: calcEiweiss, color: '#6366f1' },
-            ].map(item => (
+            ].map((item, idx, arr) => (
               <div key={item.key} style={nutritionItemStyle}>
                 <span style={{ ...nutritionLabelStyle, color: item.color }}>{item.label}</span>
                 <input
                   value={item.value}
                   onChange={e => item.setValue(e.target.value)}
+                  onKeyDown={handleNextField}
+                  enterKeyHint={idx === arr.length - 1 ? 'done' : 'next'}
                   inputMode="decimal"
                   style={nutritionInputStyle}
                 />
