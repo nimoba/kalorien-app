@@ -2,16 +2,9 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { FavoritItem } from '../types/favorit';
 
-export interface FavoritItem {
-  name: string;
-  kcal: number;
-  eiweiss: number;
-  fett: number;
-  kh: number;
-  unit: 'g' | 'ml' | 'Stück' | 'Portion';
-  unitWeight?: number;
-}
+export type { FavoritItem };
 
 interface Props {
   isOpen: boolean;
@@ -162,12 +155,9 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
               </div>
             ) : (
               <div style={listStyle}>
-                {filteredFavoriten.map((item, index) => (
-                  <motion.div
+                {filteredFavoriten.map((item) => (
+                  <div
                     key={item.name}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03 }}
                     style={itemStyle}
                   >
                     <div style={itemInfoStyle}>
@@ -193,18 +183,16 @@ export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
                       <span style={mengeUnitStyle}>{item.unit}</span>
                     </div>
 
-                    <motion.button
+                    <button
                       onClick={() => handleSelect(item)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
                       style={addButtonStyle}
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                       </svg>
-                    </motion.button>
-                  </motion.div>
+                    </button>
+                  </div>
                 ))}
               </div>
             )}

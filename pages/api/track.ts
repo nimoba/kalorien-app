@@ -43,20 +43,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: "Kein Text erhalten" });
 
-  // const auth = new google.auth.GoogleAuth({
-  //   credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || ""),
-  //   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  // });
-
-  // const sheets = google.sheets({ version: "v4", auth });
-
-  // 🧠 Favoriten zuerst prüfen
+  // Favoriten zuerst prüfen
   const favorit = await checkFavoritMatch(text);
   if (favorit) {
     return res.status(200).json({ source: "favoriten", ...favorit });
   }
 
-  // 🤖 GPT-Fallback
+  // GPT-Fallback
   const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -101,8 +94,17 @@ Die Nährwerte sind immer **pro 100 g/ml**.`,
   });
 
   const gptJson = await openaiRes.json();
-  const content = gptJson.choices[0].message.content.replace(/```json|```/g, "").trim();
-  const werte = JSON.parse(content);
 
-  return res.status(200).json({ source: "gpt", ...werte });
+  try {
+    const content = gptJson.choices?.[0]?.message?.content;
+    if (!content) {
+      return res.status(500).json({ error: "Keine Antwort von GPT erhalten" });
+    }
+    const cleaned = content.replace(/```json|```/g, "").trim();
+    const werte = JSON.parse(cleaned);
+    return res.status(200).json({ source: "gpt", ...werte });
+  } catch {
+    console.error("GPT-Antwort konnte nicht geparst werden:", gptJson);
+    return res.status(500).json({ error: "GPT-Antwort konnte nicht verarbeitet werden" });
+  }
 }
