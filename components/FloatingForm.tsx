@@ -5,7 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import BarcodeScanner from './BarcodeScanner';
 import FavoritenModal from './FavoritenModal';
 import RezeptBuilder from './RezeptBuilder';
+import KantineModal from './KantineModal';
 import type { FavoritItem } from './FavoritenModal';
+import type { KantineDish } from './KantineModal';
 
 interface Props {
   onClose: () => void;
@@ -23,6 +25,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
   const [scanning, setScanning] = useState(false);
   const [showFavoriten, setShowFavoriten] = useState(false);
   const [showRezeptBuilder, setShowRezeptBuilder] = useState(false);
+  const [showKantine, setShowKantine] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<'g' | 'ml' | 'Stück' | 'Portion'>('g');
   const [unitWeight, setUnitWeight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -159,6 +162,17 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
     if (item.unitWeight) setUnitWeight(String(item.unitWeight));
   };
 
+  const handleKantine = (dish: KantineDish) => {
+    setName(dish.name);
+    setBasisKcal(String(dish.kcal));
+    setBasisEiweiss(String(dish.eiweiss));
+    setBasisFett(String(dish.fett));
+    setBasisKh(String(dish.kh));
+    setSelectedUnit('g');
+    setUnitWeight('');
+    setMenge(dish.gewicht > 0 ? String(dish.gewicht) : '100');
+  };
+
   const handleUseRecipe = (name: string, totalKcal: number, totalEiweiss: number, totalFett: number, totalKh: number, totalWeight: number) => {
     setName(name);
     const per100gKcal = totalWeight > 0 ? (totalKcal * 100) / totalWeight : 0;
@@ -219,10 +233,17 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
             <p style={subtitleStyle}>Mahlzeit hinzufügen</p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => setShowRezeptBuilder(true)} style={iconButtonStyle}>
+            <button onClick={() => setShowRezeptBuilder(true)} style={iconButtonStyle} aria-label="Rezept">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+            </button>
+            <button onClick={() => setShowKantine(true)} style={kantineButtonStyle} aria-label="Kantine">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 11h18" />
+                <path d="M12 3v8" />
+                <path d="M6 11v9a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-9" />
               </svg>
             </button>
             <button onClick={onClose} style={closeButtonStyle}>
@@ -401,6 +422,7 @@ export default function FloatingForm({ onClose, onRefresh }: Props) {
         {/* Modals */}
         <FavoritenModal isOpen={showFavoriten} onClose={() => setShowFavoriten(false)} onSelect={handleFavorit} />
         <RezeptBuilder isOpen={showRezeptBuilder} onClose={() => setShowRezeptBuilder(false)} onUseRecipe={handleUseRecipe} />
+        <KantineModal isOpen={showKantine} onClose={() => setShowKantine(false)} onSelect={handleKantine} />
 
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </motion.div>
@@ -451,6 +473,13 @@ const closeButtonStyle: React.CSSProperties = {
 
 const iconButtonStyle: React.CSSProperties = {
   background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+  border: 'none', borderRadius: 10, width: 36, height: 36,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  cursor: 'pointer', color: '#fff',
+};
+
+const kantineButtonStyle: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)',
   border: 'none', borderRadius: 10, width: 36, height: 36,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   cursor: 'pointer', color: '#fff',
