@@ -1,73 +1,64 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { google } from "googleapis";
+import { getSheets, SHEET_ID } from "../../lib/sheets";
+import { todayDE, isoToDE, isValidISO, normalizeDE } from "../../lib/date";
 
 function parseDecimal(input: unknown): string {
-  if (typeof input === "string") {
-    return input.replace(",", ".");
-  }
+  if (typeof input === "string") return input.replace(",", ".");
   return input?.toString() || "";
 }
 
+// Saves a weight entry. One row per day: a second entry on the same day replaces the first.
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { gewicht, fett, muskel, wasser } = req.body; // ✨ wasser hinzugefügt
+  const { gewicht, fett, muskel, wasser, datum } = req.body;
 
-  if (!gewicht) {
-    return res.status(400).json({ error: "Gewicht ist erforderlich" });
-  }
+  if (!gewicht) return res.status(400).json({ error: "Gewicht ist erforderlich" });
 
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || ""),
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-    });
+    const sheets = getSheets();
+    const day = isValidISO(datum) ? isoToDE(datum) : todayDE();
 
-    const sheets = google.sheets({ version: "v4", auth });
-    const sheetId = process.env.GOOGLE_SHEET_ID;
-    const range = "Gewicht!A2:E"; // ✨ Erweitert um Spalte E für Wasser
+    const prev = await sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID(), range: "Gewicht!A:E" });
+    const rows = prev.data.values || [];
+    const last = rows.length > 1 ? rows[rows.length - 1] : undefined;
 
-    // 🧠 Fallback: Letzten bekannten Fett/Muskel/Wasser-Wert holen
-    const prevData = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range,
-    });
-
-    const zeilen = prevData.data.values || [];
-    const letzte = zeilen[zeilen.length - 1];
-
-    const fallbackFett = letzte?.[2] || "";
-    const fallbackMuskel = letzte?.[3] || "";
-    const fallbackWasser = letzte?.[4] || ""; // ✨ Fallback für Wasser
-
-    const heute = new Date().toLocaleDateString("de-DE", {timeZone: "Europe/Berlin"});
     const neueZeile = [
-      heute,
+      day,
       parseDecimal(gewicht),
-      fett != null && fett !== "" ? parseDecimal(fett) : fallbackFett,
-      muskel != null && muskel !== "" ? parseDecimal(muskel) : fallbackMuskel,
-      wasser != null && wasser !== "" ? parseDecimal(wasser) : fallbackWasser, // ✨ Wasser
+      fett != null && fett !== "" ? parseDecimal(fett) : (last?.[2] || ""),
+      muskel != null && muskel !== "" ? parseDecimal(muskel) : (last?.[3] || ""),
+      wasser != null && wasser !== "" ? parseDecimal(wasser) : (last?.[4] || ""),
     ];
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: sheetId,
-      range: "Gewicht!A:E", // ✨ Erweitert um Spalte E
-      valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [neueZeile],
-      },
-    });
-
-    // Update habit tracking
-    try {
-      await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/habits`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ foodLogged: false, weightLogged: true })
+    const existingIdx = rows.findIndex((r, i) => i > 0 && r[0] && normalizeDE(String(r[0])) === normalizeDE(day));
+    if (existingIdx >= 0) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID(),
+        range: `Gewicht!A${existingIdx + 1}:E${existingIdx + 1}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [neueZeile] },
       });
-    } catch {
-      // Habit tracking is optional, don't fail the main operation
+    } else {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SHEET_ID(),
+        range: "Gewicht!A:E",
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [neueZeile] },
+      });
     }
 
-    res.status(200).json({ success: true });
+    if (day === todayDE()) {
+      try {
+        await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/habits`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ foodLogged: false, weightLogged: true }),
+        });
+      } catch {
+        // optional
+      }
+    }
+
+    res.status(200).json({ success: true, replaced: existingIdx >= 0 });
   } catch (err) {
     console.error("Fehler beim Speichern des Gewichts:", err);
     res.status(500).json({ error: "Speichern fehlgeschlagen" });

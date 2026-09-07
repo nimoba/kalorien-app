@@ -359,7 +359,7 @@ export default function TransactionForm({ onClose, onRefresh, editTransaction }:
 const overlayStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0, left: 0, right: 0, bottom: 0,
-  background: 'rgba(0, 0, 0, 0.8)',
+  background: 'rgba(0, 0, 0, 0.6)',
   backdropFilter: 'blur(8px)',
   display: 'flex',
   alignItems: 'center',
@@ -369,7 +369,7 @@ const overlayStyle: React.CSSProperties = {
 };
 
 const modalStyle: React.CSSProperties = {
-  background: '#1c1c26',
+  background: 'var(--surface)',
   borderRadius: 24,
   width: '100%',
   maxWidth: 480,
@@ -386,7 +386,7 @@ const headerStyle: React.CSSProperties = {
   borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
   position: 'sticky',
   top: 0,
-  background: '#1c1c26',
+  background: 'var(--surface)',
   zIndex: 1,
 };
 
@@ -471,7 +471,7 @@ const fieldStyle: React.CSSProperties = {
 const fieldIconStyle: React.CSSProperties = {
   width: 40,
   height: 40,
-  borderRadius: 12,
+  borderRadius: 16,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

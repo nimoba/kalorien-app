@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import Icon from "../ui/Icon";
 
 interface Props {
   onOpenTransaction: () => void;
@@ -9,100 +10,28 @@ interface Props {
 }
 
 export default function FinanceFloatingActionMenu({ onOpenTransaction, onOpenSettings }: Props) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleMenu = () => setIsOpen(!isOpen);
-
+  const [open, setOpen] = useState(false);
+  const pick = (fn: () => void) => { setOpen(false); fn(); };
   return (
-    <div style={{ 
-      position: "fixed", 
-      bottom: "80px", 
-      right: "24px", 
-      zIndex: 1000 
-    }}>
+    <>
       <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.button
-              initial={{ opacity: 0, scale: 0.3, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.3, y: 20 }}
-              transition={{ duration: 0.2, delay: 0.1 }}
-              onClick={onOpenSettings}
-              style={{
-                position: "absolute",
-                bottom: "140px",
-                right: 0,
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                backgroundColor: "#ff9800",
-                border: "none",
-                color: "#fff",
-                fontSize: "24px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 16px rgba(255, 152, 0, 0.4)",
-              }}
-            >
-              ⚙️
+        {open && <motion.div className="fab-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setOpen(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {open && (
+          <div className="fab-menu">
+            <motion.button className="fab-item" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} onClick={() => pick(onOpenSettings)}>
+              <Icon name="settings" size={18} /> Einstellungen
             </motion.button>
-
-            <motion.button
-              initial={{ opacity: 0, scale: 0.3, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.3, y: 20 }}
-              transition={{ duration: 0.2 }}
-              onClick={onOpenTransaction}
-              style={{
-                position: "absolute",
-                bottom: "70px",
-                right: 0,
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                backgroundColor: "#4caf50",
-                border: "none",
-                color: "#fff",
-                fontSize: "24px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 16px rgba(76, 175, 80, 0.4)",
-              }}
-            >
-              💳
+            <motion.button className="fab-item" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ delay: 0.03 }} onClick={() => pick(onOpenTransaction)}>
+              <Icon name="euro" size={18} /> Buchung
             </motion.button>
-          </>
+          </div>
         )}
       </AnimatePresence>
-
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={toggleMenu}
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: "50%",
-          backgroundColor: "#36a2eb",
-          border: "none",
-          color: "#fff",
-          fontSize: "28px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 4px 16px rgba(54, 162, 235, 0.4)",
-          transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
-          transition: "transform 0.2s ease",
-        }}
-      >
-        {isOpen ? "✕" : "+"}
-      </motion.button>
-    </div>
+      <button className="fab" style={{ background: '#3b82f6', color: '#fff', boxShadow: '0 8px 24px rgba(59,130,246,0.3)' }} onClick={() => setOpen((v) => !v)} aria-label="Hinzufügen">
+        <motion.span animate={{ rotate: open ? 45 : 0 }} style={{ display: 'flex' }}><Icon name="plus" size={26} strokeWidth={2.4} /></motion.span>
+      </button>
+    </>
   );
 }

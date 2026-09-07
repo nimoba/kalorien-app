@@ -1,463 +1,121 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import Sheet from './ui/Sheet';
+import Icon from './ui/Icon';
+import { Input } from './ui/Field';
+import { EmptyState } from './ui/Card';
+import { useToast } from './ui/Toast';
 import type { FavoritItem } from '../types/favorit';
 
 export type { FavoritItem };
 
 interface Props {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
   onSelect: (item: FavoritItem, menge: number) => void;
+  zIndex?: number;
 }
 
-export default function FavoritenModal({ isOpen, onClose, onSelect }: Props) {
-  const [favoriten, setFavoriten] = useState<FavoritItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMenge, setSelectedMenge] = useState<Record<string, number>>({});
+const defaultMenge = (item: FavoritItem) => (item.unit === 'Stück' || item.unit === 'Portion' ? 1 : 100);
 
-  const loadFavoriten = useCallback(async () => {
+export default function FavoritenModal({ open, onClose, onSelect, zIndex }: Props) {
+  const toast = useToast();
+  const [favoriten, setFavoriten] = useState<FavoritItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [mengen, setMengen] = useState<Record<string, string>>({});
+  const [confirm, setConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/favoriten');
       const data = await res.json();
-      if (res.ok) {
-        setFavoriten(data);
-        const defaultMengen = data.reduce((acc: Record<string, number>, item: FavoritItem) => {
-          acc[item.name] = item.unit === 'Stück' || item.unit === 'Portion' ? 1 : 100;
-          return acc;
-        }, {});
-        setSelectedMenge(defaultMengen);
-      }
-    } catch (error) {
-      console.error('Fehler beim Laden der Favoriten:', error);
+      if (res.ok) { setFavoriten(data); setLoaded(true); }
+    } catch {
+      toast.error('Favoriten konnten nicht geladen werden');
     }
     setLoading(false);
-  }, []);
+  }, [toast]);
 
-  useEffect(() => {
-    if (isOpen && favoriten.length === 0) {
-      loadFavoriten();
+  useEffect(() => { if (open && !loaded) load(); }, [open, loaded, load]);
+  useEffect(() => { if (open) { setSearch(''); setConfirm(null); } }, [open]);
+
+  const filtered = useMemo(() => {
+    const t = search.trim().toLowerCase();
+    return t ? favoriten.filter((f) => f.name.toLowerCase().includes(t)) : favoriten;
+  }, [favoriten, search]);
+
+  const remove = async (name: string) => {
+    setDeleting(name);
+    try {
+      const res = await fetch('/api/favoriten', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+      if (!res.ok) throw new Error();
+      setFavoriten((prev) => prev.filter((f) => f.name !== name));
+      toast.success('Favorit entfernt');
+    } catch {
+      toast.error('Löschen fehlgeschlagen');
     }
-  }, [isOpen, favoriten.length, loadFavoriten]);
-
-  const filteredFavoriten = useMemo(() => {
-    if (!searchTerm.trim()) return favoriten;
-    const term = searchTerm.toLowerCase();
-    return favoriten.filter(item => item.name.toLowerCase().includes(term));
-  }, [favoriten, searchTerm]);
-
-  const getDisplayUnit = (item: FavoritItem) => {
-    if (item.unit === 'g' || item.unit === 'ml') {
-      return `100${item.unit}`;
-    } else if (item.unit === 'Stück' || item.unit === 'Portion') {
-      return `1 ${item.unit}${item.unitWeight ? ` (${item.unitWeight}g)` : ''}`;
-    }
-    return '100g';
+    setDeleting(null);
+    setConfirm(null);
   };
-
-  const handleSelect = (item: FavoritItem) => {
-    const menge = selectedMenge[item.name] || getDefaultMenge(item);
-    onSelect(item, menge);
-    onClose();
-  };
-
-  const getDefaultMenge = (item: FavoritItem) => {
-    return item.unit === 'Stück' || item.unit === 'Portion' ? 1 : 100;
-  };
-
-  const updateMenge = (itemName: string, menge: number) => {
-    setSelectedMenge(prev => ({ ...prev, [itemName]: menge }));
-  };
-
-  if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        style={overlayStyle}
-        onClick={(e) => e.target === e.currentTarget && onClose()}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          style={modalStyle}
-        >
-          {/* Header */}
-          <div style={headerStyle}>
-            <div style={headerIconStyle}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-            </div>
-            <div>
-              <h2 style={titleStyle}>Favoriten</h2>
-              <p style={subtitleStyle}>{favoriten.length} gespeicherte Einträge</p>
-            </div>
-            <button onClick={onClose} style={closeButtonStyle}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Search */}
-          <div style={searchContainerStyle}>
-            <div style={searchInputWrapperStyle}>
-              <svg style={searchIconStyle} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Favoriten durchsuchen..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={searchInputStyle}
-                autoFocus
-              />
-              {searchTerm && (
-                <button onClick={() => setSearchTerm('')} style={clearSearchStyle}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Content */}
-          <div style={contentStyle}>
-            {loading ? (
-              <div style={loadingContainerStyle}>
-                <div style={spinnerStyle} />
-                <span style={{ color: '#71717a', fontSize: 14 }}>Lade Favoriten...</span>
-              </div>
-            ) : filteredFavoriten.length === 0 ? (
-              <div style={emptyStyle}>
-                <div style={emptyIconStyle}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
-                </div>
-                <p style={{ color: '#71717a', margin: 0 }}>
-                  {searchTerm ? 'Keine Treffer gefunden' : 'Noch keine Favoriten vorhanden'}
-                </p>
-              </div>
-            ) : (
-              <div style={listStyle}>
-                {filteredFavoriten.map((item) => (
-                  <div
-                    key={item.name}
-                    style={itemStyle}
+    <Sheet open={open} onClose={onClose} title="Favoriten" subtitle={`${favoriten.length} gespeichert`} zIndex={zIndex}>
+      <Input prefixIcon="search" placeholder="Suchen…" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus />
+      <div style={{ marginTop: 10 }}>
+        {loading ? (
+          <div className="stack"><div className="skeleton" style={{ height: 56 }} /><div className="skeleton" style={{ height: 56 }} /><div className="skeleton" style={{ height: 56 }} /></div>
+        ) : filtered.length === 0 ? (
+          <EmptyState icon={<Icon name="star" size={24} />} text={search ? 'Nichts gefunden' : 'Noch keine Favoriten. Beim Eintragen den Stern setzen.'} />
+        ) : (
+          <div className="list">
+            {filtered.map((item) => {
+              const mengeStr = mengen[item.name] ?? String(defaultMenge(item));
+              const menge = parseFloat(mengeStr.replace(',', '.')) || 0;
+              const grams = item.unit === 'g' || item.unit === 'ml' ? menge : menge * (item.unitWeight || 0);
+              const kcal = Math.round((item.kcal / 100) * grams);
+              const isConfirm = confirm === item.name;
+              return (
+                <div key={item.name} className="list-item">
+                  <button
+                    className="list-item-main"
+                    style={{ background: 'none', border: 'none', textAlign: 'left', padding: 0, cursor: 'pointer' }}
+                    onClick={() => onSelect(item, menge || defaultMenge(item))}
                   >
-                    <div style={itemInfoStyle}>
-                      <div style={itemNameStyle}>{item.name}</div>
-                      <div style={nutritionRowStyle}>
-                        <span style={{ ...nutritionTagStyle, color: '#f97316' }}>{item.kcal} kcal</span>
-                        <span style={{ ...nutritionTagStyle, color: '#ef4444' }}>{item.eiweiss}g P</span>
-                        <span style={{ ...nutritionTagStyle, color: '#eab308' }}>{item.fett}g F</span>
-                        <span style={{ ...nutritionTagStyle, color: '#6366f1' }}>{item.kh}g KH</span>
+                    <div className="list-item-title" style={{ textTransform: 'capitalize' }}>{item.name}</div>
+                    <div className="list-item-sub num">
+                      {Math.round(item.kcal)} kcal / {item.unit === 'g' || item.unit === 'ml' ? `100 ${item.unit}` : `100 g`}
+                      {item.unitWeight ? ` · 1 ${item.unit} ≈ ${item.unitWeight} g` : ''}
+                    </div>
+                  </button>
+                  {isConfirm ? (
+                    <div className="row" style={{ gap: 4 }}>
+                      <button className="btn btn-danger btn-sm" onClick={() => remove(item.name)} disabled={deleting === item.name}>
+                        {deleting === item.name ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Löschen'}
+                      </button>
+                      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setConfirm(null)}><Icon name="x" size={16} /></button>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ width: 88, flexShrink: 0 }}>
+                        <Input small className="input-center" value={mengeStr} onChange={(e) => setMengen((m) => ({ ...m, [item.name]: e.target.value }))} inputMode="decimal" suffix={item.unit} />
                       </div>
-                      <div style={unitInfoStyle}>pro {getDisplayUnit(item)}</div>
-                    </div>
-
-                    <div style={mengeContainerStyle}>
-                      <input
-                        type="number"
-                        value={selectedMenge[item.name] || getDefaultMenge(item)}
-                        onChange={(e) => updateMenge(item.name, Number(e.target.value))}
-                        style={mengeInputStyle}
-                        min="1"
-                        step="1"
-                      />
-                      <span style={mengeUnitStyle}>{item.unit}</span>
-                    </div>
-
-                    <button
-                      onClick={() => handleSelect(item)}
-                      style={addButtonStyle}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+                      <div className="num small" style={{ width: 44, textAlign: 'right', fontWeight: 600 }}>{kcal}</div>
+                      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setConfirm(item.name)} aria-label="Entfernen" style={{ color: 'var(--text-3)' }}>
+                        <Icon name="trash" size={15} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
-
-          {/* Footer */}
-          {!loading && favoriten.length > 0 && (
-            <div style={footerStyle}>
-              <span style={{ color: '#52525b', fontSize: 12 }}>
-                {filteredFavoriten.length} von {favoriten.length} Favoriten
-              </span>
-            </div>
-          )}
-        </motion.div>
-      </motion.div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </AnimatePresence>
+        )}
+      </div>
+    </Sheet>
   );
 }
-
-// Styles
-const overlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  top: 0, left: 0, right: 0, bottom: 0,
-  background: 'rgba(0, 0, 0, 0.8)',
-  backdropFilter: 'blur(8px)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1001,
-  padding: 20,
-};
-
-const modalStyle: React.CSSProperties = {
-  background: '#1c1c26',
-  borderRadius: 24,
-  width: '100%',
-  maxWidth: 500,
-  maxHeight: '85vh',
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-};
-
-const headerStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 14,
-  padding: '20px 20px 16px 20px',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-};
-
-const headerIconStyle: React.CSSProperties = {
-  width: 44,
-  height: 44,
-  borderRadius: 14,
-  background: 'rgba(251, 191, 36, 0.15)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const titleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: 18,
-  fontWeight: 600,
-  color: '#fff',
-  letterSpacing: '-0.02em',
-};
-
-const subtitleStyle: React.CSSProperties = {
-  margin: '2px 0 0 0',
-  fontSize: 13,
-  color: '#71717a',
-};
-
-const closeButtonStyle: React.CSSProperties = {
-  marginLeft: 'auto',
-  width: 36,
-  height: 36,
-  borderRadius: 10,
-  border: 'none',
-  background: 'rgba(255, 255, 255, 0.05)',
-  color: '#71717a',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const searchContainerStyle: React.CSSProperties = {
-  padding: '16px 20px',
-};
-
-const searchInputWrapperStyle: React.CSSProperties = {
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-};
-
-const searchIconStyle: React.CSSProperties = {
-  position: 'absolute',
-  left: 14,
-};
-
-const searchInputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 40px 12px 44px',
-  fontSize: 15,
-  borderRadius: 14,
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  background: 'rgba(255, 255, 255, 0.03)',
-  color: '#fff',
-  outline: 'none',
-};
-
-const clearSearchStyle: React.CSSProperties = {
-  position: 'absolute',
-  right: 12,
-  width: 24,
-  height: 24,
-  borderRadius: 6,
-  border: 'none',
-  background: 'rgba(255, 255, 255, 0.1)',
-  color: '#71717a',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const contentStyle: React.CSSProperties = {
-  flex: 1,
-  overflow: 'hidden',
-  display: 'flex',
-  flexDirection: 'column',
-};
-
-const loadingContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 40,
-  gap: 16,
-};
-
-const spinnerStyle: React.CSSProperties = {
-  width: 32,
-  height: 32,
-  border: '3px solid rgba(251, 191, 36, 0.2)',
-  borderTopColor: '#fbbf24',
-  borderRadius: '50%',
-  animation: 'spin 1s linear infinite',
-};
-
-const emptyStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 40,
-  gap: 16,
-  textAlign: 'center',
-};
-
-const emptyIconStyle: React.CSSProperties = {
-  width: 64,
-  height: 64,
-  borderRadius: 16,
-  background: 'rgba(255, 255, 255, 0.03)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const listStyle: React.CSSProperties = {
-  flex: 1,
-  overflowY: 'auto',
-  padding: '0 12px 12px 12px',
-};
-
-const itemStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  padding: 14,
-  marginBottom: 8,
-  background: 'rgba(255, 255, 255, 0.03)',
-  borderRadius: 14,
-  border: '1px solid rgba(255, 255, 255, 0.06)',
-  gap: 12,
-};
-
-const itemInfoStyle: React.CSSProperties = {
-  flex: 1,
-  minWidth: 0,
-};
-
-const itemNameStyle: React.CSSProperties = {
-  color: '#fff',
-  fontSize: 15,
-  fontWeight: 500,
-  marginBottom: 6,
-  textTransform: 'capitalize',
-};
-
-const nutritionRowStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: 8,
-  flexWrap: 'wrap',
-  marginBottom: 4,
-};
-
-const nutritionTagStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 600,
-};
-
-const unitInfoStyle: React.CSSProperties = {
-  color: '#52525b',
-  fontSize: 11,
-};
-
-const mengeContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-};
-
-const mengeInputStyle: React.CSSProperties = {
-  width: 56,
-  padding: '8px 6px',
-  fontSize: 14,
-  fontWeight: 600,
-  borderRadius: 10,
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  background: 'rgba(255, 255, 255, 0.03)',
-  color: '#fff',
-  textAlign: 'center',
-  outline: 'none',
-};
-
-const mengeUnitStyle: React.CSSProperties = {
-  color: '#71717a',
-  fontSize: 12,
-  minWidth: 28,
-};
-
-const addButtonStyle: React.CSSProperties = {
-  width: 40,
-  height: 40,
-  borderRadius: 12,
-  border: 'none',
-  background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
-  color: '#fff',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexShrink: 0,
-};
-
-const footerStyle: React.CSSProperties = {
-  padding: '14px 20px',
-  borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-  textAlign: 'center',
-};

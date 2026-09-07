@@ -1,269 +1,103 @@
 'use client';
 
 import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-  LineElement,
-  PointElement,
-  BarController,
-  LineController,
+  Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend, LineElement, PointElement, BarController, LineController,
 } from "chart.js";
 import { Chart } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
-import { motion } from "framer-motion";
-import { getProgressColor, getStatusInfo } from "../../utils/colors";
 import { useEffect, useState } from "react";
+import { chartScales, chartTooltip } from "../../utils/colors";
+import { Segmented } from "../ui/Field";
 
-ChartJS.register(
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-  LineElement,
-  PointElement,
-  BarController,
-  LineController
-);
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, LineElement, PointElement, BarController, LineController);
 
-interface Props {
-  refresh?: number;
-}
-
-interface HistoryEntry {
-  datum: string;
-  kalorien: number;
-  ziel: number;
-}
+interface Props { refresh?: number; }
+interface HistoryEntry { datum: string; kalorien: number; ziel: number; geloggt: boolean; }
+type Range = '7' | '30' | '90';
 
 export function WochenChart({ refresh }: Props) {
+  const [range, setRange] = useState<Range>('30');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/history")
-      .then((res) => res.json())
-      .then((data) => {
-        setHistory(data);
-        setLoading(false);
-      })
+    setLoading(true);
+    fetch(`/api/history?days=${range}`)
+      .then((r) => r.json())
+      .then((d) => { setHistory(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [refresh]);
+  }, [refresh, range]);
 
-  if (loading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{
-          background: 'rgba(28, 28, 38, 0.6)',
-          borderRadius: 20,
-          padding: 20,
-          marginTop: 20,
-          border: '1px solid rgba(255, 255, 255, 0.06)',
-          height: 300,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: 12 }} />
-      </motion.div>
-    );
-  }
+  // Aggregate to weeks for the 90-day view so bars stay readable
+  const rows = range === '90' ? aggregateWeeks(history) : history;
+  const logged = rows.filter((r) => r.geloggt);
+  const avg = logged.length ? Math.round(logged.reduce((s, r) => s + r.kalorien, 0) / logged.length) : 0;
+  const avgPct = logged.length ? logged.reduce((s, r) => s + (r.ziel ? r.kalorien / r.ziel : 0), 0) / logged.length : 0;
 
-  if (history.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{
-          background: 'rgba(28, 28, 38, 0.6)',
-          borderRadius: 20,
-          padding: 20,
-          marginTop: 20,
-          border: '1px solid rgba(255, 255, 255, 0.06)',
-        }}
-      >
-        <p style={{ color: "#71717a", margin: 0, textAlign: 'center' }}>Keine Verlaufsdaten verfügbar</p>
-      </motion.div>
-    );
-  }
-
-  const labels = history.map((e) => e.datum);
-  const daten = history.map((e) => e.kalorien);
-  const ziele = history.map((e) => e.ziel);
-  const barColors = daten.map((val, i) => getProgressColor(val / ziele[i]));
-
-  const durchschnittsProzent = history.reduce((sum, entry) => {
-    return sum + (entry.kalorien / entry.ziel);
-  }, 0) / history.length;
-
-  const statusInfo = getStatusInfo(durchschnittsProzent);
-  const avgCalories = Math.round(daten.reduce((a, b) => a + b, 0) / daten.length);
+  const labels = rows.map((r) => shortLabel(r.datum, range));
+  const colors = rows.map((r) => {
+    if (!r.geloggt) return 'rgba(255,255,255,0.06)';
+    const p = r.ziel ? r.kalorien / r.ziel : 0;
+    return p > 1.1 ? '#fb7185' : p >= 0.9 ? '#bef264' : '#71717a';
+  });
 
   const data: ChartData<"bar" | "line"> = {
     labels,
     datasets: [
-      {
-        type: "bar",
-        label: "Kalorien",
-        data: daten,
-        backgroundColor: barColors.map(c => c + '80'),
-        borderColor: barColors,
-        borderWidth: 1,
-        borderRadius: 6,
-      },
-      {
-        type: "line",
-        label: "Tagesziel",
-        data: ziele,
-        borderColor: "rgba(239, 68, 68, 0.6)",
-        borderDash: [5, 5],
-        pointRadius: 0,
-        borderWidth: 1.5,
-      },
+      { type: "bar", label: "kcal", data: rows.map((r) => r.kalorien), backgroundColor: colors, borderRadius: 4, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.8 },
+      { type: "line", label: "Ziel", data: rows.map((r) => r.ziel), borderColor: "rgba(255,255,255,0.3)", borderDash: [4, 5], pointRadius: 0, borderWidth: 1, stepped: true },
     ],
   };
 
   const options: ChartOptions<"bar" | "line"> = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: { duration: 300 },
     plugins: {
-      legend: {
-        position: "bottom",
-        labels: {
-          color: '#71717a',
-          font: { size: 11, family: 'Inter, sans-serif' },
-          usePointStyle: true,
-          padding: 16,
-        },
-      },
-      tooltip: {
-        backgroundColor: 'rgba(28, 28, 38, 0.95)',
-        titleColor: '#fff',
-        bodyColor: '#a1a1aa',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 10,
-      },
+      legend: { display: false },
+      tooltip: { ...chartTooltip(), callbacks: { label: (c) => `${c.dataset.label}: ${Math.round(Number(c.parsed.y))} kcal` } },
     },
-    scales: {
-      x: {
-        ticks: { color: '#52525b', font: { size: 10, family: 'Inter, sans-serif' } },
-        grid: { color: 'rgba(255, 255, 255, 0.04)' },
-        border: { display: false },
-      },
-      y: {
-        beginAtZero: true,
-        ticks: { color: '#52525b', font: { size: 10, family: 'Inter, sans-serif' } },
-        grid: { color: 'rgba(255, 255, 255, 0.04)' },
-        border: { display: false },
-      },
-    },
+    scales: chartScales({ beginAtZero: true }),
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.2 }}
-      style={{
-        background: 'rgba(28, 28, 38, 0.6)',
-        borderRadius: 20,
-        padding: 20,
-        marginTop: 20,
-        border: '1px solid rgba(255, 255, 255, 0.06)',
-      }}
-    >
-      {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 16
-      }}>
+    <section className="card">
+      <div className="row-between" style={{ marginBottom: 12 }}>
         <div>
-          <h3 style={{
-            margin: 0,
-            color: '#fff',
-            fontSize: 16,
-            fontWeight: 600,
-            letterSpacing: '-0.02em',
-          }}>
-            Monatsverlauf
-          </h3>
-          <p style={{
-            margin: '4px 0 0 0',
-            fontSize: 12,
-            color: '#71717a',
-          }}>
-            Kalorien der letzten Tage
+          <h3 className="card-title">Verlauf</h3>
+          <p className="card-subtitle">
+            {logged.length ? `Ø ${avg.toLocaleString('de-DE')} kcal · ${Math.round(avgPct * 100)} % vom Ziel` : 'Keine geloggten Tage'}
           </p>
         </div>
-        <div style={{
-          background: `${statusInfo.color}15`,
-          padding: '5px 10px',
-          borderRadius: 12,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 5,
-        }}>
-          <div style={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: statusInfo.color,
-          }} />
-          <span style={{
-            fontSize: 11,
-            color: statusInfo.color,
-            fontWeight: 600,
-          }}>
-            {statusInfo.text}
-          </span>
-        </div>
       </div>
-
-      {/* Stats */}
-      <div style={{
-        display: 'flex',
-        gap: 16,
-        marginBottom: 16,
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.03)',
-          borderRadius: 12,
-          padding: '10px 16px',
-          flex: 1,
-        }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
-            {Math.round(durchschnittsProzent * 100)}%
-          </div>
-          <div style={{ fontSize: 11, color: '#71717a', marginTop: 2 }}>Zielerreichung</div>
-        </div>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.03)',
-          borderRadius: 12,
-          padding: '10px 16px',
-          flex: 1,
-        }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
-            {avgCalories}
-          </div>
-          <div style={{ fontSize: 11, color: '#71717a', marginTop: 2 }}>Durchschnitt</div>
-        </div>
+      <Segmented value={range} onChange={setRange} options={[{ value: '7', label: '7 Tage' }, { value: '30', label: '30 Tage' }, { value: '90', label: '90 Tage' }]} />
+      <div style={{ height: 190, marginTop: 12 }}>
+        {loading ? <div className="skeleton" style={{ height: '100%' }} /> : <Chart type="bar" data={data} options={options} />}
       </div>
-
-      {/* Chart */}
-      <div style={{ height: '240px' }}>
-        <Chart type="bar" data={data} options={options} />
-      </div>
-    </motion.div>
+    </section>
   );
+}
+
+function aggregateWeeks(rows: HistoryEntry[]): HistoryEntry[] {
+  const out: HistoryEntry[] = [];
+  for (let i = 0; i < rows.length; i += 7) {
+    const chunk = rows.slice(i, i + 7);
+    const logged = chunk.filter((r) => r.geloggt);
+    out.push({
+      datum: chunk[0].datum,
+      kalorien: logged.length ? Math.round(logged.reduce((s, r) => s + r.kalorien, 0) / logged.length) : 0,
+      ziel: chunk.length ? Math.round(chunk.reduce((s, r) => s + r.ziel, 0) / chunk.length) : 0,
+      geloggt: logged.length > 0,
+    });
+  }
+  return out;
+}
+
+function shortLabel(datum: string, range: Range) {
+  const [d, m] = datum.split('.');
+  if (range === '7') {
+    const dt = new Date(new Date().getFullYear(), Number(m) - 1, Number(d));
+    return dt.toLocaleDateString('de-DE', { weekday: 'short' });
+  }
+  return `${d}.${m}.`;
 }

@@ -198,7 +198,7 @@ export default function RecurringPaymentsPage() {
   if (loading) {
     return (
       <div style={{ 
-        backgroundColor: "#2c2c2c", 
+        backgroundColor: "var(--bg)", 
         minHeight: "100vh", 
         color: "#fff", 
         display: "flex", 
@@ -214,9 +214,9 @@ export default function RecurringPaymentsPage() {
     <div
       style={{
         padding: "24px",
-        fontFamily: "sans-serif",
+        
         position: "relative",
-        backgroundColor: "#2c2c2c",
+        backgroundColor: "var(--bg)",
         minHeight: "100vh",
         color: "#ffffff",
         paddingBottom: "100px",
@@ -232,9 +232,9 @@ export default function RecurringPaymentsPage() {
         <button
           onClick={() => window.location.href = "/"}
           style={{
-            background: "#36a2eb",
+            background: "#3b82f6",
             border: "none",
-            borderRadius: "12px",
+            borderRadius: "16px",
             color: "#fff",
             padding: "8px 12px",
             fontSize: "14px",
@@ -254,9 +254,9 @@ export default function RecurringPaymentsPage() {
         <button
           onClick={() => setShowForm(true)}
           style={{
-            background: "#4caf50",
+            background: "#22c55e",
             border: "none",
-            borderRadius: "12px",
+            borderRadius: "16px",
             color: "#fff",
             padding: "12px 16px",
             fontSize: "14px",
@@ -273,11 +273,11 @@ export default function RecurringPaymentsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
-          background: "#1e1e1e",
-          borderRadius: "12px",
+          background: "var(--surface)",
+          borderRadius: "16px",
           padding: "20px",
           marginBottom: "24px",
-          border: "1px solid #333",
+          border: "1px solid var(--border)",
           textAlign: "center"
         }}
       >
@@ -286,7 +286,7 @@ export default function RecurringPaymentsPage() {
           margin: 0, 
           fontSize: "28px", 
           fontWeight: "bold",
-          color: "#f44336"
+          color: "#fb7185"
         }}>
           {totalMonthlyAmount.toFixed(2)} €
         </p>
@@ -297,7 +297,7 @@ export default function RecurringPaymentsPage() {
         <div style={{ 
           textAlign: "center", 
           padding: "40px", 
-          color: "#888" 
+          color: "var(--text-3)" 
         }}>
           <p style={{ fontSize: "18px", margin: "0 0 8px 0" }}>🔄</p>
           <p style={{ margin: 0 }}>Noch keine wiederkehrenden Zahlungen vorhanden</p>
@@ -313,11 +313,11 @@ export default function RecurringPaymentsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 style={{
-                  background: payment.active ? "#1e1e1e" : "#2a2a2a",
-                  borderRadius: "12px",
+                  background: payment.active ? "var(--surface)" : "#2a2a2a",
+                  borderRadius: "16px",
                   padding: "16px",
                   marginBottom: "12px",
-                  border: `1px solid ${isUpcoming ? "#ff9800" : "#333"}`,
+                  border: `1px solid ${isUpcoming ? "#fbbf24" : "var(--surface-2)"}`,
                   opacity: payment.active ? 1 : 0.6,
                 }}
               >
@@ -330,7 +330,7 @@ export default function RecurringPaymentsPage() {
                       </h4>
                       {!payment.active && (
                         <span style={{
-                          background: "#666",
+                          background: "var(--surface-3)",
                           color: "#fff",
                           padding: "2px 8px",
                           borderRadius: "4px",
@@ -341,7 +341,7 @@ export default function RecurringPaymentsPage() {
                       )}
                       {isUpcoming && payment.active && (
                         <span style={{
-                          background: "#ff9800",
+                          background: "#fbbf24",
                           color: "#fff",
                           padding: "2px 8px",
                           borderRadius: "4px",
@@ -357,14 +357,14 @@ export default function RecurringPaymentsPage() {
                         margin: 0, 
                         fontSize: "18px", 
                         fontWeight: "bold",
-                        color: "#f44336"
+                        color: "#fb7185"
                       }}>
                         {payment.amount.toFixed(2)} €
                       </p>
-                      <p style={{ margin: 0, fontSize: "14px", color: "#888" }}>
+                      <p style={{ margin: 0, fontSize: "14px", color: "var(--text-3)" }}>
                         {getFrequencyText(payment.frequency)}
                       </p>
-                      <p style={{ margin: 0, fontSize: "14px", color: "#888" }}>
+                      <p style={{ margin: 0, fontSize: "14px", color: "var(--text-3)" }}>
                         Nächste Zahlung: {payment.nextPayment}
                       </p>
                     </div>
@@ -374,7 +374,7 @@ export default function RecurringPaymentsPage() {
                     <button
                       onClick={() => handleToggleActive(payment)}
                       style={{
-                        background: payment.active ? "#ff9800" : "#4caf50",
+                        background: payment.active ? "#fbbf24" : "#22c55e",
                         border: "none",
                         borderRadius: "6px",
                         color: "#fff",
@@ -388,7 +388,7 @@ export default function RecurringPaymentsPage() {
                     <button
                       onClick={() => handleEdit(payment)}
                       style={{
-                        background: "#36a2eb",
+                        background: "#3b82f6",
                         border: "none",
                         borderRadius: "6px",
                         color: "#fff",
@@ -402,7 +402,7 @@ export default function RecurringPaymentsPage() {
                     <button
                       onClick={() => handleDelete(payment.id)}
                       style={{
-                        background: "#f44336",
+                        background: "#fb7185",
                         border: "none",
                         borderRadius: "6px",
                         color: "#fff",
@@ -432,7 +432,7 @@ export default function RecurringPaymentsPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -445,7 +445,7 @@ export default function RecurringPaymentsPage() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             style={{
-              backgroundColor: "#2c2c2c",
+              backgroundColor: "var(--bg)",
               borderRadius: "16px",
               padding: "24px",
               width: "100%",
@@ -468,7 +468,7 @@ export default function RecurringPaymentsPage() {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#ccc",
+                  color: "var(--text-2)",
                   fontSize: "24px",
                   cursor: "pointer",
                   padding: "4px",
@@ -497,9 +497,9 @@ export default function RecurringPaymentsPage() {
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border: "1px solid #555",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: "8px",
-                    backgroundColor: "#1e1e1e",
+                    backgroundColor: "var(--surface)",
                     color: "#fff",
                     fontSize: "16px",
                   }}
@@ -526,9 +526,9 @@ export default function RecurringPaymentsPage() {
                     style={{
                       width: "100%",
                       padding: "12px",
-                      border: "1px solid #555",
+                      border: "1px solid var(--border-strong)",
                       borderRadius: "8px",
-                      backgroundColor: "#1e1e1e",
+                      backgroundColor: "var(--surface)",
                       color: "#fff",
                       fontSize: "16px",
                     }}
@@ -552,9 +552,9 @@ export default function RecurringPaymentsPage() {
                     style={{
                       width: "100%",
                       padding: "12px",
-                      border: "1px solid #555",
+                      border: "1px solid var(--border-strong)",
                       borderRadius: "8px",
-                      backgroundColor: "#1e1e1e",
+                      backgroundColor: "var(--surface)",
                       color: "#fff",
                       fontSize: "16px",
                     }}
@@ -582,9 +582,9 @@ export default function RecurringPaymentsPage() {
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border: "1px solid #555",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: "8px",
-                    backgroundColor: "#1e1e1e",
+                    backgroundColor: "var(--surface)",
                     color: "#fff",
                     fontSize: "16px",
                   }}
@@ -615,9 +615,9 @@ export default function RecurringPaymentsPage() {
                     style={{
                       width: "100%",
                       padding: "12px",
-                      border: "1px solid #555",
+                      border: "1px solid var(--border-strong)",
                       borderRadius: "8px",
-                      backgroundColor: "#1e1e1e",
+                      backgroundColor: "var(--surface)",
                       color: "#fff",
                       fontSize: "16px",
                     }}
@@ -640,9 +640,9 @@ export default function RecurringPaymentsPage() {
                     style={{
                       width: "100%",
                       padding: "12px",
-                      border: "1px solid #555",
+                      border: "1px solid var(--border-strong)",
                       borderRadius: "8px",
-                      backgroundColor: "#1e1e1e",
+                      backgroundColor: "var(--surface)",
                       color: "#fff",
                       fontSize: "16px",
                     }}
@@ -679,7 +679,7 @@ export default function RecurringPaymentsPage() {
                   style={{
                     flex: 1,
                     padding: "14px",
-                    border: "1px solid #555",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: "8px",
                     backgroundColor: "transparent",
                     color: "#fff",
@@ -696,7 +696,7 @@ export default function RecurringPaymentsPage() {
                     padding: "14px",
                     border: "none",
                     borderRadius: "8px",
-                    backgroundColor: "#36a2eb",
+                    backgroundColor: "#3b82f6",
                     color: "#fff",
                     fontSize: "16px",
                     cursor: "pointer",

@@ -1,16 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { google } from "googleapis";
+import { getSheets, SHEET_ID } from "../../lib/sheets";
+import { todayDE, isoToDE, isValidISO, nowTimeDE } from "../../lib/date";
 
 function parseDecimal(input: unknown): number {
-  if (typeof input === "string") {
-    return parseFloat(input.replace(",", "."));
-  }
+  if (typeof input === "string") return parseFloat(input.replace(",", "."));
   return typeof input === "number" ? input : NaN;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { beschreibung, kcal, uhrzeit } = req.body;
-
+  const { beschreibung, kcal, uhrzeit, datum } = req.body;
   const kcalVal = parseDecimal(kcal);
 
   if (!beschreibung || isNaN(kcalVal)) {
@@ -18,29 +16,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || ""),
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-    });
-
-    const sheets = google.sheets({ version: "v4", auth });
-    const sheetId = process.env.GOOGLE_SHEET_ID;
-
-    const datum = new Date().toLocaleDateString("de-DE", {timeZone: "Europe/Berlin"});
-
-    // ✅ Verwende übergebene Uhrzeit oder fallback auf Serverzeit
-    const uhr = uhrzeit || new Date().toLocaleTimeString("de-DE", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const sheets = getSheets();
+    const day = isValidISO(datum) ? isoToDE(datum) : todayDE();
+    const uhr = uhrzeit || nowTimeDE();
 
     await sheets.spreadsheets.values.append({
-      spreadsheetId: sheetId,
+      spreadsheetId: SHEET_ID(),
       range: "Aktivitäten!A:D",
       valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [[datum, beschreibung, kcalVal, uhr]],
-      },
+      requestBody: { values: [[day, beschreibung, kcalVal, uhr]] },
     });
 
     res.status(200).json({ success: true });

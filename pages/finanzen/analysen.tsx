@@ -91,7 +91,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div style={{ 
-        backgroundColor: "#2c2c2c", 
+        backgroundColor: "var(--bg)", 
         minHeight: "100vh", 
         color: "#fff", 
         display: "flex", 
@@ -106,7 +106,7 @@ export default function AnalyticsPage() {
   if (!data) {
     return (
       <div style={{ 
-        backgroundColor: "#2c2c2c", 
+        backgroundColor: "var(--bg)", 
         minHeight: "100vh", 
         color: "#fff", 
         display: "flex", 
@@ -130,7 +130,7 @@ export default function AnalyticsPage() {
       data: Object.values(data.categoryExpenses),
       backgroundColor: Object.keys(data.categoryExpenses).map(key => CATEGORY_COLORS[key as keyof typeof CATEGORY_COLORS] || '#C9CBCF'),
       borderWidth: 2,
-      borderColor: '#2c2c2c',
+      borderColor: 'var(--bg)',
     }]
   };
 
@@ -184,7 +184,7 @@ export default function AnalyticsPage() {
           color: '#ffffff'
         },
         grid: {
-          color: '#444'
+          color: 'var(--surface-3)'
         }
       },
       y: {
@@ -192,7 +192,7 @@ export default function AnalyticsPage() {
           color: '#ffffff'
         },
         grid: {
-          color: '#444'
+          color: 'var(--surface-3)'
         }
       }
     }
@@ -220,9 +220,9 @@ export default function AnalyticsPage() {
     <div
       style={{
         padding: "24px",
-        fontFamily: "sans-serif",
+        
         position: "relative",
-        backgroundColor: "#2c2c2c",
+        backgroundColor: "var(--bg)",
         minHeight: "100vh",
         color: "#ffffff",
         paddingBottom: "100px",
@@ -238,9 +238,9 @@ export default function AnalyticsPage() {
         <button
           onClick={() => window.location.href = "/"}
           style={{
-            background: "#36a2eb",
+            background: "#3b82f6",
             border: "none",
-            borderRadius: "12px",
+            borderRadius: "16px",
             color: "#fff",
             padding: "8px 12px",
             fontSize: "14px",
@@ -268,19 +268,19 @@ export default function AnalyticsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
-            background: "#1e1e1e",
-            borderRadius: "12px",
+            background: "var(--surface)",
+            borderRadius: "16px",
             padding: "20px",
             textAlign: "center",
-            border: "1px solid #333"
+            border: "1px solid var(--border)"
           }}
         >
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#888" }}>Sparquote</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--text-3)" }}>Sparquote</h3>
           <p style={{ 
             margin: 0, 
             fontSize: "24px", 
             fontWeight: "bold",
-            color: data.savingsRate >= 0 ? "#4caf50" : "#f44336"
+            color: data.savingsRate >= 0 ? "#22c55e" : "#fb7185"
           }}>
             {data.savingsRate.toFixed(1)}%
           </p>
@@ -291,19 +291,19 @@ export default function AnalyticsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           style={{
-            background: "#1e1e1e",
-            borderRadius: "12px",
+            background: "var(--surface)",
+            borderRadius: "16px",
             padding: "20px",
             textAlign: "center",
-            border: "1px solid #333"
+            border: "1px solid var(--border)"
           }}
         >
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#888" }}>Ausgaben-Wachstum</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--text-3)" }}>Ausgaben-Wachstum</h3>
           <p style={{ 
             margin: 0, 
             fontSize: "24px", 
             fontWeight: "bold",
-            color: data.expenseGrowth <= 0 ? "#4caf50" : "#f44336"
+            color: data.expenseGrowth <= 0 ? "#22c55e" : "#fb7185"
           }}>
             {data.expenseGrowth > 0 ? '+' : ''}{data.expenseGrowth.toFixed(1)}%
           </p>
@@ -316,11 +316,11 @@ export default function AnalyticsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         style={{
-          background: "#1e1e1e",
-          borderRadius: "12px",
+          background: "var(--surface)",
+          borderRadius: "16px",
           padding: "20px",
           marginBottom: "24px",
-          border: "1px solid #333"
+          border: "1px solid var(--border)"
         }}
       >
         <h3 style={{ margin: "0 0 20px 0", fontSize: "18px" }}>💸 Ausgaben nach Kategorien</h3>
@@ -335,11 +335,11 @@ export default function AnalyticsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         style={{
-          background: "#1e1e1e",
-          borderRadius: "12px",
+          background: "var(--surface)",
+          borderRadius: "16px",
           padding: "20px",
           marginBottom: "24px",
-          border: "1px solid #333"
+          border: "1px solid var(--border)"
         }}
       >
         <h3 style={{ margin: "0 0 20px 0", fontSize: "18px" }}>📈 Monatlicher Verlauf</h3>
@@ -354,11 +354,11 @@ export default function AnalyticsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         style={{
-          background: "#1e1e1e",
-          borderRadius: "12px",
+          background: "var(--surface)",
+          borderRadius: "16px",
           padding: "20px",
           marginBottom: "24px",
-          border: "1px solid #333"
+          border: "1px solid var(--border)"
         }}
       >
         <h3 style={{ margin: "0 0 20px 0", fontSize: "18px" }}>📅 Ausgaben nach Wochentag</h3>
@@ -373,11 +373,11 @@ export default function AnalyticsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
         style={{
-          background: "#1e1e1e",
-          borderRadius: "12px",
+          background: "var(--surface)",
+          borderRadius: "16px",
           padding: "20px",
           marginBottom: "24px",
-          border: "1px solid #333"
+          border: "1px solid var(--border)"
         }}
       >
         <h3 style={{ margin: "0 0 20px 0", fontSize: "18px" }}>💰 Größte Ausgaben</h3>
@@ -387,13 +387,13 @@ export default function AnalyticsPage() {
             justifyContent: "space-between",
             alignItems: "center",
             padding: "12px 0",
-            borderBottom: index < data.topExpenses.length - 1 ? "1px solid #333" : "none"
+            borderBottom: index < data.topExpenses.length - 1 ? "1px solid var(--border)" : "none"
           }}>
             <div>
               <p style={{ margin: 0, fontSize: "14px", fontWeight: "bold" }}>
                 {expense.description}
               </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#888" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-3)" }}>
                 {expense.date}
               </p>
             </div>
@@ -401,7 +401,7 @@ export default function AnalyticsPage() {
               margin: 0, 
               fontSize: "16px", 
               fontWeight: "bold",
-              color: "#f44336"
+              color: "#fb7185"
             }}>
               -{expense.amount.toFixed(2)} €
             </p>
@@ -415,11 +415,11 @@ export default function AnalyticsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
         style={{
-          background: "#1e1e1e",
-          borderRadius: "12px",
+          background: "var(--surface)",
+          borderRadius: "16px",
           padding: "20px",
           marginBottom: "24px",
-          border: "1px solid #333"
+          border: "1px solid var(--border)"
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
@@ -428,7 +428,7 @@ export default function AnalyticsPage() {
             onClick={generateAnalysis}
             disabled={loadingAnalysis}
             style={{
-              background: loadingAnalysis ? "#666" : "#36a2eb",
+              background: loadingAnalysis ? "var(--surface-3)" : "#3b82f6",
               border: "none",
               borderRadius: "8px",
               color: "#fff",
@@ -444,16 +444,16 @@ export default function AnalyticsPage() {
         
         {analysisText ? (
           <div style={{
-            background: "#2c2c2c",
+            background: "var(--bg)",
             borderRadius: "8px",
             padding: "16px",
-            border: "1px solid #444",
+            border: "1px solid var(--border)",
             lineHeight: "1.6"
           }}>
             <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{analysisText}</p>
           </div>
         ) : (
-          <p style={{ margin: 0, color: "#888", fontStyle: "italic" }}>
+          <p style={{ margin: 0, color: "var(--text-3)", fontStyle: "italic" }}>
             Klicken Sie auf &quot;Analyse generieren&quot; um eine personalisierte KI-Analyse Ihrer Finanzen zu erhalten.
           </p>
         )}

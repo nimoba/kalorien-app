@@ -2,324 +2,65 @@
 
 import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from 'chart.js';
+import type { ChartData, ChartOptions } from 'chart.js';
+import { chartScales, chartTooltip } from '../../utils/colors';
+import { Stat } from '../ui/Card';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
-interface GewichtEntry {
-  datum: string;
-  gewicht: number;
-  fett: number | null;
-  muskel: number | null;
-  wasser: number | null;
-}
+interface GewichtEntry { datum: string; gewicht: number; fett: number | null; muskel: number | null; wasser: number | null; }
 
-const BodyCompositionDashboard: React.FC = () => {
+const COLORS = { fett: '#f9a8d4', muskel: '#bef264', wasser: '#7dd3fc' };
+
+export default function GewichtKomponentenChart() {
   const [data, setData] = useState<GewichtEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/gewicht-komponenten')
-      .then((res) => res.json())
-      .then((data) => {
-        setData(data);
-        setLoading(false);
-      })
+      .then((r) => r.json())
+      .then((d) => { setData(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return React.createElement('p', { style: { color: "#fff" } }, '⏳ Lade Körperzusammensetzung...');
-  }
+  if (loading) return <div className="skeleton" style={{ height: 240 }} />;
+  const withComp = data.filter((e) => e.fett !== null || e.muskel !== null || e.wasser !== null);
+  if (withComp.length === 0) return null;
 
-  if (!data || data.length === 0) {
-    return React.createElement('p', { style: { color: "#fff" } }, 'Keine Daten verfügbar');
-  }
+  const first = withComp[0];
+  const last = withComp[withComp.length - 1];
+  const delta = (a: number | null, b: number | null) => (a !== null && b !== null ? Math.round((b - a) * 10) / 10 : null);
+  const d = { fett: delta(first.fett, last.fett), muskel: delta(first.muskel, last.muskel), wasser: delta(first.wasser, last.wasser) };
+  const fmtDelta = (v: number | null) => (v === null ? '' : `${v > 0 ? '+' : ''}${v} % seit ${first.datum}`);
 
-  // Letzte 30 Tage für Trends
-  const last30Days = data.slice(-30);
-  
-  // 🎯 DELTA-BERECHNUNGEN (täglich - alle Tage)
-  const firstEntry = data[0]; // Allererster Eintrag
-  const lastEntry = data[data.length - 1]; // Allerletzter Eintrag
-  
-  const gewichtDelta = lastEntry.gewicht - firstEntry.gewicht;
-  const fettDelta = (lastEntry.fett || 0) - (firstEntry.fett || 0);
-  const muskelDelta = (lastEntry.muskel || 0) - (firstEntry.muskel || 0);
-  const wasserDelta = (lastEntry.wasser || 0) - (firstEntry.wasser || 0);
-
-  // 📊 Bewertungsfunktion
-  const bewerteFortschritt = (wert: number, typ: 'gewicht' | 'fett' | 'muskel' | 'wasser') => {
-    let maxAenderung: number;
-    
-    // Realistische Maximalwerte für Balken-Berechnung
-    switch (typ) {
-      case 'gewicht': maxAenderung = 10; break; // ±10kg als Maximum
-      case 'fett': maxAenderung = 10; break;    // ±10% als Maximum  
-      case 'muskel': maxAenderung = 8; break;   // ±8% als Maximum
-      case 'wasser': maxAenderung = 8; break;   // ±8% als Maximum
-      default: maxAenderung = 5;
-    }
-    
-    // Prozent basierend auf tatsächlicher Veränderung (nicht Bewertung!)
-    const prozent = Math.min(100, Math.abs(wert / maxAenderung) * 100);
-    
-    // Bewertungstext separat
-    switch (typ) {
-      case 'gewicht':
-        if (wert <= -2) return { farbe: '#27ae60', text: 'Excellent! 🎉', prozent };
-        if (wert <= -0.5) return { farbe: '#2ecc71', text: 'Sehr gut! 💪', prozent };
-        if (wert <= 0.5) return { farbe: '#f39c12', text: 'Stabil 👍', prozent };
-        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent };
-      
-      case 'fett':
-        if (wert <= -2) return { farbe: '#27ae60', text: 'Excellent! 🔥', prozent };
-        if (wert <= -0.5) return { farbe: '#2ecc71', text: 'Super! 💪', prozent };
-        if (wert <= 0.5) return { farbe: '#f39c12', text: 'Ok 👍', prozent };
-        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent };
-      
-      case 'muskel':
-        if (wert >= 2) return { farbe: '#27ae60', text: 'Excellent! 💪', prozent };
-        if (wert >= 0.5) return { farbe: '#2ecc71', text: 'Sehr gut! 🚀', prozent };
-        if (wert >= -0.5) return { farbe: '#f39c12', text: 'Stabil 👍', prozent };
-        return { farbe: '#e74c3c', text: 'Aufpassen! ⚠️', prozent };
-      
-      default:
-        return { farbe: '#95a5a6', text: 'Normal', prozent };
-    }
-  };
-
-  // 📈 CHART DATA (Trend-Linien)
-  const chartLabels = last30Days
-    .filter((_, i) => i % 3 === 0) // Jeden 3. Tag
-    .map(entry => {
-      const [tag, monat] = entry.datum.split('.');
-      return `${tag}.${monat}`;
-    });
-
-  const chartData = {
-    labels: chartLabels,
+  const chart: ChartData<'line'> = {
+    labels: data.map((e) => e.datum.split('.').slice(0, 2).join('.') + '.'),
     datasets: [
-      {
-        label: 'Körperfett (%)',
-        data: last30Days
-          .filter((_, i) => i % 3 === 0)
-          .map(entry => entry.fett),
-        borderColor: '#e74c3c',
-        backgroundColor: '#e74c3c33',
-        tension: 0.4,
-        borderWidth: 3,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-      {
-        label: 'Muskelmasse (%)',
-        data: last30Days
-          .filter((_, i) => i % 3 === 0)
-          .map(entry => entry.muskel),
-        borderColor: '#27ae60',
-        backgroundColor: '#27ae6033',
-        tension: 0.4,
-        borderWidth: 3,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-      {
-        label: 'Wasseranteil (%)',
-        data: last30Days
-          .filter((_, i) => i % 3 === 0)
-          .map(entry => entry.wasser),
-        borderColor: '#3498db',
-        backgroundColor: '#3498db33',
-        tension: 0.4,
-        borderWidth: 2,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-      },
+      { label: 'Körperfett', data: data.map((e) => e.fett), borderColor: COLORS.fett, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, spanGaps: true },
+      { label: 'Muskeln', data: data.map((e) => e.muskel), borderColor: COLORS.muskel, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, spanGaps: true },
+      { label: 'Wasser', data: data.map((e) => e.wasser), borderColor: COLORS.wasser, tension: 0.3, borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 4, spanGaps: true, borderDash: [3, 4] },
     ],
   };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: '#fff',
-          font: { size: 12 },
-          usePointStyle: true,
-        },
-      },
-      tooltip: {
-        backgroundColor: '#1e1e1e',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: '#444',
-        borderWidth: 1,
-      },
-    },
-    scales: {
-      x: {
-        ticks: { color: '#ccc', font: { size: 11 } },
-        grid: { color: '#333' },
-      },
-      y: {
-        ticks: { color: '#ccc', font: { size: 11 } },
-        grid: { color: '#333' },
-      },
-    },
+  const options: ChartOptions<'line'> = {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+    plugins: { legend: { display: false }, tooltip: { ...chartTooltip(), displayColors: true, callbacks: { label: (c) => `${c.dataset.label}: ${c.formattedValue} %` } } },
+    interaction: { mode: 'index', intersect: false },
+    scales: chartScales(),
   };
 
-  // 🎨 Delta-Card Komponente
-  const createDeltaCard = (
-    icon: string,
-    titel: string,
-    wert: number,
-    einheit: string,
-    typ: 'gewicht' | 'fett' | 'muskel' | 'wasser'
-  ) => {
-    const bewertung = bewerteFortschritt(wert, typ);
-    
-    return React.createElement('div', {
-      style: {
-        backgroundColor: '#1e1e1e',
-        borderRadius: 12,
-        padding: 20,
-        border: `2px solid ${bewertung.farbe}33`,
-        position: 'relative',
-        overflow: 'hidden',
-      }
-    }, [
-      // Hintergrund-Balken (Progress-Bar-Effekt)
-      React.createElement('div', {
-        key: 'bg-bar',
-        style: {
-          position: 'absolute',
-          top: 0, left: 0, bottom: 0,
-          width: `${bewertung.prozent}%`,
-          backgroundColor: `${bewertung.farbe}11`,
-          borderRadius: '12px 0 0 12px',
-        }
-      }),
-      
-      // Content
-      React.createElement('div', { 
-        key: 'content',
-        style: { position: 'relative', zIndex: 2 }
-      }, [
-        React.createElement('div', { 
-          key: 'header',
-          style: { 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: 8
-          }
-        }, [
-          React.createElement('span', { 
-            key: 'icon',
-            style: { fontSize: 24 }
-          }, icon),
-          React.createElement('span', { 
-            key: 'bewertung',
-            style: { 
-              fontSize: 12, 
-              color: bewertung.farbe,
-              fontWeight: 'bold'
-            }
-          }, bewertung.text)
-        ]),
-        
-        React.createElement('div', { 
-          key: 'titel',
-          style: { 
-            color: '#ccc', 
-            fontSize: 14,
-            marginBottom: 4
-          }
-        }, titel),
-        
-        React.createElement('div', { 
-          key: 'wert',
-          style: { 
-            fontSize: 28,
-            fontWeight: 'bold',
-            color: bewertung.farbe,
-            lineHeight: 1
-          }
-        }, `${wert >= 0 ? '+' : ''}${wert.toFixed(1)}${einheit}`)
-      ])
-    ]);
-  };
-
-  return React.createElement('div', { style: { marginTop: 50 } }, [
-    React.createElement('h2', { 
-      key: 'title',
-      style: { 
-        color: '#fff', 
-        marginBottom: 24,
-        fontSize: 24,
-        fontWeight: 'bold'
-      } 
-    }, '🏆 Körperzusammensetzung - Fortschritt (30 Tage)'),
-    
-    // 📊 DELTA CARDS
-    React.createElement('div', {
-      key: 'delta-grid',
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: 16,
-        marginBottom: 32,
-      }
-    }, [
-      createDeltaCard('⚖️', 'Gewichtsveränderung', gewichtDelta, 'kg', 'gewicht'),
-      createDeltaCard('🔥', 'Körperfett', fettDelta, '%', 'fett'),
-      createDeltaCard('💪', 'Muskelmasse', muskelDelta, '%', 'muskel'),
-      createDeltaCard('💧', 'Wasseranteil', wasserDelta, '%', 'wasser'),
-    ]),
-    
-    // 📈 TREND CHART
-    React.createElement('div', {
-      key: 'chart-container',
-      style: {
-        backgroundColor: '#1e1e1e',
-        borderRadius: 12,
-        padding: 20,
-        marginTop: 24,
-      }
-    }, [
-      React.createElement('h3', {
-        key: 'chart-title',
-        style: {
-          color: '#fff',
-          marginBottom: 20,
-          fontSize: 18,
-        }
-      }, '📈 Trend-Verlauf'),
-      
-      React.createElement('div', { 
-        key: 'chart',
-        style: { height: '350px' } 
-      }, React.createElement(Line, { data: chartData, options: chartOptions }))
-    ])
-  ]);
-};
-
-export default BodyCompositionDashboard;
+  return (
+    <section className="card">
+      <div style={{ marginBottom: 12 }}>
+        <h3 className="card-title">Körperzusammensetzung</h3>
+        <p className="card-subtitle">Letzte 30 Tage</p>
+      </div>
+      <div className="grid-3" style={{ marginBottom: 12 }}>
+        <Stat value={last.fett !== null ? `${last.fett} %` : '–'} label={`Fett ${fmtDelta(d.fett)}`} color={COLORS.fett} size="sm" />
+        <Stat value={last.muskel !== null ? `${last.muskel} %` : '–'} label={`Muskeln ${fmtDelta(d.muskel)}`} color={COLORS.muskel} size="sm" />
+        <Stat value={last.wasser !== null ? `${last.wasser} %` : '–'} label={`Wasser ${fmtDelta(d.wasser)}`} color={COLORS.wasser} size="sm" />
+      </div>
+      <div style={{ height: 180 }}><Line data={chart} options={options} /></div>
+    </section>
+  );
+}

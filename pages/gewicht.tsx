@@ -1,723 +1,178 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import FloatingTabBar from "../components/FloatingTabBar";
-import { motion, AnimatePresence } from "framer-motion";
 import { Line } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler } from "chart.js";
+import type { ChartData, ChartOptions } from "chart.js";
+import Page, { ErrorState, Loading } from "../components/ui/Page";
+import Button from "../components/ui/Button";
+import Icon from "../components/ui/Icon";
+import { Stat } from "../components/ui/Card";
+import { Segmented } from "../components/ui/Field";
+import { useToast } from "../components/ui/Toast";
+import GewichtForm from "../components/GewichtForm";
 import GewichtKomponentenChart from "../components/charts/GewichtKomponentenChart";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-  Filler,
-} from "chart.js";
+import { chartScales, chartTooltip } from "../utils/colors";
+import { todayISO } from "../lib/date";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-  Filler
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
-interface GewichtVerlaufEntry {
-  datum: string;
-  gewicht: number;
-}
-
-interface GewichtKomponentEntry {
-  datum: string;
-  wert: number;
-}
-
+interface Entry { datum: string; gewicht: number }
 interface GewichtData {
   startgewicht: number;
-  verlauf: GewichtVerlaufEntry[];
-  theoretisch: GewichtVerlaufEntry[];
-  geglättet: GewichtVerlaufEntry[];
-  trend: GewichtVerlaufEntry[];
+  verlauf: Entry[];
+  theoretisch: Entry[];
+  geglättet: Entry[];
+  trend: Entry[];
   trendSteigung: number;
-  fett: GewichtKomponentEntry[];
-  muskel: GewichtKomponentEntry[];
-  zielGewicht: number;
+  zielGewicht: number | null;
 }
+type Range = '30' | '90' | 'all';
 
 export default function GewichtSeite() {
+  const toast = useToast();
   const [data, setData] = useState<GewichtData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [range, setRange] = useState<Range>('90');
+  const [showForm, setShowForm] = useState(false);
   const [analyse, setAnalyse] = useState<string | null>(null);
   const [analyseLoading, setAnalyseLoading] = useState(false);
+  const [showTheory, setShowTheory] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     fetch("/api/weight-history")
-      .then((res) => res.json())
-      .then((data) => {
-        setData(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+      .then((d) => { setData(d); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
+  };
+  useEffect(load, []);
 
   const handleAnalyse = async () => {
     setAnalyseLoading(true);
-    const res = await fetch("/api/analyse", { method: "POST" });
-    const d = await res.json();
-    setAnalyse(d.analyse || "Keine Analyse verfügbar");
+    try {
+      const res = await fetch("/api/analyse", { method: "POST" });
+      const d = await res.json();
+      setAnalyse(d.analyse || "Keine Analyse verfügbar");
+    } catch {
+      toast.error('Analyse fehlgeschlagen');
+    }
     setAnalyseLoading(false);
   };
 
-  if (loading) {
-    return (
-      <div style={containerStyle}>
-        <div style={loadingContainerStyle}>
-          <div style={spinnerStyle} />
-          <span style={{ color: '#71717a', fontSize: 14 }}>Lade Gewichtsdaten...</span>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <FloatingTabBar />
-      </div>
-    );
-  }
+  if (loading) return <Page title="Gewicht"><Loading text="Lade Gewichtsdaten…" /></Page>;
+  if (error || !data) return <Page title="Gewicht"><ErrorState text="Gewichtsdaten konnten nicht geladen werden" onRetry={load} /></Page>;
 
-  if (!data) {
-    return (
-      <div style={containerStyle}>
-        <div style={errorContainerStyle}>
-          <div style={errorIconStyle}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          </div>
-          <p style={{ color: '#fff', margin: '16px 0 8px 0', fontWeight: 600 }}>Keine Daten verfügbar</p>
-          <p style={{ color: '#71717a', margin: 0, fontSize: 14 }}>Gewichtsdaten konnten nicht geladen werden</p>
-        </div>
-        <FloatingTabBar />
-      </div>
-    );
-  }
+  const { startgewicht, verlauf, theoretisch, geglättet, trend, trendSteigung, zielGewicht } = data;
+  const n = range === 'all' ? verlauf.length : Math.min(verlauf.length, Number(range));
+  const slice = <T,>(arr: T[]) => arr.slice(arr.length - n);
 
-  const {
-    startgewicht,
-    verlauf,
-    theoretisch,
-    geglättet,
-    trend,
-    trendSteigung,
-    fett,
-    muskel,
-    zielGewicht
-  } = data;
+  const letzte = verlauf[verlauf.length - 1]?.gewicht ?? startgewicht;
+  const diff = Math.round((letzte - startgewicht) * 10) / 10;
+  const wochenTrend = Math.round(trendSteigung * 7 * 100) / 100;
 
-  const labels = verlauf.map((e) => e.datum);
-  const echteWerte = verlauf.map((e) => e.gewicht);
-  const theoriewerte = theoretisch.map((e) => e.gewicht);
-  const smoothed = geglättet.map((e) => e.gewicht);
-  const trendlinie = trend.map((e) => e.gewicht);
+  // Direction-aware status: losing is good only if the goal is below the start weight
+  const wantsLoss = zielGewicht ? zielGewicht < startgewicht : true;
+  const towardsGoal = wantsLoss ? diff < 0 : diff > 0;
+  const statusColor = Math.abs(diff) < 0.5 ? 'var(--text-2)' : towardsGoal ? 'var(--accent)' : 'var(--danger)';
 
-  const letzte = echteWerte[echteWerte.length - 1] || startgewicht;
-  const diff = (letzte - startgewicht).toFixed(1);
-  const diffNum = parseFloat(diff);
+  const zielDiff = zielGewicht ? Math.round((letzte - zielGewicht) * 10) / 10 : null;
+  const movingRightWay = zielGewicht ? (wantsLoss ? trendSteigung < 0 : trendSteigung > 0) : false;
+  const tageBisZiel = zielGewicht && Math.abs(trendSteigung) > 0.001 && movingRightWay ? Math.ceil(Math.abs(letzte - zielGewicht) / Math.abs(trendSteigung)) : null;
 
-  // Status info based on weight change
-  const getStatusInfo = () => {
-    if (diffNum <= -5) return { color: '#10b981', text: 'Excellent', icon: 'trending-down' };
-    if (diffNum <= -1) return { color: '#22c55e', text: 'Sehr gut', icon: 'trending-down' };
-    if (diffNum >= -0.5 && diffNum <= 0.5) return { color: '#f59e0b', text: 'Stabil', icon: 'minus' };
-    if (diffNum >= 1) return { color: '#ef4444', text: 'Aufpassen', icon: 'trending-up' };
-    return { color: '#71717a', text: 'Ok', icon: 'minus' };
-  };
-
-  const statusInfo = getStatusInfo();
-
-  // Goal progress calculation
-  const zielDifferenz = letzte - zielGewicht;
-  const verbleibendeTage = (trendSteigung !== 0 && zielGewicht)
-    ? Math.ceil(Math.abs(zielDifferenz) / Math.abs(trendSteigung))
-    : null;
-
-  const zieltext =
-    !zielGewicht
-      ? "Kein Zielgewicht definiert"
-      : verbleibendeTage && verbleibendeTage > 0 && Math.abs(trendSteigung) > 0.001
-        ? `Zielgewicht in ca. ${verbleibendeTage} Tagen`
-        : "Zielgewicht erreicht oder Trend zu flach";
-
-  const chartData = {
+  const labels = slice(verlauf).map((e) => e.datum.split('.').slice(0, 2).join('.') + '.');
+  const chartData: ChartData<'line'> = {
     labels,
     datasets: [
-      {
-        label: "Tatsächliches Gewicht",
-        data: echteWerte,
-        borderColor: "#6366f1",
-        backgroundColor: "rgba(99, 102, 241, 0.1)",
-        fill: true,
-        tension: 0.3,
-        borderWidth: 2,
-        pointRadius: 3,
-        pointHoverRadius: 6,
-        pointBackgroundColor: "#6366f1",
-      },
-      {
-        label: "Theoretisch (Kcal-basiert)",
-        data: theoriewerte,
-        borderColor: "#f472b6",
-        borderDash: [5, 5],
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        tension: 0.2,
-        borderWidth: 2,
-      },
-      {
-        label: "7-Tage Ø",
-        data: smoothed,
-        borderColor: "#fbbf24",
-        borderWidth: 2,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        tension: 0.25,
-      },
-      {
-        label: "Trendlinie",
-        data: trendlinie,
-        borderColor: "#8b5cf6",
-        borderDash: [2, 4],
-        pointRadius: 0,
-        borderWidth: 2,
-        tension: 0,
-      },
-      ...(zielGewicht ? [{
-        label: "Zielgewicht",
-        data: new Array(labels.length).fill(zielGewicht),
-        borderColor: "rgba(255, 255, 255, 0.3)",
-        borderWidth: 1,
-        pointRadius: 0,
-        borderDash: [2, 2],
-        tension: 0,
-      }] : [])
+      { label: "Gewicht", data: slice(verlauf).map((e) => e.gewicht), borderColor: "rgba(255,255,255,0.35)", borderWidth: 1, pointRadius: 0, tension: 0.2 },
+      { label: "7-Tage-Schnitt", data: slice(geglättet).map((e) => e.gewicht), borderColor: "#bef264", backgroundColor: "rgba(190,242,100,0.06)", fill: true, borderWidth: 2.5, pointRadius: 0, tension: 0.3 },
+      { label: "Trend", data: slice(trend).map((e) => e.gewicht), borderColor: "rgba(190,242,100,0.5)", borderDash: [3, 4], borderWidth: 1, pointRadius: 0 },
+      ...(showTheory ? [{ label: "Theoretisch (aus Bilanz)", data: slice(theoretisch).map((e) => e.gewicht), borderColor: "#f9a8d4", borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, tension: 0.2 }] : []),
+      ...(zielGewicht ? [{ label: "Ziel", data: new Array(labels.length).fill(zielGewicht), borderColor: "rgba(255,255,255,0.2)", borderWidth: 1, pointRadius: 0, borderDash: [2, 3] }] : []),
     ],
   };
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "bottom" as const,
-        labels: {
-          color: '#71717a',
-          font: { size: 11, family: 'Inter, sans-serif' },
-          usePointStyle: true,
-          padding: 16,
-        },
-      },
-      tooltip: {
-        enabled: true,
-        mode: "index" as const,
-        intersect: false,
-        backgroundColor: 'rgba(28, 28, 38, 0.95)',
-        titleColor: '#fff',
-        bodyColor: '#a1a1aa',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 10,
-        callbacks: {
-          label: (context: import("chart.js").TooltipItem<"line">) =>
-            `${context.dataset.label}: ${context.formattedValue} kg`,
-        },
-      },
-    },
-    interaction: {
-      mode: "index" as const,
-      intersect: false,
-    },
-    scales: {
-      x: {
-        ticks: { color: '#52525b', font: { size: 10, family: 'Inter, sans-serif' } },
-        grid: { color: 'rgba(255, 255, 255, 0.04)' },
-        border: { display: false },
-      },
-      y: {
-        beginAtZero: false,
-        ticks: { color: '#52525b', font: { size: 10, family: 'Inter, sans-serif' } },
-        grid: { color: 'rgba(255, 255, 255, 0.04)' },
-        border: { display: false },
-      },
-    },
-  };
-
-  // Body composition chart
-  const koerperChartData = {
-    labels: verlauf.map((e) => e.datum),
-    datasets: [
-      {
-        label: "Körperfett (%)",
-        data: fett.map((e) => e.wert),
-        borderColor: "#f97316",
-        backgroundColor: "rgba(249, 115, 22, 0.1)",
-        fill: true,
-        tension: 0.25,
-        borderWidth: 2,
-        pointRadius: 3,
-        pointHoverRadius: 6,
-        pointBackgroundColor: "#f97316",
-      },
-      {
-        label: "Muskelmasse (%)",
-        data: muskel.map((e) => e.wert),
-        borderColor: "#10b981",
-        backgroundColor: "rgba(16, 185, 129, 0.1)",
-        fill: true,
-        tension: 0.25,
-        borderWidth: 2,
-        pointRadius: 3,
-        pointHoverRadius: 6,
-        pointBackgroundColor: "#10b981",
-      },
-    ],
-  };
-
-  const koerperOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "bottom" as const,
-        labels: {
-          color: '#71717a',
-          font: { size: 11, family: 'Inter, sans-serif' },
-          usePointStyle: true,
-          padding: 16,
-        },
-      },
-      tooltip: {
-        backgroundColor: 'rgba(28, 28, 38, 0.95)',
-        titleColor: '#fff',
-        bodyColor: '#a1a1aa',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 10,
-      },
-    },
-    scales: {
-      x: {
-        ticks: { color: '#52525b', font: { size: 10, family: 'Inter, sans-serif' } },
-        grid: { color: 'rgba(255, 255, 255, 0.04)' },
-        border: { display: false },
-      },
-      y: {
-        beginAtZero: false,
-        ticks: { color: '#52525b', font: { size: 10, family: 'Inter, sans-serif' } },
-        grid: { color: 'rgba(255, 255, 255, 0.04)' },
-        border: { display: false },
-      },
-    },
+  const options: ChartOptions<'line'> = {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+    plugins: { legend: { display: false }, tooltip: { ...chartTooltip(), displayColors: true, callbacks: { label: (c) => `${c.dataset.label}: ${c.formattedValue} kg` } } },
+    interaction: { mode: 'index', intersect: false },
+    scales: chartScales(),
   };
 
   return (
-    <div style={containerStyle}>
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={headerStyle}
-      >
-        <div>
-          <h1 style={titleStyle}>Gewicht</h1>
-          <p style={subtitleStyle}>Dein Fortschritt im Überblick</p>
-        </div>
-        <div style={{
-          background: `${statusInfo.color}15`,
-          padding: '8px 14px',
-          borderRadius: 12,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          <div style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: statusInfo.color,
-          }} />
-          <span style={{
-            fontSize: 13,
-            color: statusInfo.color,
-            fontWeight: 600,
-          }}>
-            {statusInfo.text}
-          </span>
-        </div>
-      </motion.div>
-
-      {/* Main Stats Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        style={mainStatsCardStyle}
-      >
-        <div style={statsGridStyle}>
-          <div style={statItemStyle}>
-            <span style={{ ...statNumberStyle, color: statusInfo.color }}>
-              {diffNum < 0 ? '' : '+'}{diff}
-            </span>
-            <span style={statLabelStyle}>kg {diffNum < 0 ? 'abgenommen' : 'zugenommen'}</span>
+    <Page
+      title="Gewicht"
+      subtitle={verlauf.length ? `Letzter Eintrag ${verlauf[verlauf.length - 1].datum}` : 'Noch keine Einträge'}
+      right={<Button variant="primary" size="sm" icon="plus" onClick={() => setShowForm(true)}>Eintragen</Button>}
+    >
+      <div className="stack">
+        <section className="card">
+          <div className="grid-3">
+            <Stat value={`${letzte.toLocaleString('de-DE', { maximumFractionDigits: 1 })} kg`} label="Aktuell" size="lg" />
+            <Stat value={`${diff > 0 ? '+' : ''}${diff.toLocaleString('de-DE')} kg`} label={`seit Start (${startgewicht} kg)`} color={statusColor} />
+            <Stat value={`${wochenTrend > 0 ? '+' : ''}${wochenTrend.toLocaleString('de-DE')} kg`} label="Trend pro Woche" color={Math.abs(wochenTrend) < 0.05 ? 'var(--text-2)' : (wantsLoss ? wochenTrend < 0 : wochenTrend > 0) ? 'var(--accent)' : 'var(--danger)'} />
           </div>
-          <div style={statItemStyle}>
-            <span style={statNumberStyle}>{letzte.toFixed(1)}</span>
-            <span style={statLabelStyle}>Aktuell (kg)</span>
-          </div>
-          {zielGewicht && (
-            <div style={statItemStyle}>
-              <span style={statNumberStyle}>{zielGewicht}</span>
-              <span style={statLabelStyle}>Ziel (kg)</span>
-            </div>
-          )}
-        </div>
-
-        {/* Goal Progress */}
-        <div style={goalProgressStyle}>
-          <div style={goalIconStyle}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="6" />
-              <circle cx="12" cy="12" r="2" />
-            </svg>
-          </div>
-          <span style={{ color: '#a1a1aa', fontSize: 14 }}>{zieltext}</span>
-        </div>
-      </motion.div>
-
-      {/* AI Analysis Button */}
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        onClick={handleAnalyse}
-        disabled={analyseLoading}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        style={analyseButtonStyle}
-      >
-        {analyseLoading ? (
-          <>
-            <div style={buttonSpinnerStyle} />
-            Analysiere...
-          </>
-        ) : (
-          <>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
-              <path d="M12 2a10 10 0 0 1 10 10" />
-              <circle cx="12" cy="12" r="6" />
-            </svg>
-            GPT-Analyse anzeigen
-          </>
-        )}
-      </motion.button>
-
-      {/* Analysis Result */}
-      <AnimatePresence>
-        {analyse && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            style={analyseCardStyle}
-          >
-            <div style={analyseHeaderStyle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              <span style={{ color: '#fff', fontWeight: 600 }}>KI-Analyse</span>
-            </div>
-            <p style={{ color: '#a1a1aa', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{analyse}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Weight Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        style={chartCardStyle}
-      >
-        <div style={chartHeaderStyle}>
-          <div>
-            <h3 style={chartTitleStyle}>Gewichtsverlauf</h3>
-            <p style={chartSubtitleStyle}>Trend über Zeit</p>
-          </div>
-          <div style={chartIconStyle}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-            </svg>
-          </div>
-        </div>
-        <div style={{ height: '300px' }}>
-          <Line data={chartData} options={options} />
-        </div>
-      </motion.div>
-
-      {/* Body Composition Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        style={chartCardStyle}
-      >
-        <div style={chartHeaderStyle}>
-          <div>
-            <h3 style={chartTitleStyle}>Körperzusammensetzung</h3>
-            <p style={chartSubtitleStyle}>Fett & Muskelmasse</p>
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <div style={compositionStatStyle}>
-              <span style={{ color: '#f97316', fontWeight: 600, fontSize: 16 }}>
-                {fett[fett.length - 1]?.wert?.toFixed(1) || 'N/A'}%
-              </span>
-              <span style={{ color: '#71717a', fontSize: 11 }}>Fett</span>
-            </div>
-            <div style={compositionStatStyle}>
-              <span style={{ color: '#10b981', fontWeight: 600, fontSize: 16 }}>
-                {muskel[muskel.length - 1]?.wert?.toFixed(1) || 'N/A'}%
-              </span>
-              <span style={{ color: '#71717a', fontSize: 11 }}>Muskel</span>
+          <div className="divider" />
+          <div className="row" style={{ gap: 12 }}>
+            <div className="icon-box" style={{ color: 'var(--accent)', background: 'var(--accent-soft)' }}><Icon name="target" size={18} /></div>
+            <div style={{ flex: 1 }}>
+              {!zielGewicht ? (
+                <span className="small muted">Kein Zielgewicht gesetzt. In den Zielen auf dem Dashboard eintragen.</span>
+              ) : (
+                <>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>
+                    {zielDiff !== null && Math.abs(zielDiff) < 0.3 ? 'Zielgewicht erreicht' : `Noch ${Math.abs(zielDiff || 0).toLocaleString('de-DE')} kg bis ${zielGewicht} kg`}
+                  </div>
+                  <div className="small faint">
+                    {tageBisZiel ? `Bei aktuellem Trend in etwa ${tageBisZiel} Tagen` : Math.abs(trendSteigung) <= 0.001 ? 'Trend ist flach' : 'Trend zeigt gerade in die andere Richtung'}
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </div>
-        <div style={{ height: '260px' }}>
-          <Line data={koerperChartData} options={koerperOptions} />
-        </div>
-      </motion.div>
+        </section>
 
-      {/* Body Composition Dashboard */}
-      <GewichtKomponentenChart />
+        <section className="card">
+          <div className="row-between" style={{ marginBottom: 12 }}>
+            <div>
+              <h3 className="card-title">Verlauf</h3>
+              <p className="card-subtitle">Geglättet, Trend und Theorie aus der Kalorienbilanz</p>
+            </div>
+          </div>
+          <Segmented value={range} onChange={setRange} options={[{ value: '30', label: '30 Tage' }, { value: '90', label: '90 Tage' }, { value: 'all', label: 'Alles' }]} />
+          <div style={{ height: 240, marginTop: 12 }}><Line data={chartData} options={options} /></div>
+          <div className="row" style={{ marginTop: 10, gap: 14, flexWrap: 'wrap' }}>
+            <LegendItem color="#bef264" label="7-Tage-Schnitt" />
+            <LegendItem color="rgba(255,255,255,0.35)" label="Messung" />
+            <button className="row tiny" style={{ gap: 6, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: showTheory ? 'var(--text-2)' : 'var(--text-3)', textDecoration: showTheory ? 'none' : 'line-through' }} onClick={() => setShowTheory((v) => !v)}>
+              <span style={{ width: 14, height: 2, background: '#f9a8d4', display: 'inline-block' }} /> Theoretisch
+            </button>
+          </div>
+        </section>
 
-      <FloatingTabBar />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+        <GewichtKomponentenChart />
+
+        <section className="card">
+          <div className="row-between">
+            <div>
+              <h3 className="card-title">KI-Analyse</h3>
+              <p className="card-subtitle">Einschätzung zu Gewicht und Bilanz</p>
+            </div>
+            <Button size="sm" icon="sparkles" onClick={handleAnalyse} loading={analyseLoading}>{analyse ? 'Neu' : 'Analysieren'}</Button>
+          </div>
+          {analyse && <p className="small muted" style={{ marginTop: 12, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{analyse}</p>}
+        </section>
+      </div>
+
+      <GewichtForm open={showForm} onClose={() => setShowForm(false)} onSaved={load} date={todayISO()} />
+    </Page>
   );
 }
 
-// === STYLES ===
-const containerStyle: React.CSSProperties = {
-  padding: "20px",
-  paddingBottom: 100,
-  backgroundColor: "#0f0f14",
-  minHeight: "100vh",
-  color: "#fff",
-};
-
-const loadingContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minHeight: '60vh',
-  gap: 16,
-};
-
-const spinnerStyle: React.CSSProperties = {
-  width: 48,
-  height: 48,
-  border: '3px solid rgba(99, 102, 241, 0.2)',
-  borderTopColor: '#6366f1',
-  borderRadius: '50%',
-  animation: 'spin 1s linear infinite',
-};
-
-const errorContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minHeight: '60vh',
-  textAlign: 'center',
-};
-
-const errorIconStyle: React.CSSProperties = {
-  width: 64,
-  height: 64,
-  borderRadius: 16,
-  background: 'rgba(239, 68, 68, 0.1)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const headerStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  marginBottom: 24,
-};
-
-const titleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: 28,
-  fontWeight: 700,
-  letterSpacing: '-0.03em',
-  background: 'linear-gradient(135deg, #fff 0%, #a1a1aa 100%)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-};
-
-const subtitleStyle: React.CSSProperties = {
-  margin: '4px 0 0 0',
-  fontSize: 14,
-  color: '#71717a',
-};
-
-const mainStatsCardStyle: React.CSSProperties = {
-  background: 'rgba(28, 28, 38, 0.6)',
-  borderRadius: 20,
-  padding: 20,
-  marginBottom: 16,
-  border: '1px solid rgba(255, 255, 255, 0.06)',
-};
-
-const statsGridStyle: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: 16,
-  marginBottom: 16,
-};
-
-const statItemStyle: React.CSSProperties = {
-  textAlign: 'center',
-};
-
-const statNumberStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: 24,
-  fontWeight: 700,
-  color: '#fff',
-  letterSpacing: '-0.03em',
-  fontVariantNumeric: 'tabular-nums',
-};
-
-const statLabelStyle: React.CSSProperties = {
-  fontSize: 12,
-  color: '#71717a',
-  marginTop: 4,
-  display: 'block',
-};
-
-const goalProgressStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 12,
-  paddingTop: 16,
-  borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-};
-
-const goalIconStyle: React.CSSProperties = {
-  width: 36,
-  height: 36,
-  borderRadius: 10,
-  background: 'rgba(139, 92, 246, 0.15)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const analyseButtonStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '14px 20px',
-  fontSize: 15,
-  fontWeight: 600,
-  borderRadius: 14,
-  border: 'none',
-  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%)',
-  color: '#a78bfa',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 10,
-  marginBottom: 16,
-};
-
-const buttonSpinnerStyle: React.CSSProperties = {
-  width: 18,
-  height: 18,
-  border: '2px solid rgba(167, 139, 250, 0.3)',
-  borderTopColor: '#a78bfa',
-  borderRadius: '50%',
-  animation: 'spin 1s linear infinite',
-};
-
-const analyseCardStyle: React.CSSProperties = {
-  background: 'rgba(28, 28, 38, 0.6)',
-  borderRadius: 16,
-  padding: 16,
-  marginBottom: 16,
-  border: '1px solid rgba(139, 92, 246, 0.2)',
-  overflow: 'hidden',
-};
-
-const analyseHeaderStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  marginBottom: 12,
-};
-
-const chartCardStyle: React.CSSProperties = {
-  background: 'rgba(28, 28, 38, 0.6)',
-  borderRadius: 20,
-  padding: 20,
-  marginBottom: 16,
-  border: '1px solid rgba(255, 255, 255, 0.06)',
-};
-
-const chartHeaderStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  marginBottom: 16,
-};
-
-const chartTitleStyle: React.CSSProperties = {
-  margin: 0,
-  color: '#fff',
-  fontSize: 16,
-  fontWeight: 600,
-  letterSpacing: '-0.02em',
-};
-
-const chartSubtitleStyle: React.CSSProperties = {
-  margin: '4px 0 0 0',
-  fontSize: 12,
-  color: '#71717a',
-};
-
-const chartIconStyle: React.CSSProperties = {
-  width: 40,
-  height: 40,
-  borderRadius: 12,
-  background: 'rgba(99, 102, 241, 0.15)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const compositionStatStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  background: 'rgba(255, 255, 255, 0.03)',
-  padding: '8px 12px',
-  borderRadius: 10,
-};
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="row tiny faint" style={{ gap: 6 }}>
+      <span style={{ width: 14, height: 2, background: color, display: 'inline-block' }} /> {label}
+    </span>
+  );
+}
