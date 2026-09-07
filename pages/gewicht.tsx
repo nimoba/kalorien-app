@@ -86,7 +86,7 @@ export default function GewichtSeite() {
     labels,
     datasets: [
       { label: "Gewicht", data: slice(verlauf).map((e) => e.gewicht), borderColor: "rgba(255,255,255,0.35)", borderWidth: 1, pointRadius: 0, tension: 0.2 },
-      { label: "7-Tage-Schnitt", data: slice(geglättet).map((e) => e.gewicht), borderColor: "#bef264", backgroundColor: "rgba(190,242,100,0.06)", fill: true, borderWidth: 2.5, pointRadius: 0, tension: 0.3 },
+      { label: "7-Tage-Schnitt", data: slice(geglättet).map((e) => e.gewicht), borderColor: "#bef264", borderWidth: 2.5, pointRadius: 0, tension: 0.3 },
       { label: "Trend", data: slice(trend).map((e) => e.gewicht), borderColor: "rgba(190,242,100,0.5)", borderDash: [3, 4], borderWidth: 1, pointRadius: 0 },
       ...(showTheory ? [{ label: "Theoretisch (aus Bilanz)", data: slice(theoretisch).map((e) => e.gewicht), borderColor: "#f9a8d4", borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, tension: 0.2 }] : []),
       ...(zielGewicht ? [{ label: "Ziel", data: new Array(labels.length).fill(zielGewicht), borderColor: "rgba(255,255,255,0.2)", borderWidth: 1, pointRadius: 0, borderDash: [2, 3] }] : []),
