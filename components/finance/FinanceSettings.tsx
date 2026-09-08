@@ -112,7 +112,7 @@ export default function FinanceSettings({ onClose }: Props) {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -135,7 +135,7 @@ export default function FinanceSettings({ onClose }: Props) {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -149,7 +149,7 @@ export default function FinanceSettings({ onClose }: Props) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
         style={{
-          backgroundColor: "#2c2c2c",
+          backgroundColor: "var(--bg)",
           borderRadius: "16px",
           padding: "24px",
           width: "100%",
@@ -176,7 +176,7 @@ export default function FinanceSettings({ onClose }: Props) {
             style={{
               background: "none",
               border: "none",
-              color: "#ccc",
+              color: "var(--text-2)",
               fontSize: "24px",
               cursor: "pointer",
               padding: "4px",
@@ -206,9 +206,9 @@ export default function FinanceSettings({ onClose }: Props) {
               style={{
                 width: "100%",
                 padding: "12px",
-                border: "1px solid #555",
+                border: "1px solid var(--border-strong)",
                 borderRadius: "8px",
-                backgroundColor: "#1e1e1e",
+                backgroundColor: "var(--surface)",
                 color: "#fff",
                 fontSize: "16px",
               }}
@@ -217,7 +217,7 @@ export default function FinanceSettings({ onClose }: Props) {
             <p style={{ 
               margin: "4px 0 0 0", 
               fontSize: "12px", 
-              color: "#888" 
+              color: "var(--text-3)" 
             }}>
               Der Kontostand zu Beginn Ihrer Aufzeichnungen
             </p>
@@ -240,9 +240,9 @@ export default function FinanceSettings({ onClose }: Props) {
               style={{
                 width: "100%",
                 padding: "12px",
-                border: "1px solid #555",
+                border: "1px solid var(--border-strong)",
                 borderRadius: "8px",
-                backgroundColor: "#1e1e1e",
+                backgroundColor: "var(--surface)",
                 color: "#fff",
                 fontSize: "16px",
               }}
@@ -272,9 +272,9 @@ export default function FinanceSettings({ onClose }: Props) {
               style={{
                 width: "100%",
                 padding: "12px",
-                border: "1px solid #555",
+                border: "1px solid var(--border-strong)",
                 borderRadius: "8px",
-                backgroundColor: "#1e1e1e",
+                backgroundColor: "var(--surface)",
                 color: "#fff",
                 fontSize: "16px",
               }}
@@ -282,7 +282,7 @@ export default function FinanceSettings({ onClose }: Props) {
             <p style={{ 
               margin: "4px 0 0 0", 
               fontSize: "12px", 
-              color: "#888" 
+              color: "var(--text-3)" 
             }}>
               Maximale Ausgaben pro Monat (für Budgetanalyse)
             </p>
@@ -296,10 +296,10 @@ export default function FinanceSettings({ onClose }: Props) {
               style={{
                 width: "100%",
                 padding: "14px",
-                border: "1px solid #36a2eb",
+                border: "1px solid #3b82f6",
                 borderRadius: "8px",
                 backgroundColor: "transparent",
-                color: "#36a2eb",
+                color: "#3b82f6",
                 fontSize: "16px",
                 cursor: "pointer",
                 fontWeight: "bold",
@@ -310,7 +310,7 @@ export default function FinanceSettings({ onClose }: Props) {
             <p style={{ 
               margin: "4px 0 0 0", 
               fontSize: "12px", 
-              color: "#888",
+              color: "var(--text-3)",
               textAlign: "center"
             }}>
               Alle Transaktionen als CSV-Datei herunterladen
@@ -325,7 +325,7 @@ export default function FinanceSettings({ onClose }: Props) {
               style={{
                 flex: 1,
                 padding: "14px",
-                border: "1px solid #555",
+                border: "1px solid var(--border-strong)",
                 borderRadius: "8px",
                 backgroundColor: "transparent",
                 color: "#fff",
@@ -343,7 +343,7 @@ export default function FinanceSettings({ onClose }: Props) {
                 padding: "14px",
                 border: "none",
                 borderRadius: "8px",
-                backgroundColor: loading ? "#666" : "#36a2eb",
+                backgroundColor: loading ? "var(--surface-3)" : "#3b82f6",
                 color: "#fff",
                 fontSize: "16px",
                 cursor: loading ? "not-allowed" : "pointer",

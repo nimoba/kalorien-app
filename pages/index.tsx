@@ -1,276 +1,135 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { KalorienHalbkreis } from "../components/charts/KalorienHalbkreis";
-import { MakroBalken } from "../components/charts/MakroBalken";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import Page, { ErrorState } from "../components/ui/Page";
+import Icon from "../components/ui/Icon";
+import KcalHero from "../components/dashboard/KcalHero";
+import MacroRow from "../components/dashboard/MacroRow";
+import TodayList from "../components/dashboard/TodayList";
+import RecentChips from "../components/dashboard/RecentChips";
+import WeekCard from "../components/dashboard/WeekCard";
+import FabMenu from "../components/dashboard/FabMenu";
 import { TagesLineChart } from "../components/charts/TagesLineChart";
 import { WochenChart } from "../components/charts/WochenChart";
-import FloatingForm from "../components/FloatingForm";
-import SettingsForm from "../components/SettingsForm";
-import FloatingActionMenu from "../components/FloatingActionMenu";
-import GewichtForm from "../components/GewichtForm";
-import FloatingTabBar from "../components/FloatingTabBar";
 import KcalBilanzChart from "../components/charts/KcalBilanzChart";
+import FoodSheet from "../components/FoodSheet";
 import SportForm from "../components/SportForm";
-import DayCounter from "../components/DayCounter";
-
-interface DashboardData {
-  kalorien: number;
-  ziel: number;
-  kh: number;
-  zielKh: number;
-  eiweiss: number;
-  zielEiweiss: number;
-  fett: number;
-  zielFett: number;
-  eintraege: { zeit: string; kcal: number }[];
-}
+import GewichtForm from "../components/GewichtForm";
+import SettingsForm from "../components/SettingsForm";
+import FavoritenModal from "../components/FavoritenModal";
+import type { FavoritItem } from "../types/favorit";
+import type { DashboardData, FoodPrefill, RecentFood, FoodEntry } from "../types/dashboard";
+import { todayISO, shiftISO, formatISOLong, formatISOShort } from "../lib/date";
 
 export default function Dashboard() {
-  const [showForm, setShowForm] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const router = useRouter();
+  const [date, setDate] = useState<string>(todayISO());
   const [daten, setDaten] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showWeight, setShowWeight] = useState(false);
+  const [error, setError] = useState(false);
+  const [refreshCharts, setRefreshCharts] = useState(0);
+
+  const [showFood, setShowFood] = useState(false);
+  const [prefill, setPrefill] = useState<FoodPrefill | null>(null);
   const [showSport, setShowSport] = useState(false);
-  const [refreshBilanz, setRefreshBilanz] = useState(0);
+  const [showWeight, setShowWeight] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
 
-  const loadDaten = () => {
-    fetch("/api/overview")
-      .then((res) => res.json())
-      .then((data) => {
-        setDaten(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  };
+  const load = useCallback((silent = false) => {
+    if (!silent) setLoading(true);
+    setError(false);
+    fetch(`/api/dashboard?date=${date}`)
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+      .then((d: DashboardData) => { setDaten(d); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
+  }, [date]);
 
-  useEffect(() => {
-    loadDaten();
-  }, []);
+  useEffect(() => { load(); }, [load]);
 
   const refreshAll = () => {
-    loadDaten();
-    setRefreshBilanz((v) => v + 1);
+    load(true);
+    setRefreshCharts((v) => v + 1);
   };
 
-  if (loading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: '#0f0f14',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 16,
-          }}
-        >
-          <div style={{
-            width: 48,
-            height: 48,
-            border: '3px solid rgba(99, 102, 241, 0.2)',
-            borderTopColor: '#6366f1',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-          }} />
-          <span style={{ color: '#71717a', fontSize: 14 }}>Lade Daten...</span>
-          <style>{`
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          `}</style>
-        </motion.div>
-      </div>
-    );
-  }
+  const isToday = date === todayISO();
+  const openFood = (p: FoodPrefill | null = null) => { setPrefill(p); setShowFood(true); };
 
-  if (!daten) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: '#0f0f14',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-      }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: 16,
-            padding: 24,
-            textAlign: 'center',
-          }}
-        >
-          <div style={{ fontSize: 32, marginBottom: 12 }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          </div>
-          <p style={{ color: '#fff', margin: 0, fontSize: 16 }}>Fehler beim Laden der Daten</p>
-          <button
-            onClick={loadDaten}
-            style={{
-              marginTop: 16,
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 10,
-              padding: '10px 20px',
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 500,
-            }}
-          >
-            Erneut versuchen
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
+  const pickRecent = (r: RecentFood) => openFood({ ...r });
+  const repeatEntry = (e: FoodEntry) => {
+    const grams = e.menge !== null && e.unit ? (e.unit === 'g' || e.unit === 'ml' ? e.menge : e.menge * (e.unitWeight || 0)) : 0;
+    if (grams > 0 && e.unit && e.menge !== null) {
+      const f = 100 / grams;
+      openFood({ name: e.name, kcal: e.kcal * f, eiweiss: e.eiweiss * f, fett: e.fett * f, kh: e.kh * f, menge: e.menge, unit: e.unit, unitWeight: e.unitWeight });
+    } else {
+      openFood({ name: e.name, kcal: e.kcal, eiweiss: e.eiweiss, fett: e.fett, kh: e.kh, menge: 1, unit: 'Portion', unitWeight: 100 });
+    }
+  };
+  const pickFavorite = (item: FavoritItem, menge: number) => {
+    setShowFavorites(false);
+    openFood({ name: item.name, kcal: item.kcal, eiweiss: item.eiweiss, fett: item.fett, kh: item.kh, menge, unit: item.unit, unitWeight: item.unitWeight ?? null });
+  };
+
+  const dateNav = (
+    <div className="row" style={{ gap: 4 }}>
+      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setDate(shiftISO(date, -1))} aria-label="Vorheriger Tag"><Icon name="chevronLeft" /></button>
+      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setDate(shiftISO(date, 1))} disabled={isToday} aria-label="Nächster Tag"><Icon name="chevronRight" /></button>
+      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setShowSettings(true)} aria-label="Ziele"><Icon name="settings" /></button>
+      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => router.push('/finanzen')} aria-label="Finanzen"><Icon name="wallet" /></button>
+    </div>
+  );
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        minHeight: "100vh",
-        background: "#0f0f14",
-        color: "#ffffff",
-        paddingBottom: "120px",
-      }}
+    <Page
+      title={isToday ? 'Heute' : formatISOShort(date)}
+      subtitle={
+        isToday ? formatISOLong(date) : (
+          <button className="btn btn-ghost btn-sm" onClick={() => setDate(todayISO())} style={{ height: 24, padding: 0, color: 'var(--accent)' }}>
+            Zurück zu heute
+          </button>
+        )
+      }
+      right={dateNav}
     >
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{
-          marginBottom: 24,
-        }}
-      >
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          <div>
-            <h1 style={{
-              margin: 0,
-              fontSize: 28,
-              fontWeight: 700,
-              letterSpacing: '-0.03em',
-              background: 'linear-gradient(135deg, #fff 0%, #a1a1aa 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>
-              Dashboard
-            </h1>
-            <p style={{
-              margin: '4px 0 0 0',
-              fontSize: 14,
-              color: '#71717a',
-            }}>
-              {new Date().toLocaleDateString('de-DE', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}
-            </p>
-          </div>
+      {error && !daten ? (
+        <ErrorState text="Daten konnten nicht geladen werden" onRetry={() => load()} />
+      ) : loading && !daten ? (
+        <div className="stack">
+          <div className="skeleton" style={{ height: 250 }} />
+          <div className="grid-3"><div className="skeleton" style={{ height: 96 }} /><div className="skeleton" style={{ height: 96 }} /><div className="skeleton" style={{ height: 96 }} /></div>
+          <div className="skeleton" style={{ height: 140 }} />
         </div>
-      </motion.div>
+      ) : daten && (
+        <div className="stack" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 150ms' }}>
+          <KcalHero gegessen={daten.tag.kcal} ziel={daten.tag.zielKcal} aktivitaet={daten.tag.aktivitaet} basisZiel={daten.ziele.kcal} />
+          <MacroRow
+            eiweiss={daten.tag.eiweiss} zielEiweiss={daten.tag.zielEiweiss}
+            kh={daten.tag.kh} zielKh={daten.tag.zielKh}
+            fett={daten.tag.fett} zielFett={daten.tag.zielFett}
+          />
 
-      {/* Main Calorie Card */}
-      <KalorienHalbkreis gegessen={daten.kalorien} ziel={daten.ziel} />
+          <RecentChips items={daten.recent} onPick={pickRecent} onOpenFavorites={() => setShowFavorites(true)} />
 
-      {/* Macros Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        style={{ marginTop: 20 }}
-      >
-        <h2 style={{
-          margin: '0 0 16px 0',
-          fontSize: 16,
-          fontWeight: 600,
-          color: '#fff',
-          letterSpacing: '-0.02em',
-        }}>
-          Makros
-        </h2>
-        <MakroBalken label="Kohlenhydrate" value={daten.kh} ziel={daten.zielKh} />
-        <MakroBalken label="Eiweiß" value={daten.eiweiss} ziel={daten.zielEiweiss} />
-        <MakroBalken label="Fett" value={daten.fett} ziel={daten.zielFett} />
-      </motion.div>
+          <div>
+            <div className="section-label">{isToday ? 'Heute gegessen' : 'Einträge'}</div>
+            <TodayList eintraege={daten.tag.eintraege} aktivitaeten={daten.tag.aktivitaeten} onChanged={refreshAll} onRepeat={repeatEntry} />
+          </div>
 
-      {/* Day Counter */}
-      <DayCounter refresh={refreshBilanz} />
-
-      {/* Daily Progress Chart */}
-      <TagesLineChart eintraege={daten.eintraege} ziel={daten.ziel} />
-
-      {/* Monthly Chart */}
-      <WochenChart refresh={refreshBilanz} />
-
-      {/* Calorie Balance */}
-      <KcalBilanzChart refresh={refreshBilanz} />
-
-      {/* Floating Action Menu */}
-      <FloatingActionMenu
-        onOpenForm={() => setShowForm(true)}
-        onOpenWeight={() => setShowWeight(true)}
-        onOpenSettings={() => setShowSettings(true)}
-        onOpenSport={() => setShowSport(true)}
-      />
-
-      {/* Modals */}
-      {showForm && (
-        <FloatingForm
-          onClose={() => setShowForm(false)}
-          onRefresh={refreshAll}
-        />
+          <WeekCard woche={daten.woche} gewicht={daten.gewicht} ziele={daten.ziele} />
+          <TagesLineChart eintraege={daten.tag.eintraege} ziel={daten.tag.zielKcal} isToday={isToday} />
+          <WochenChart refresh={refreshCharts} />
+          <KcalBilanzChart refresh={refreshCharts} />
+        </div>
       )}
 
-      {showSettings && (
-        <SettingsForm
-          onClose={() => {
-            setShowSettings(false);
-            refreshAll();
-          }}
-        />
-      )}
+      <FabMenu onFood={() => openFood(null)} onSport={() => setShowSport(true)} onWeight={() => setShowWeight(true)} />
 
-      {showSport && (
-        <SportForm
-          onClose={() => setShowSport(false)}
-          onRefresh={refreshAll}
-        />
-      )}
-
-      {showWeight && (
-        <GewichtForm
-          onClose={() => setShowWeight(false)}
-          onRefresh={refreshAll}
-        />
-      )}
-
-      {/* Tab Bar */}
-      {!showForm && !showSettings && !showWeight && !showSport && <FloatingTabBar />}
-    </div>
+      <FoodSheet open={showFood} onClose={() => setShowFood(false)} onSaved={refreshAll} date={date} prefill={prefill} />
+      <SportForm open={showSport} onClose={() => setShowSport(false)} onSaved={refreshAll} date={date} />
+      <GewichtForm open={showWeight} onClose={() => setShowWeight(false)} onSaved={refreshAll} date={date} />
+      <SettingsForm open={showSettings} onClose={() => setShowSettings(false)} onSaved={refreshAll} />
+      <FavoritenModal open={showFavorites} onClose={() => setShowFavorites(false)} onSelect={pickFavorite} />
+    </Page>
   );
 }

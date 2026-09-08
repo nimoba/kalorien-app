@@ -112,7 +112,7 @@ export default function TransactionsPage() {
   if (loading) {
     return (
       <div style={{ 
-        backgroundColor: "#2c2c2c", 
+        backgroundColor: "var(--bg)", 
         minHeight: "100vh", 
         color: "#fff", 
         display: "flex", 
@@ -128,9 +128,9 @@ export default function TransactionsPage() {
     <div
       style={{
         padding: "24px",
-        fontFamily: "sans-serif",
+        
         position: "relative",
-        backgroundColor: "#2c2c2c",
+        backgroundColor: "var(--bg)",
         minHeight: "100vh",
         color: "#ffffff",
         paddingBottom: "100px",
@@ -146,9 +146,9 @@ export default function TransactionsPage() {
         <button
           onClick={() => window.location.href = "/"}
           style={{
-            background: "#36a2eb",
+            background: "#3b82f6",
             border: "none",
-            borderRadius: "12px",
+            borderRadius: "16px",
             color: "#fff",
             padding: "8px 12px",
             fontSize: "14px",
@@ -171,9 +171,9 @@ export default function TransactionsPage() {
             setShowForm(true);
           }}
           style={{
-            background: "#4caf50",
+            background: "#22c55e",
             border: "none",
-            borderRadius: "12px",
+            borderRadius: "16px",
             color: "#fff",
             padding: "12px 16px",
             fontSize: "14px",
@@ -187,11 +187,11 @@ export default function TransactionsPage() {
 
       {/* Filters */}
       <div style={{ 
-        background: "#1e1e1e", 
-        borderRadius: "12px", 
+        background: "var(--surface)", 
+        borderRadius: "16px", 
         padding: "16px", 
         marginBottom: "24px",
-        border: "1px solid #333"
+        border: "1px solid var(--border)"
       }}>
         <div style={{ marginBottom: "16px" }}>
           <input
@@ -202,9 +202,9 @@ export default function TransactionsPage() {
             style={{
               width: "100%",
               padding: "12px",
-              border: "1px solid #555",
+              border: "1px solid var(--border-strong)",
               borderRadius: "8px",
-              backgroundColor: "#2c2c2c",
+              backgroundColor: "var(--bg)",
               color: "#fff",
               fontSize: "16px",
             }}
@@ -219,9 +219,9 @@ export default function TransactionsPage() {
               flex: 1,
               minWidth: "120px",
               padding: "8px",
-              border: "1px solid #555",
+              border: "1px solid var(--border-strong)",
               borderRadius: "8px",
-              backgroundColor: "#2c2c2c",
+              backgroundColor: "var(--bg)",
               color: "#fff",
               fontSize: "14px",
             }}
@@ -241,9 +241,9 @@ export default function TransactionsPage() {
               flex: 1,
               minWidth: "120px",
               padding: "8px",
-              border: "1px solid #555",
+              border: "1px solid var(--border-strong)",
               borderRadius: "8px",
-              backgroundColor: "#2c2c2c",
+              backgroundColor: "var(--bg)",
               color: "#fff",
               fontSize: "14px",
             }}
@@ -260,7 +260,7 @@ export default function TransactionsPage() {
         <div style={{ 
           textAlign: "center", 
           padding: "40px", 
-          color: "#888" 
+          color: "var(--text-3)" 
         }}>
           <p style={{ fontSize: "18px", margin: "0 0 8px 0" }}>💳</p>
           <p style={{ margin: 0 }}>
@@ -285,9 +285,9 @@ export default function TransactionsPage() {
               <h3 style={{ 
                 margin: "0 0 12px 0", 
                 fontSize: "16px", 
-                color: "#36a2eb",
+                color: "#3b82f6",
                 padding: "8px 0",
-                borderBottom: "1px solid #333"
+                borderBottom: "1px solid var(--border)"
               }}>
                 {date}
               </h3>
@@ -298,11 +298,11 @@ export default function TransactionsPage() {
                   <div
                     key={transaction.id}
                     style={{
-                      background: "#1e1e1e",
-                      borderRadius: "12px",
+                      background: "var(--surface)",
+                      borderRadius: "16px",
                       padding: "16px",
                       marginBottom: "8px",
-                      border: "1px solid #333",
+                      border: "1px solid var(--border)",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
@@ -318,7 +318,7 @@ export default function TransactionsPage() {
                       <p style={{ 
                         margin: "4px 0 0 0", 
                         fontSize: "14px", 
-                        color: "#888" 
+                        color: "var(--text-3)" 
                       }}>
                         {categoryInfo.name} • {transaction.time}
                         {transaction.notes && ` • ${transaction.notes}`}
@@ -330,7 +330,7 @@ export default function TransactionsPage() {
                         margin: 0, 
                         fontSize: "18px", 
                         fontWeight: "bold",
-                        color: transaction.type === 'income' ? "#4caf50" : "#f44336"
+                        color: transaction.type === 'income' ? "#22c55e" : "#fb7185"
                       }}>
                         {transaction.type === 'income' ? '+' : '-'}{Math.abs(transaction.amount).toFixed(2)} €
                       </p>
@@ -339,7 +339,7 @@ export default function TransactionsPage() {
                         <button
                           onClick={() => handleEdit(transaction)}
                           style={{
-                            background: "#36a2eb",
+                            background: "#3b82f6",
                             border: "none",
                             borderRadius: "6px",
                             color: "#fff",
@@ -353,7 +353,7 @@ export default function TransactionsPage() {
                         <button
                           onClick={() => handleDelete(transaction.id)}
                           style={{
-                            background: "#f44336",
+                            background: "#fb7185",
                             border: "none",
                             borderRadius: "6px",
                             color: "#fff",

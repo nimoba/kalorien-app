@@ -65,7 +65,7 @@ export default function FinanceDashboard() {
   if (loading) {
     return (
       <div style={{ 
-        backgroundColor: "#2c2c2c", 
+        backgroundColor: "var(--bg)", 
         minHeight: "100vh", 
         color: "#fff", 
         display: "flex", 
@@ -80,7 +80,7 @@ export default function FinanceDashboard() {
   if (!data) {
     return (
       <div style={{ 
-        backgroundColor: "#2c2c2c", 
+        backgroundColor: "var(--bg)", 
         minHeight: "100vh", 
         color: "#fff", 
         display: "flex", 
@@ -96,9 +96,9 @@ export default function FinanceDashboard() {
     <div
       style={{
         padding: "24px",
-        fontFamily: "sans-serif",
+        
         position: "relative",
-        backgroundColor: "#2c2c2c",
+        backgroundColor: "var(--bg)",
         minHeight: "100vh",
         color: "#ffffff",
         paddingBottom: "100px",
@@ -114,9 +114,9 @@ export default function FinanceDashboard() {
         <button
           onClick={() => window.location.href = "/"}
           style={{
-            background: "#36a2eb",
+            background: "#3b82f6",
             border: "none",
-            borderRadius: "12px",
+            borderRadius: "16px",
             color: "#fff",
             padding: "8px 12px",
             fontSize: "14px",
@@ -124,26 +124,26 @@ export default function FinanceDashboard() {
             display: "flex",
             alignItems: "center",
             gap: "6px",
-            boxShadow: "0 2px 8px rgba(54, 162, 235, 0.3)"
+            boxShadow: "none"
           }}
         >
-          🍽️ Kalorien
+          ← Kalorien
         </button>
       </div>
 
-      <h1 style={{ marginBottom: "24px" }}>💰 Finanzen Dashboard</h1>
+      <h1 className="page-title" style={{ marginBottom: "20px" }}>Finanzen</h1>
 
       {/* Current Balance */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
-          background: "linear-gradient(135deg, #4caf50 0%, #45a049 100%)",
+          background: "var(--surface-2)",
           borderRadius: "16px",
           padding: "24px",
           marginBottom: "24px",
           textAlign: "center",
-          boxShadow: "0 4px 16px rgba(76, 175, 80, 0.3)"
+          boxShadow: "none"
         }}
       >
         <h2 style={{ margin: 0, fontSize: "18px", opacity: 0.9 }}>Aktueller Kontostand</h2>
@@ -169,15 +169,15 @@ export default function FinanceDashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
           style={{
-            background: "#1e1e1e",
-            borderRadius: "12px",
+            background: "var(--surface)",
+            borderRadius: "16px",
             padding: "20px",
             textAlign: "center",
-            border: "1px solid #333"
+            border: "1px solid var(--border)"
           }}
         >
           <p style={{ margin: 0, fontSize: "14px", opacity: 0.7 }}>Einnahmen</p>
-          <p style={{ margin: "8px 0 0 0", fontSize: "24px", fontWeight: "bold", color: "#4caf50" }}>
+          <p style={{ margin: "8px 0 0 0", fontSize: "24px", fontWeight: "bold", color: "#22c55e" }}>
             +{data.monthlyIncome.toFixed(2)} €
           </p>
         </motion.div>
@@ -187,15 +187,15 @@ export default function FinanceDashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
           style={{
-            background: "#1e1e1e",
-            borderRadius: "12px",
+            background: "var(--surface)",
+            borderRadius: "16px",
             padding: "20px",
             textAlign: "center",
-            border: "1px solid #333"
+            border: "1px solid var(--border)"
           }}
         >
           <p style={{ margin: 0, fontSize: "14px", opacity: 0.7 }}>Ausgaben</p>
-          <p style={{ margin: "8px 0 0 0", fontSize: "24px", fontWeight: "bold", color: "#f44336" }}>
+          <p style={{ margin: "8px 0 0 0", fontSize: "24px", fontWeight: "bold", color: "#fb7185" }}>
             -{data.monthlyExpenses.toFixed(2)} €
           </p>
         </motion.div>
@@ -207,11 +207,11 @@ export default function FinanceDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         style={{
-          background: "#1e1e1e",
-          borderRadius: "12px",
+          background: "var(--surface)",
+          borderRadius: "16px",
           padding: "20px",
           marginBottom: "24px",
-          border: "1px solid #333"
+          border: "1px solid var(--border)"
         }}
       >
         <h3 style={{ margin: "0 0 16px 0", fontSize: "16px" }}>📊 Ausgaben Übersicht</h3>
@@ -243,11 +243,11 @@ export default function FinanceDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         style={{
-          background: "#1e1e1e",
-          borderRadius: "12px",
+          background: "var(--surface)",
+          borderRadius: "16px",
           padding: "20px",
           marginBottom: "24px",
-          border: "1px solid #333"
+          border: "1px solid var(--border)"
         }}
       >
         <h3 style={{ margin: "0 0 16px 0", fontSize: "16px" }}>📋 Letzte Transaktionen</h3>
@@ -265,7 +265,7 @@ export default function FinanceDashboard() {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "12px 0",
-                  borderBottom: index < 4 ? "1px solid #333" : "none"
+                  borderBottom: index < 4 ? "1px solid var(--border)" : "none"
                 }}
               >
                 <div>
@@ -280,7 +280,7 @@ export default function FinanceDashboard() {
                   margin: 0, 
                   fontSize: "16px", 
                   fontWeight: "bold",
-                  color: transaction.type === 'income' ? "#4caf50" : "#f44336"
+                  color: transaction.type === 'income' ? "#22c55e" : "#fb7185"
                 }}>
                   {transaction.type === 'income' ? '+' : '-'}{Math.abs(transaction.amount).toFixed(2)} €
                 </p>

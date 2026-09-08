@@ -255,15 +255,15 @@ export default function BudgetsPage() {
   };
 
   const getProgressColor = (percentage: number) => {
-    if (percentage <= 50) return '#4caf50';
-    if (percentage <= 80) return '#ff9800';
-    return '#f44336';
+    if (percentage <= 50) return '#22c55e';
+    if (percentage <= 80) return '#fbbf24';
+    return '#fb7185';
   };
 
   if (loading) {
     return (
       <div style={{ 
-        backgroundColor: "#2c2c2c", 
+        backgroundColor: "var(--bg)", 
         minHeight: "100vh", 
         color: "#fff", 
         display: "flex", 
@@ -279,9 +279,9 @@ export default function BudgetsPage() {
     <div
       style={{
         padding: "24px",
-        fontFamily: "sans-serif",
+        
         position: "relative",
-        backgroundColor: "#2c2c2c",
+        backgroundColor: "var(--bg)",
         minHeight: "100vh",
         color: "#ffffff",
         paddingBottom: "100px",
@@ -297,9 +297,9 @@ export default function BudgetsPage() {
         <button
           onClick={() => window.location.href = "/"}
           style={{
-            background: "#36a2eb",
+            background: "#3b82f6",
             border: "none",
-            borderRadius: "12px",
+            borderRadius: "16px",
             color: "#fff",
             padding: "8px 12px",
             fontSize: "14px",
@@ -320,10 +320,10 @@ export default function BudgetsPage() {
       <div style={{ 
         display: "flex", 
         marginBottom: "24px",
-        background: "#1e1e1e",
-        borderRadius: "12px",
+        background: "var(--surface)",
+        borderRadius: "16px",
         padding: "4px",
-        border: "1px solid #333"
+        border: "1px solid var(--border)"
       }}>
         <button
           onClick={() => setActiveTab('budgets')}
@@ -332,7 +332,7 @@ export default function BudgetsPage() {
             padding: "12px",
             border: "none",
             borderRadius: "8px",
-            backgroundColor: activeTab === 'budgets' ? "#36a2eb" : "transparent",
+            backgroundColor: activeTab === 'budgets' ? "#3b82f6" : "transparent",
             color: "#fff",
             fontSize: "16px",
             cursor: "pointer",
@@ -348,7 +348,7 @@ export default function BudgetsPage() {
             padding: "12px",
             border: "none",
             borderRadius: "8px",
-            backgroundColor: activeTab === 'goals' ? "#36a2eb" : "transparent",
+            backgroundColor: activeTab === 'goals' ? "#3b82f6" : "transparent",
             color: "#fff",
             fontSize: "16px",
             cursor: "pointer",
@@ -364,9 +364,9 @@ export default function BudgetsPage() {
         <button
           onClick={() => activeTab === 'budgets' ? setShowBudgetForm(true) : setShowGoalForm(true)}
           style={{
-            background: "#4caf50",
+            background: "#22c55e",
             border: "none",
-            borderRadius: "12px",
+            borderRadius: "16px",
             color: "#fff",
             padding: "12px 16px",
             fontSize: "14px",
@@ -385,7 +385,7 @@ export default function BudgetsPage() {
             <div style={{ 
               textAlign: "center", 
               padding: "40px", 
-              color: "#888" 
+              color: "var(--text-3)" 
             }}>
               <p style={{ fontSize: "18px", margin: "0 0 8px 0" }}>💰</p>
               <p style={{ margin: 0 }}>Noch keine Budgets vorhanden</p>
@@ -401,11 +401,11 @@ export default function BudgetsPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{
-                      background: "#1e1e1e",
-                      borderRadius: "12px",
+                      background: "var(--surface)",
+                      borderRadius: "16px",
                       padding: "20px",
                       marginBottom: "16px",
-                      border: budget.percentage > 100 ? "1px solid #f44336" : "1px solid #333",
+                      border: budget.percentage > 100 ? "1px solid #fb7185" : "1px solid var(--border)",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
@@ -417,7 +417,7 @@ export default function BudgetsPage() {
                           </h3>
                           {budget.percentage > 100 && (
                             <span style={{
-                              background: "#f44336",
+                              background: "#fb7185",
                               color: "#fff",
                               padding: "2px 8px",
                               borderRadius: "4px",
@@ -428,7 +428,7 @@ export default function BudgetsPage() {
                             </span>
                           )}
                         </div>
-                        <p style={{ margin: 0, fontSize: "14px", color: "#888" }}>
+                        <p style={{ margin: 0, fontSize: "14px", color: "var(--text-3)" }}>
                           {budget.currentSpent.toFixed(2)} € von {budget.monthlyLimit.toFixed(2)} €
                         </p>
                       </div>
@@ -437,7 +437,7 @@ export default function BudgetsPage() {
                         <button
                           onClick={() => handleEditBudget(budget)}
                           style={{
-                            background: "#36a2eb",
+                            background: "#3b82f6",
                             border: "none",
                             borderRadius: "6px",
                             color: "#fff",
@@ -451,7 +451,7 @@ export default function BudgetsPage() {
                         <button
                           onClick={() => handleDeleteBudget(budget.id)}
                           style={{
-                            background: "#f44336",
+                            background: "#fb7185",
                             border: "none",
                             borderRadius: "6px",
                             color: "#fff",
@@ -467,7 +467,7 @@ export default function BudgetsPage() {
 
                     {/* Progress Bar */}
                     <div style={{
-                      background: "#333",
+                      background: "var(--surface-2)",
                       borderRadius: "8px",
                       height: "8px",
                       overflow: "hidden",
@@ -506,7 +506,7 @@ export default function BudgetsPage() {
             <div style={{ 
               textAlign: "center", 
               padding: "40px", 
-              color: "#888" 
+              color: "var(--text-3)" 
             }}>
               <p style={{ fontSize: "18px", margin: "0 0 8px 0" }}>🎯</p>
               <p style={{ margin: 0 }}>Noch keine Sparziele vorhanden</p>
@@ -521,11 +521,11 @@ export default function BudgetsPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{
-                      background: "#1e1e1e",
-                      borderRadius: "12px",
+                      background: "var(--surface)",
+                      borderRadius: "16px",
                       padding: "20px",
                       marginBottom: "16px",
-                      border: "1px solid #333",
+                      border: "1px solid var(--border)",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
@@ -537,7 +537,7 @@ export default function BudgetsPage() {
                           </h3>
                           {goal.percentage >= 100 && (
                             <span style={{
-                              background: "#4caf50",
+                              background: "#22c55e",
                               color: "#fff",
                               padding: "2px 8px",
                               borderRadius: "4px",
@@ -548,11 +548,11 @@ export default function BudgetsPage() {
                             </span>
                           )}
                         </div>
-                        <p style={{ margin: "0 0 4px 0", fontSize: "14px", color: "#888" }}>
+                        <p style={{ margin: "0 0 4px 0", fontSize: "14px", color: "var(--text-3)" }}>
                           {goal.currentAmount.toFixed(2)} € von {goal.targetAmount.toFixed(2)} €
                         </p>
                         {goal.deadline && (
-                          <p style={{ margin: 0, fontSize: "12px", color: "#888" }}>
+                          <p style={{ margin: 0, fontSize: "12px", color: "var(--text-3)" }}>
                             Deadline: {goal.deadline} {goal.daysRemaining > 0 && `(${goal.daysRemaining} Tage)`}
                           </p>
                         )}
@@ -562,7 +562,7 @@ export default function BudgetsPage() {
                         <button
                           onClick={() => handleEditGoal(goal)}
                           style={{
-                            background: "#36a2eb",
+                            background: "#3b82f6",
                             border: "none",
                             borderRadius: "6px",
                             color: "#fff",
@@ -576,7 +576,7 @@ export default function BudgetsPage() {
                         <button
                           onClick={() => handleDeleteGoal(goal.id)}
                           style={{
-                            background: "#f44336",
+                            background: "#fb7185",
                             border: "none",
                             borderRadius: "6px",
                             color: "#fff",
@@ -592,14 +592,14 @@ export default function BudgetsPage() {
 
                     {/* Progress Bar */}
                     <div style={{
-                      background: "#333",
+                      background: "var(--surface-2)",
                       borderRadius: "8px",
                       height: "8px",
                       overflow: "hidden",
                       marginBottom: "8px"
                     }}>
                       <div style={{
-                        background: goal.percentage >= 100 ? "#4caf50" : "#36a2eb",
+                        background: goal.percentage >= 100 ? "#22c55e" : "#3b82f6",
                         height: "100%",
                         width: `${Math.min(goal.percentage, 100)}%`,
                         borderRadius: "8px",
@@ -611,7 +611,7 @@ export default function BudgetsPage() {
                       margin: 0, 
                       fontSize: "14px", 
                       textAlign: "right",
-                      color: goal.percentage >= 100 ? "#4caf50" : "#36a2eb",
+                      color: goal.percentage >= 100 ? "#22c55e" : "#3b82f6",
                       fontWeight: "bold"
                     }}>
                       {goal.percentage.toFixed(1)}%
@@ -635,7 +635,7 @@ export default function BudgetsPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -648,7 +648,7 @@ export default function BudgetsPage() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             style={{
-              backgroundColor: "#2c2c2c",
+              backgroundColor: "var(--bg)",
               borderRadius: "16px",
               padding: "24px",
               width: "100%",
@@ -669,7 +669,7 @@ export default function BudgetsPage() {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#ccc",
+                  color: "var(--text-2)",
                   fontSize: "24px",
                   cursor: "pointer",
                   padding: "4px",
@@ -696,9 +696,9 @@ export default function BudgetsPage() {
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border: "1px solid #555",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: "8px",
-                    backgroundColor: "#1e1e1e",
+                    backgroundColor: "var(--surface)",
                     color: "#fff",
                     fontSize: "16px",
                   }}
@@ -729,9 +729,9 @@ export default function BudgetsPage() {
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border: "1px solid #555",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: "8px",
-                    backgroundColor: "#1e1e1e",
+                    backgroundColor: "var(--surface)",
                     color: "#fff",
                     fontSize: "16px",
                   }}
@@ -746,7 +746,7 @@ export default function BudgetsPage() {
                   style={{
                     flex: 1,
                     padding: "14px",
-                    border: "1px solid #555",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: "8px",
                     backgroundColor: "transparent",
                     color: "#fff",
@@ -763,7 +763,7 @@ export default function BudgetsPage() {
                     padding: "14px",
                     border: "none",
                     borderRadius: "8px",
-                    backgroundColor: "#36a2eb",
+                    backgroundColor: "#3b82f6",
                     color: "#fff",
                     fontSize: "16px",
                     cursor: "pointer",
@@ -789,7 +789,7 @@ export default function BudgetsPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -802,7 +802,7 @@ export default function BudgetsPage() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             style={{
-              backgroundColor: "#2c2c2c",
+              backgroundColor: "var(--bg)",
               borderRadius: "16px",
               padding: "24px",
               width: "100%",
@@ -825,7 +825,7 @@ export default function BudgetsPage() {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#ccc",
+                  color: "var(--text-2)",
                   fontSize: "24px",
                   cursor: "pointer",
                   padding: "4px",
@@ -854,9 +854,9 @@ export default function BudgetsPage() {
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border: "1px solid #555",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: "8px",
-                    backgroundColor: "#1e1e1e",
+                    backgroundColor: "var(--surface)",
                     color: "#fff",
                     fontSize: "16px",
                   }}
@@ -883,9 +883,9 @@ export default function BudgetsPage() {
                     style={{
                       width: "100%",
                       padding: "12px",
-                      border: "1px solid #555",
+                      border: "1px solid var(--border-strong)",
                       borderRadius: "8px",
-                      backgroundColor: "#1e1e1e",
+                      backgroundColor: "var(--surface)",
                       color: "#fff",
                       fontSize: "16px",
                     }}
@@ -911,9 +911,9 @@ export default function BudgetsPage() {
                     style={{
                       width: "100%",
                       padding: "12px",
-                      border: "1px solid #555",
+                      border: "1px solid var(--border-strong)",
                       borderRadius: "8px",
-                      backgroundColor: "#1e1e1e",
+                      backgroundColor: "var(--surface)",
                       color: "#fff",
                       fontSize: "16px",
                     }}
@@ -939,9 +939,9 @@ export default function BudgetsPage() {
                     style={{
                       width: "100%",
                       padding: "12px",
-                      border: "1px solid #555",
+                      border: "1px solid var(--border-strong)",
                       borderRadius: "8px",
-                      backgroundColor: "#1e1e1e",
+                      backgroundColor: "var(--surface)",
                       color: "#fff",
                       fontSize: "16px",
                     }}
@@ -964,9 +964,9 @@ export default function BudgetsPage() {
                     style={{
                       width: "100%",
                       padding: "12px",
-                      border: "1px solid #555",
+                      border: "1px solid var(--border-strong)",
                       borderRadius: "8px",
-                      backgroundColor: "#1e1e1e",
+                      backgroundColor: "var(--surface)",
                       color: "#fff",
                       fontSize: "16px",
                     }}
@@ -987,7 +987,7 @@ export default function BudgetsPage() {
                   style={{
                     flex: 1,
                     padding: "14px",
-                    border: "1px solid #555",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: "8px",
                     backgroundColor: "transparent",
                     color: "#fff",
@@ -1004,7 +1004,7 @@ export default function BudgetsPage() {
                     padding: "14px",
                     border: "none",
                     borderRadius: "8px",
-                    backgroundColor: "#36a2eb",
+                    backgroundColor: "#3b82f6",
                     color: "#fff",
                     fontSize: "16px",
                     cursor: "pointer",
