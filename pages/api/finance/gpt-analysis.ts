@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { chat, MODEL_FAST } from "../../../lib/openai";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -14,15 +15,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } = req.body;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
+    const analysis = (await chat({
+      model: MODEL_FAST,
+      maxTokens: 600,
+      temperature: 0.7,
+      messages: [
           {
             role: "system",
             content: "Du bist ein Finanzberater, der personalisierte Finanzanalysen erstellt. Antworte auf Deutsch und gib konkrete, umsetzbare Tipps."
@@ -46,17 +43,8 @@ ${topExpenses.slice(0, 5).map(e => `- ${e.description}: ${e.amount.toFixed(2)}�
 Bitte analysiere diese Daten und gib mir konkrete Empfehlungen zur Optimierung meiner Finanzen. Halte die Antwort prägnant (max. 200 Wörter).`
           }
         ],
-        max_tokens: 400,
-        temperature: 0.7,
-      }),
-    });
+    })) || "Analyse konnte nicht generiert werden.";
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const analysis = data.choices[0]?.message?.content || "Analyse konnte nicht generiert werden.";
 
     res.status(200).json({ analysis });
   } catch (error) {

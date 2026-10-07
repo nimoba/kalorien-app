@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { chat, MODEL_FAST } from "../../lib/openai";
 import { getSheets, SHEET_ID } from "../../lib/sheets";
 import { loadTracking, summarizeDay, dateKeyForISO } from "../../lib/tracking";
 
@@ -73,22 +74,16 @@ ${wochenplan
   : `{"vorschlaege":[{"gericht":"…","zutaten":["…"],"rezept":"…","makros":{"kcal":0,"eiweiss":0,"fett":0,"kh":0},"preis":"ca. 3.00 €","zeit":20}]}`}
 `;
 
-    const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        temperature: 0.7,
-        response_format: { type: "json_object" },
-        messages: [
+    const antwort = await chat({
+      model: MODEL_FAST,
+      reasoning: "low",
+      json: "object",
+      messages: [
           { role: "system", content: "Du bist ein deutscher Ernährungsberater. Antworte nur mit gültigem JSON." },
           { role: "user", content: prompt },
         ],
-      }),
     });
 
-    const json = await gptRes.json();
-    const antwort: string = json.choices?.[0]?.message?.content || "";
     const parsed = JSON.parse(antwort.replace(/```json|```/g, "").trim());
 
     // Normalise: older prompts returned a bare array

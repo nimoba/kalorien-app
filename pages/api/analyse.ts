@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { chat, MODEL_FAST } from "../../lib/openai";
 import { google } from "googleapis";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -69,24 +70,15 @@ Gewicht (Datum + kg):
 ${gewichtText}
 `;
 
-    const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
+    const analyse = (await chat({
+      model: MODEL_FAST,
+      reasoning: "low",
+      messages: [
           { role: "system", content: "Du bist ein einfühlsamer, analytischer Ernährungscoach." },
           { role: "user", content: prompt },
         ],
-        temperature: 0.7,
-      }),
-    });
+    })) || "Keine Analyse verfügbar.";
 
-    const result = await gptRes.json();
-    const analyse = result.choices?.[0]?.message?.content || "Keine Analyse verfügbar.";
 
     res.status(200).json({ analyse });
   } catch (err) {

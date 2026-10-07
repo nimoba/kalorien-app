@@ -29,16 +29,16 @@ export default function NutritionEditor({ state, onOpenFavorites, onOpenKantine,
     setBusy('ai');
     try {
       const res = await fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: aiText }) });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ error: `Fehler ${res.status}` }));
       if (!res.ok) throw new Error(data.error);
       state.apply({
         name: aiText.trim(), kcal: Number(data.Kalorien), eiweiss: Number(data.Eiweiß), fett: Number(data.Fett), kh: Number(data.Kohlenhydrate),
         menge: data.menge ? Number(data.menge) : 100, unit: (data.unit as Unit) || 'g', unitWeight: data.unitWeight ? Number(data.unitWeight) : null,
       });
       setAiText('');
-      toast.success(data.source === 'favoriten' ? 'Aus Favoriten übernommen' : 'Geschätzt, bitte prüfen');
-    } catch {
-      toast.error('Schätzung fehlgeschlagen');
+      toast.success(data.source === 'favoriten' ? 'Aus Favoriten übernommen' : data.gesamt ? `Geschätzt: ca. ${data.gesamt.kcal} kcal, bitte prüfen` : 'Geschätzt, bitte prüfen');
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : 'Schätzung fehlgeschlagen');
     }
     setBusy(null);
   };
@@ -61,31 +61,29 @@ export default function NutritionEditor({ state, onOpenFavorites, onOpenKantine,
     setBusy(null);
   };
 
-  const onPhoto = (file: File) => {
-    if (!file.type.startsWith('image/')) return toast.error('Bitte ein Bild wählen');
-    if (file.size > 10 * 1024 * 1024) return toast.error('Bild zu groß (max. 10 MB)');
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result?.toString().split(',')[1];
-      if (!base64) return;
-      setBusy('photo');
-      try {
-        const res = await fetch('/api/kalorien-bild', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: base64 }) });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-        state.apply({
-          name: data.name || 'Foto-Schätzung',
-          kcal: Number(data.kcal ?? data.Kalorien ?? 0), eiweiss: Number(data.eiweiss ?? data.Eiweiß ?? 0),
-          fett: Number(data.fett ?? data.Fett ?? 0), kh: Number(data.kh ?? data.Kohlenhydrate ?? 0),
-          menge: data.menge ? Number(data.menge) : 100, unit: 'g', unitWeight: null,
-        });
-        toast.success('Foto analysiert, bitte prüfen');
-      } catch {
-        toast.error('Foto konnte nicht analysiert werden');
-      }
-      setBusy(null);
-    };
-    reader.readAsDataURL(file);
+  const onPhoto = async (file: File) => {
+    if (!file.type.startsWith('image/') && !/\.(heic|heif)$/i.test(file.name)) return toast.error('Bitte ein Bild wählen');
+    setBusy('photo');
+    try {
+      const image = await downscaleImage(file);
+      const res = await fetch('/api/kalorien-bild', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image, mimeType: 'image/jpeg', hinweis: aiText.trim() || undefined }),
+      });
+      const data = await res.json().catch(() => ({ error: `Fehler ${res.status}` }));
+      if (!res.ok) throw new Error(data.error);
+      state.apply({
+        name: data.name || 'Foto-Schätzung',
+        kcal: Number(data.kcal ?? 0), eiweiss: Number(data.eiweiss ?? 0), fett: Number(data.fett ?? 0), kh: Number(data.kh ?? 0),
+        menge: data.menge ? Number(data.menge) : 100, unit: (data.unit as Unit) || 'g', unitWeight: data.unitWeight ? Number(data.unitWeight) : null,
+      });
+      setAiText('');
+      toast.success(data.gesamt ? `Foto analysiert: ca. ${data.gesamt.kcal} kcal, bitte prüfen` : 'Foto analysiert, bitte prüfen');
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : 'Foto konnte nicht analysiert werden');
+    }
+    setBusy(null);
   };
 
   const sources: { label: string; icon: IconName; onClick: () => void; show: boolean }[] = [
@@ -188,4 +186,27 @@ export default function NutritionEditor({ state, onOpenFavorites, onOpenKantine,
       </div>
     </div>
   );
+}
+
+/** Scales a photo down to max 1600 px and re-encodes as JPEG, returns base64 without data-URL prefix. */
+async function downscaleImage(file: File, maxSide = 1600, quality = 0.85): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('Bildformat wird nicht unterstützt'));
+      el.src = url;
+    });
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Bild konnte nicht verarbeitet werden');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', quality).split(',')[1];
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { google } from "googleapis";
+import { chatJSON, aggregateFood, FOOD_RULES, FOOD_SCHEMA, MODEL_PRECISE, type FoodEstimateRaw } from "../../lib/openai";
 
 // ✅ Favoriten-Tabelle checken
 async function checkFavoritMatch(name: string) {
@@ -44,67 +45,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!text) return res.status(400).json({ error: "Kein Text erhalten" });
 
   // Favoriten zuerst prüfen
-  const favorit = await checkFavoritMatch(text);
-  if (favorit) {
-    return res.status(200).json({ source: "favoriten", ...favorit });
+  try {
+    const favorit = await checkFavoritMatch(text);
+    if (favorit) return res.status(200).json({ source: "favoriten", ...favorit });
+  } catch (err) {
+    console.error("Favoriten-Abgleich fehlgeschlagen:", err);
   }
 
-  // GPT-Fallback
-  const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      temperature: 0.3,
-      messages: [
-        {
-          role: "system",
-          content: `Du bist ein Ernährungsberater. Bitte gib die Kalorien und Makros **pro 100 g oder ml** zurück – unabhängig davon, wie viel der Nutzer gegessen hat.
-
-Antworte **nur** im folgenden JSON-Format:
-
-{
-  "Kalorien": ...,
-  "Eiweiß": ...,
-  "Fett": ...,
-  "Kohlenhydrate": ...,
-  "menge": ...,
-  "unit": ...,
-  "unitWeight": ...
-}
-
-- "menge": geschätzte **verzehrte Menge** in der angegebenen Einheit
-- "unit": "g", "ml", "Stück", oder "Portion"
-- "unitWeight": Gramm pro Einheit (nur bei Stück/Portion, sonst weglassen)
-
-Beispiele:
-- "2 Äpfel" → unit: "Stück", menge: 2, unitWeight: 180
-- "250ml Milch" → unit: "ml", menge: 250
-- "1 Portion Nudeln" → unit: "Portion", menge: 1, unitWeight: 300
-- "100g Reis" → unit: "g", menge: 100
-
-Die Nährwerte sind immer **pro 100 g/ml**.`,
-        },
-        { role: "user", content: text },
-      ],
-    }),
-  });
-
-  const gptJson = await openaiRes.json();
-
   try {
-    const content = gptJson.choices?.[0]?.message?.content;
-    if (!content) {
-      return res.status(500).json({ error: "Keine Antwort von GPT erhalten" });
-    }
-    const cleaned = content.replace(/```json|```/g, "").trim();
-    const werte = JSON.parse(cleaned);
-    return res.status(200).json({ source: "gpt", ...werte });
-  } catch {
-    console.error("GPT-Antwort konnte nicht geparst werden:", gptJson);
-    return res.status(500).json({ error: "GPT-Antwort konnte nicht verarbeitet werden" });
+    const raw = await chatJSON<FoodEstimateRaw>({
+      model: MODEL_PRECISE,
+      reasoning: "low",
+      json: FOOD_SCHEMA,
+      messages: [
+        { role: "developer", content: `Du bist ein präziser Ernährungsberater und schätzt Nährwerte für ein Kalorientracking-Tool.\n${FOOD_RULES}` },
+        { role: "user", content: String(text) },
+      ],
+    });
+    const e = aggregateFood(raw);
+    return res.status(200).json({
+      source: "gpt",
+      name: e.name,
+      Kalorien: e.kcal,
+      Eiweiß: e.eiweiss,
+      Fett: e.fett,
+      Kohlenhydrate: e.kh,
+      menge: e.menge,
+      unit: e.unit,
+      unitWeight: e.unitWeight,
+      gesamt: e.gesamt,
+      komponenten: e.komponenten,
+    });
+  } catch (err) {
+    console.error("Fehler bei KI-Schätzung:", err);
+    return res.status(500).json({ error: err instanceof Error ? err.message : "Schätzung fehlgeschlagen" });
   }
 }

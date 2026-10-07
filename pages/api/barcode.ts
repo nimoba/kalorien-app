@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { chatJSON, MODEL_PRECISE } from "../../lib/openai";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { code } = req.query;
@@ -40,47 +41,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (fehlenMakros) {
-      const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      const parsed = await chatJSON<{ Kalorien: number; Eiweiß: number; Fett: number; Kohlenhydrate: number; portion_g: number }>({
+        model: MODEL_PRECISE,
+        reasoning: "low",
+        json: {
+          name: "produkt_naehrwerte",
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["Kalorien", "Eiweiß", "Fett", "Kohlenhydrate", "portion_g"],
+            properties: {
+              Kalorien: { type: "number", description: "kcal pro 100 g/ml" },
+              Eiweiß: { type: "number", description: "g pro 100 g/ml" },
+              Fett: { type: "number", description: "g pro 100 g/ml" },
+              Kohlenhydrate: { type: "number", description: "g pro 100 g/ml" },
+              portion_g: { type: "number", description: "Übliche Verzehrportion in g/ml" },
+            },
+          },
         },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          temperature: 0.3,
-          messages: [
-            {
-              role: "system",
-              content: `Du bist ein Ernährungsberater. Gib nur geschätzte Nährwerte für ein bekanntes Produkt aus – **nicht pro 100g**, sondern realistisch für **eine konsumierte Portion**. Verwende dabei allgemeine Marktstandards.
-              
-Antwort **nur** im folgenden JSON-Format:
-
-{
-  "Kalorien": ...,
-  "Eiweiß": ...,
-  "Fett": ...,
-  "Kohlenhydrate": ...,
-  "menge": ...
-}`,
-            },
-            {
-              role: "user",
-              content: `Ich habe das Produkt „${produktname}“ gegessen. Bitte schätze Kalorien, Eiweiß, Fett, Kohlenhydrate und Menge (in g oder ml) für eine normale Portion.`,
-            },
-          ],
-        }),
+        messages: [
+          { role: "developer", content: "Du bist Ernährungsberater. Gib die Nährwerte eines Produkts **pro 100 g bzw. 100 ml** an, wie sie auf der Verpackung in Deutschland stehen würden, sowie die übliche Portionsgröße." },
+          {
+            role: "user",
+            content: `Produkt: „${produktname}“${p.brands ? ` (Marke: ${p.brands})` : ""}${p.quantity ? `, Packung: ${p.quantity}` : ""}${p.categories ? `, Kategorie: ${p.categories}` : ""}.
+Bekannte Werte pro 100 g (fehlende ergänzen, vorhandene übernehmen): kcal ${p.nutriments?.["energy-kcal_100g"] ?? "?"}, Eiweiß ${p.nutriments?.["proteins_100g"] ?? "?"}, Fett ${p.nutriments?.["fat_100g"] ?? "?"}, KH ${p.nutriments?.["carbohydrates_100g"] ?? "?"}.`,
+          },
+        ],
       });
-
-      const gptJson = await gptRes.json();
-      const content = gptJson.choices[0].message.content.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(content);
 
       kcal = parsed.Kalorien;
       eiweiß = parsed.Eiweiß;
       fett = parsed.Fett;
       kohlenhydrate = parsed.Kohlenhydrate;
-      menge = parsed.menge ?? menge; // GPT liefert Menge → falls vorhanden, übernehmen
+      if (!p.serving_quantity && !p.serving_size && parsed.portion_g > 0) menge = Math.round(parsed.portion_g);
     }
 
     // 🔍 Einheits-Erkennung
@@ -99,6 +92,7 @@ Antwort **nur** im folgenden JSON-Format:
       // Wenn Portionsgröße verfügbar und nicht 100g, als Stück behandeln
       unit = 'Stück';
       unitWeight = p.serving_quantity;
+      menge = 1;
     }
 
     // ✅ Nur Daten zurückgeben – NICHT speichern

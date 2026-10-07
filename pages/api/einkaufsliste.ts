@@ -1,5 +1,6 @@
 // pages/api/einkaufsliste.ts
 import type { NextApiRequest, NextApiResponse } from "next";
+import { chat, MODEL_FAST } from "../../lib/openai";
 
 export interface EinkaufsItem {
   name: string;
@@ -78,16 +79,11 @@ Antworte **ausschließlich** im folgenden JSON-Format:
 Gib nur den JSON zurück, keine anderen Texte.
 `;
 
-    const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        temperature: 0.6,
-        messages: [
+    const antwort = await chat({
+      model: MODEL_FAST,
+      reasoning: "low",
+      json: "object",
+      messages: [
           {
             role: "system",
             content: "Du bist ein Einkaufsexperte mit Kenntnissen über deutsche Supermärkte, Preise und optimale Mengen für Haushalte."
@@ -97,14 +93,11 @@ Gib nur den JSON zurück, keine anderen Texte.
             content: prompt
           }
         ],
-      }),
     });
 
-    const gptJson = await gptRes.json();
-    const antwort = gptJson.choices?.[0]?.message?.content || "";
 
     if (!antwort) {
-      console.error("❌ GPT-Antwort leer:", gptJson);
+      console.error("❌ GPT-Antwort leer");
       return res.status(500).json({ error: "Keine Antwort von GPT erhalten" });
     }
 

@@ -1,55 +1,71 @@
 // pages/api/sport-gpt.ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
+import { chatJSON, MODEL_PRECISE } from "../../lib/openai";
+
+interface Aktivitaet {
+  name: string;
+  met: number;
+  minuten: number;
+}
+
+const SCHEMA = {
+  name: "sport_schaetzung",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["aktivitaeten"],
+    properties: {
+      aktivitaeten: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["name", "met", "minuten"],
+          properties: {
+            name: { type: "string" },
+            met: { type: "number", description: "MET-Wert laut Compendium of Physical Activities (2024), passend zur Intensität" },
+            minuten: { type: "number", description: "Aktive Dauer in Minuten" },
+          },
+        },
+      },
+    },
+  },
+};
 
 export default async function schaetzeMitGPT(req: NextApiRequest, res: NextApiResponse) {
-    console.log("💡 GPT-Schätzung gestartet");
-    const { beschreibung, gewicht } = req.body;
-
-  if (!beschreibung || !gewicht) {
+  const { beschreibung, gewicht } = req.body || {};
+  const kg = Number(gewicht);
+  if (!beschreibung || !kg) {
     return res.status(400).json({ error: "Beschreibung und Gewicht sind erforderlich." });
   }
 
-  const prompt = `
-Ich wiege ${gewicht} kg.
-Ich habe folgendes gemacht: ${beschreibung}.
-
-Schätze realistisch, wie viele Kalorien ich dadurch verbraucht habe.
-
-❗ Antworte bitte **nur mit einer Zahl**, ohne Einheit oder Text.
-`;
-
   try {
-    const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        temperature: 0.3,
-        messages: [
-          {
-            role: "system",
-            content: "Du bist ein Sportwissenschaftler und Experte für Kalorienverbrauchsschätzung.",
-          },
-          { role: "user", content: prompt },
-        ],
-      }),
+    const { aktivitaeten } = await chatJSON<{ aktivitaeten: Aktivitaet[] }>({
+      model: MODEL_PRECISE,
+      reasoning: "low",
+      json: SCHEMA,
+      messages: [
+        {
+          role: "developer",
+          content: `Du bist Sportwissenschaftler. Zerlege die beschriebene Aktivität in Einzelaktivitäten und gib je den MET-Wert (Compendium of Physical Activities) und die aktive Dauer an.
+- Leite die Intensität aus Angaben wie Pace, Geschwindigkeit, Watt, Gewichten oder Puls ab (z. B. 10 km in 50 min = 12 km/h Laufen ≈ 11.5 MET).
+- Fehlt die Dauer, schätze sie aus Distanz/Umfang realistisch (bei Krafttraining nur effektive Trainingszeit inkl. Satzpausen).
+- Schritte: ca. 100 Schritte/min Gehen bei ~3.5 MET.`,
+        },
+        { role: "user", content: String(beschreibung) },
+      ],
     });
 
-    const gptJson = await openaiRes.json();
-    const raw = gptJson.choices?.[0]?.message?.content?.trim() || "";
-    const kcal = parseFloat(raw.replace(/[^\d.]/g, ""));
+    // Net calories: (MET - 1) × kg × h, so the resting burn already in the TDEE is not counted twice
+    const kcal = Math.round(
+      (aktivitaeten || []).reduce((sum, a) => sum + Math.max(0, Number(a.met) - 1) * kg * (Number(a.minuten) / 60), 0),
+    );
+    if (!kcal) return res.status(500).json({ error: "Aktivität konnte nicht interpretiert werden" });
 
-    if (isNaN(kcal)) {
-      return res.status(500).json({ error: "Antwort konnte nicht interpretiert werden", raw });
-    }
-
-    res.status(200).json({ kcal });
+    res.status(200).json({ kcal, aktivitaeten });
   } catch (err) {
     console.error("❌ Fehler bei GPT-Sport-Call:", err);
-    res.status(500).json({ error: "Fehler bei GPT-Verarbeitung" });
+    res.status(500).json({ error: err instanceof Error ? err.message : "Fehler bei GPT-Verarbeitung" });
   }
 }
